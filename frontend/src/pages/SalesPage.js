@@ -89,7 +89,8 @@ export default function SalesPage() {
   };
 
   const filteredProducts = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    p.name.toLowerCase().includes(search.toLowerCase())||
+  p.category.toLowerCase().includes(search.toLowerCase()) 
   );
 
   const groupedByCategory = filteredProducts.reduce((acc, product) => {

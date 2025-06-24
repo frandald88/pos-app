@@ -13,8 +13,10 @@ export default function ProductsPage() {
 
 
   const filteredProducts = products.filter((p) =>
-  p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  p.name.toLowerCase().includes(search.toLowerCase()) ||
+  p.sku.toLowerCase().includes(search.toLowerCase()) ||
+  p.category.toLowerCase().includes(search.toLowerCase()) 
+);
 
   const fetchProducts = () => {
     axios
@@ -114,7 +116,7 @@ export default function ProductsPage() {
           value={form.category}
           onChange={(e) => setForm({ ...form, category: e.target.value })}
         />
-        <button className="bg-blue-500 text-white p-2 rounded">
+        <button className="text-white p-2 rounded" style={{ backgroundColor: "#46546b" }}>
           {editingId ? "Actualizar Producto" : "Crear Producto"}
         </button>
       </form>

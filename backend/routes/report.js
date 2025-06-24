@@ -1,51 +1,72 @@
-// routes/report.js
 const express = require("express");
 const router = express.Router();
-const Sale = require("../models/Sale");
-const { verifyToken } = require("../middleware/authMiddleware");
-const mongoose = require("mongoose");
+const { verifyToken } = require("../middleware/authMiddleware"); 
+const Sale = require("../models/sale");
+const User = require("../models/User");
 
-// GET /api/report/ventas
 router.get("/ventas", verifyToken, async (req, res) => {
   try {
-    const { tipoVenta, inicio, fin } = req.query;
+        const { tipoVenta, inicio, fin, tipo } = req.query;
 
-    const match = {};
-
-    if (inicio && fin) {
-      match.date = {
-        $gte: new Date(inicio),
-        $lte: new Date(fin),
-      };
-    }
-
-    if (tipoVenta === "mixta") {
-      match.method = { $in: ["efectivo", "transferencia", "tarjeta"] };
-      match.$expr = {
-        $gt: [
-          {
-            $size: {
-              $setIntersection: [
-                ["efectivo", "tarjeta", "transferencia"],
-                "$method",
-              ],
+        const filtro = {
+             date: {
+              $gte: new Date(inicio),
+              $lte: new Date(fin),
             },
-          },
-          1,
-        ],
-      };
-    } else if (tipoVenta && tipoVenta !== "todos") {
-      match.method = tipoVenta;
-    }
+        };
 
-    const ventas = await Sale.find(match)
+        if (tipoVenta) {
+            filtro.method = tipoVenta;
+        }
+
+        if (tipo) {
+            filtro.type = tipo; // Aquí se filtra por tipo de venta
+            }
+
+    const ventas = await Sale.find(filtro)
       .populate("user", "username")
-      .sort({ date: -1 });
+      .populate("deliveryPerson", "username")
+      .populate("cliente", "nombre") // si tienes un modelo de cliente
+      .lean();
 
-    res.json(ventas);
-  } catch (error) {
-    console.error("Error al generar reporte de ventas:", error);
-    res.status(500).json({ message: "Error en el servidor" });
+    const taxRate = 0.10;
+
+    const resultados = ventas.map((venta) => {
+      let ivaTotal = 0;
+      const productos = venta.items.map((item) => {
+        const precioSinIVA = item.price / (1 + taxRate);
+        const ivaProducto = item.price - precioSinIVA;
+        const subtotal = item.price * item.quantity;
+
+        ivaTotal += ivaProducto * item.quantity;
+
+        return {
+          nombre: item.name,
+          cantidad: item.quantity,
+          precioUnitario: item.price,
+          subtotal,
+          iva: ivaProducto * item.quantity,
+        };
+      });
+
+      return {
+          _id: venta._id,
+          date: venta.date,
+          user: venta.user,
+          method: venta.method,
+          type: venta.type, // ✅ Aquí está la solución
+          productos,
+          ivaTotal,
+          total: venta.total,
+          repartidor: venta.deliveryPerson || null,
+          cliente: venta.cliente || null,
+      };
+    });
+
+    res.json(resultados);
+  } catch (err) {
+    console.error("Error al generar reporte:", err);
+    res.status(500).json({ message: "Error al generar reporte" });
   }
 });
 

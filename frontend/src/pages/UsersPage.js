@@ -94,7 +94,7 @@ export default function UsersPage() {
             <option value="admin">Administrador</option>
             <option value="repartidor">Repartidor</option>
         </select>
-        <button className="bg-blue-500 text-white p-2 rounded">
+        <button className="text-white p-2 rounded" style={{ backgroundColor: "#46546b" }}>
           {editingId ? "Actualizar Usuario" : "Crear Usuario"}
         </button>
       </form>

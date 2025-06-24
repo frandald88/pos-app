@@ -15,6 +15,10 @@ const saleSchema = new mongoose.Schema({
     enum: ['efectivo', 'transferencia', 'tarjeta'],
     required: true
   },
+  cliente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Cliente',
+  },
   type: {
     type: String,
     enum: ['mostrador', 'recoger', 'domicilio'],
@@ -32,4 +36,4 @@ const saleSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('Sale', saleSchema);
+module.exports = mongoose.models.Sale || mongoose.model("Sale", saleSchema);

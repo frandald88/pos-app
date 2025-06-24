@@ -6,7 +6,8 @@ const { verifyToken } = require('../middleware/authMiddleware');
 
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { products, method, type, deliveryPerson } = req.body;
+    console.log("Body recibido:", req.body);
+    const { products, method, saleType, deliveryPerson } = req.body;
 
     if (!products || !products.length) {
       return res.status(400).json({ message: 'Productos no válidos' });
@@ -16,12 +17,12 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ message: 'Método de pago inválido' });
     }
 
-    if (!['mostrador', 'recoger', 'domicilio'].includes(type)) {
-      return res.status(400).json({ message: 'Tipo de venta inválido' });
+    if (!['mostrador', 'recoger', 'domicilio'].includes(saleType)) {
+    return res.status(400).json({ message: 'Tipo de venta inválido' });
     }
 
-    if (type === 'domicilio' && !deliveryPerson) {
-      return res.status(400).json({ message: 'Debe asignar un repartidor para domicilio' });
+    if (saleType === 'domicilio' && !deliveryPerson) {
+    return res.status(400).json({ message: 'Debe asignar un repartidor para domicilio' });
     }
 
     const items = products.map(p => ({
@@ -34,12 +35,12 @@ router.post('/', verifyToken, async (req, res) => {
     const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const sale = new Sale({
-      items,
-      total,
-      method,
-      type,
-      user: req.userId,
-      deliveryPerson: type === 'domicilio' ? deliveryPerson : null
+    items,
+    total,
+    method,
+    type: saleType,
+    user: req.userId,
+    deliveryPerson: saleType === 'domicilio' ? deliveryPerson : null
     });
 
     await sale.save();

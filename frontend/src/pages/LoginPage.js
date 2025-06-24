@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState } from 'react'; 
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo5.png'; // ajusta el path si está en otra carpeta
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -23,9 +24,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <div className="p-8 bg-white rounded-xl shadow-md w-80">
-        <h1 className="text-2xl font-bold mb-4 text-center">Login</h1>
+    <div className="h-screen flex items-center justify-center" style={{ backgroundColor: '#23334e' }}>
+      <div className="p-8 rounded-xl shadow-md w-80" style={{ backgroundColor: '#f4f6fa' }}>
+        <div className="flex justify-center mb-4">
+          <img src={logo} alt="Logo" style={{ width: '180px', height: 'auto' }} />
+        </div>
+        <h1 className="text-2xl font-bold mb-4 text-center text-gray-800">Login</h1>
         <input
           type="text"
           placeholder="Usuario"
@@ -41,7 +45,10 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
         <button
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition"
+          className="w-full text-white py-2 rounded transition"
+          style={{ backgroundColor: '#46546b' }}
+          onMouseOver={(e) => e.target.style.backgroundColor = '#3a4456'}
+          onMouseOut={(e) => e.target.style.backgroundColor = '#46546b'}
           onClick={handleLogin}
         >
           Iniciar sesión
