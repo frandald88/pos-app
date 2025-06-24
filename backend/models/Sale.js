@@ -1,0 +1,35 @@
+const mongoose = require('mongoose');
+
+const saleSchema = new mongoose.Schema({
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+      quantity: { type: Number, required: true },
+      price: { type: Number, required: true },
+      name: { type: String },
+    },
+  ],
+  total: { type: Number, required: true },
+  method: {
+    type: String,
+    enum: ['efectivo', 'transferencia', 'tarjeta'],
+    required: true
+  },
+  type: {
+    type: String,
+    enum: ['mostrador', 'recoger', 'domicilio'],
+    default: 'mostrador',
+    required: true
+  },
+  deliveryPerson: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: function () {
+      return this.type === 'domicilio';
+    }
+  },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  date: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model('Sale', saleSchema);
