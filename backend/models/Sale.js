@@ -10,6 +10,7 @@ const saleSchema = new mongoose.Schema({
     },
   ],
   total: { type: Number, required: true },
+  discount: { type: Number, default: 0 },  // 👈 Nuevo campo
   method: {
     type: String,
     enum: ['efectivo', 'transferencia', 'tarjeta'],

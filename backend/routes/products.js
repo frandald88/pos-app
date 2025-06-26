@@ -4,13 +4,17 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { verifyToken, requireAdmin } = require('../middleware/authMiddleware');
 
-// GET todos los productos
-router.get('/', verifyToken, async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
+// GET - Obtener todos los productos (solo admin)
+router.get('/', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: 'Error al obtener productos', error: err.message });
+  }
 });
 
-// POST crear producto
+// POST - Crear producto (solo admin)
 router.post('/', verifyToken, requireAdmin, async (req, res) => {
   try {
     const newProduct = new Product(req.body);
@@ -21,7 +25,7 @@ router.post('/', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT actualizar producto
+// PUT - Actualizar producto (solo admin)
 router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     await Product.findByIdAndUpdate(req.params.id, req.body);
@@ -31,7 +35,7 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// DELETE eliminar producto
+// DELETE - Eliminar producto (solo admin)
 router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);

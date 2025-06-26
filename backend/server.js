@@ -12,16 +12,10 @@ app.use(express.json());
 
 // Rutas
 const authRoutes = require('./routes/auth');
-app.use('/api', authRoutes); // <- ¡ESTO ES CRUCIAL!
+app.use('/api', authRoutes);
 
 const reportRoutes = require('./routes/report');
 app.use('/api/report', reportRoutes);
-
-// Ruta base de prueba
-app.get('/', (req, res) => {
-  res.send('API del POS funcionando ✅');
-});
-
 
 const userRoutes = require('./routes/users');
 app.use('/api/users', userRoutes);
@@ -31,6 +25,19 @@ app.use('/api/products', productRoutes);
 
 const salesRoutes = require('./routes/sales');
 app.use('/api/sales', salesRoutes);
+
+// ✅ NUEVA RUTA para clientes
+const clienteRoutes = require('./routes/clientes');
+app.use('/api/clientes', clienteRoutes);
+
+const attendanceRoutes = require("./routes/attendance");
+app.use("/api/attendance", attendanceRoutes);
+
+
+// Ruta base de prueba
+app.get('/', (req, res) => {
+  res.send('API del POS funcionando ✅');
+});
 
 // Conexión a MongoDB y encender el servidor
 mongoose.connect(process.env.MONGO_URI)
