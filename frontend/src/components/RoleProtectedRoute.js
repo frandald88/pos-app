@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import apiBaseUrl from "../apiConfig";
 
 export default function RoleProtectedRoute({ children, allowedRoles }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -9,7 +10,7 @@ export default function RoleProtectedRoute({ children, allowedRoles }) {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/users/me", {
+      .get(`${apiBaseUrl}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setCurrentUser(res.data))

@@ -6,7 +6,8 @@ const { verifyToken, requireAdmin } = require('../middleware/authMiddleware');
 // Obtener todos los usuarios (solo admin)
 router.get('/', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await User.find().select('-password')
+    .populate('tienda', 'nombre');
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener usuarios', error: err.message });
@@ -14,22 +15,39 @@ router.get('/', verifyToken, requireAdmin, async (req, res) => {
 });
 
 // Crear nuevo usuario
-router.post('/', verifyToken, requireAdmin, async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
-    const { username, password, role } = req.body;
-    const newUser = new User({ username, password, role });
+    const { username, password, role, telefono, tienda } = req.body;
+
+    // Validación manual: vendedores y repartidores deben tener tienda
+    if (role !== "admin" && !tienda) {
+      return res.status(400).json({ message: "Los usuarios que no son admin deben tener una tienda asignada" });
+    }
+
+    const newUser = new User({ username, password, role, telefono, tienda });
     await newUser.save();
-    res.status(201).json({ message: 'Usuario creado' });
-  } catch (err) {
-    res.status(400).json({ message: 'Error al crear usuario', error: err.message });
+
+    res.status(201).json({ message: "Usuario creado exitosamente" });
+  } catch (error) {
+    console.error("Error al crear usuario:", error);
+    res.status(400).json({ message: "Error al crear usuario", error: error.message });
   }
 });
 
 // Actualizar usuario
 router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { username, role } = req.body;
-    await User.findByIdAndUpdate(req.params.id, { username, role });
+    const { username, role, telefono, tienda } = req.body;
+
+    const updateData = {
+      username,
+      role,
+      telefono,
+      tienda: role !== 'admin' ? tienda : null,
+    };
+
+    await User.findByIdAndUpdate(req.params.id, updateData, { runValidators: true });
+
     res.json({ message: 'Usuario actualizado' });
   } catch (err) {
     res.status(400).json({ message: 'Error al actualizar', error: err.message });
@@ -56,6 +74,21 @@ router.get('/me', verifyToken, async (req, res) => {
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: 'Error al obtener el usuario actual', error: err.message });
+  }
+});
+
+router.get('/profile', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate('tienda', 'nombre');
+    res.json({
+      username: user.username,
+      role: user.role,
+      tienda: user.tienda?._id || null,
+      tiendaNombre: user.tienda?.nombre || null
+    });
+  } catch (error) {
+    console.error('Error al obtener perfil de usuario:', error);
+    res.status(500).json({ message: 'Error al obtener perfil' });
   }
 });
 

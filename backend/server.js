@@ -14,6 +14,20 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api', authRoutes);
 
+const cajaRoutes = require('./routes/caja');
+app.use('/api/caja', cajaRoutes);
+
+const returnsRoutes = require('./routes/returns');
+app.use('/api/returns', returnsRoutes);
+
+app.use('/uploads', express.static('uploads'));
+
+const ordersRoutes = require('./routes/orders');
+app.use('/api/orders', ordersRoutes);
+
+const employeeHistoryRoutes = require('./routes/employeeHistory');
+app.use('/api/employees/history', employeeHistoryRoutes)
+
 const reportRoutes = require('./routes/report');
 app.use('/api/report', reportRoutes);
 
@@ -32,6 +46,14 @@ app.use('/api/clientes', clienteRoutes);
 
 const attendanceRoutes = require("./routes/attendance");
 app.use("/api/attendance", attendanceRoutes);
+
+const expensesRoutes = require('./routes/expenses');
+app.use('/api/expenses', expensesRoutes);
+
+const tiendasRoutes = require('./routes/tiendas');
+app.use('/api/tiendas', tiendasRoutes);
+
+
 
 
 // Ruta base de prueba

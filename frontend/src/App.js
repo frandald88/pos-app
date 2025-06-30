@@ -8,6 +8,13 @@ import AdminLayout from "./components/AdminLayout";
 import ClientesPage from "./pages/ClientesPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import RoleProtectedRoute from "./components/RoleProtectedRoute";
+import ExpensesPage from "./pages/ExpensesPage";
+import TiendasPage from "./pages/TiendasPage";
+import OrdersPage from "./pages/OrdersPage";
+import EmployeeHistoryPage from "./pages/EmployeeHistoryPage";  // ✅ Nuevo
+import OrderTrackingPage from "./pages/OrderTrackingPage";
+import ReturnsPage from "./pages/ReturnsPage";
+import CajaPage from "./pages/CajaPage";
 
 function App() {
   return (
@@ -15,7 +22,15 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
 
-        {/* Usuarios - Solo admin */}
+        <Route
+          path="/admin/tiendas"
+          element={
+            <AdminLayout> 
+              <TiendasPage />
+            </AdminLayout>
+          }
+        />
+
         <Route
           path="/admin/usuarios"
           element={
@@ -27,7 +42,6 @@ function App() {
           }
         />
 
-        {/* Productos - Solo admin */}
         <Route
           path="/admin/productos"
           element={
@@ -39,7 +53,15 @@ function App() {
           }
         />
 
-        {/* Reportes - Solo admin */}
+        <Route
+          path="/admin/devoluciones"
+          element={
+            <AdminLayout>
+              <ReturnsPage />
+            </AdminLayout>
+          }
+        />
+
         <Route
           path="/admin/reportes"
           element={
@@ -51,7 +73,6 @@ function App() {
           }
         />
 
-        {/* Ventas - Visible para todos */}
         <Route
           path="/admin/ventas"
           element={
@@ -61,7 +82,6 @@ function App() {
           }
         />
 
-        {/* Clientes - Visible para todos */}
         <Route
           path="/admin/clientes"
           element={
@@ -71,7 +91,6 @@ function App() {
           }
         />
 
-        {/* Empleados - Visible para todos */}
         <Route
           path="/admin/empleados"
           element={
@@ -80,6 +99,56 @@ function App() {
             </AdminLayout>
           }
         />
+
+        <Route
+          path="/admin/gastos"
+          element={
+            <AdminLayout>
+              <ExpensesPage />
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/admin/ordenes"
+          element={
+            <AdminLayout>
+              <OrdersPage />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/seguimiento-pedidos"
+          element={
+            <AdminLayout>
+              <OrderTrackingPage />
+            </AdminLayout>
+          }
+        />
+
+        {/* ✅ Nueva Ruta para Historial de Empleados */}
+        <Route
+          path="/admin/historial-empleados"
+          element={
+            <AdminLayout>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <EmployeeHistoryPage />
+              </RoleProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
+            <Route
+          path="/admin/caja"
+          element={
+            <AdminLayout>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <CajaPage/>
+              </RoleProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
       </Routes>
     </BrowserRouter>
   );

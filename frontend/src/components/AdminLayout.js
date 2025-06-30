@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import logo from "../assets/logo.png";
+import apiBaseUrl from "../apiConfig";
 
 export default function AdminLayout({ children }) {
   const location = useLocation();
@@ -10,7 +11,7 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/users/me", {
+      .get(`${apiBaseUrl}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setCurrentUser(res.data))
@@ -33,6 +34,16 @@ export default function AdminLayout({ children }) {
         <img src={logo} alt="Logo" className="w-32 mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-6"></h2>
         <nav className="flex flex-col gap-2">
+
+        {localStorage.getItem("userRole") === "admin" && (
+       <Link
+              to="/admin/tiendas"
+              className={`p-2 rounded ${linkStyle("/admin/tiendas")}`}
+            >
+              Tiendas
+            </Link>
+          )}
+
           {/* Usuarios - Solo admin */}
           {currentUser?.role === "admin" && (
             <Link
@@ -69,6 +80,20 @@ export default function AdminLayout({ children }) {
             Ventas
           </Link>
 
+          <Link
+            to="/admin/devoluciones"
+            className={`p-2 rounded ${linkStyle("/admin/devoluciones")}`}
+          >
+            Devoluciones
+          </Link>
+
+          <Link
+            to="/admin/seguimiento-pedidos"
+            className={`p-2 rounded ${linkStyle("/admin/seguimiento-pedidos")}`}
+          >
+            Seguimiento de Pedidos
+          </Link>
+
           {/* Reportes - Solo admin */}
           {currentUser?.role === "admin" && (
             <Link
@@ -86,6 +111,39 @@ export default function AdminLayout({ children }) {
           >
             Empleados
           </Link>
+
+          <Link
+            to="/admin/gastos"
+            className={`p-2 rounded ${linkStyle("/admin/gastos")}`}
+          >
+            Gastos
+          </Link>
+
+          <Link
+              to="/admin/ordenes"
+              className={`p-2 rounded ${linkStyle("/admin/ordenes")}`}
+            >
+              Órdenes de Compra
+            </Link>
+
+            {currentUser?.role === "admin" && (
+              <Link
+                to="/admin/historial-empleados"
+                className={`p-2 rounded ${linkStyle("/admin/historial-empleados")}`}
+              >
+                Historial Empleados
+              </Link>
+            )}
+
+            {currentUser?.role === "admin" && (
+              <Link
+                to="/admin/caja"
+                className={`p-2 rounded ${linkStyle("/admin/caja")}`}
+              >
+                Corte de Caja
+              </Link>
+            )}
+
 
           <button
             onClick={handleLogout}

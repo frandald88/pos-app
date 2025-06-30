@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Token no proporcionado' });
   }
@@ -18,9 +17,9 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Placeholder, se puede mejorar si luego agregas roles en el modelo de usuario
+// ✅ Esta es la que te está causando el error si está mal:
 function requireAdmin(req, res, next) {
-  next(); // Por ahora, simplemente permite el paso
+  next();  // Por ahora solo pasa directo
 }
 
 module.exports = { verifyToken, requireAdmin };

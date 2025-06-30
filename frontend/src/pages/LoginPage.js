@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo5.png'; // ajusta el path si está en otra carpeta
+import apiBaseUrl from "../apiConfig";
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -11,7 +12,7 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/api/login', {
+      const response = await axios.post(`${apiBaseUrl}/api/login`, {
         username,
         password
       });

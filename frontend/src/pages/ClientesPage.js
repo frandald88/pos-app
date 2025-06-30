@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import apiBaseUrl from "../apiConfig";
 
 export default function ClientesPage() {
   const token = localStorage.getItem("token");
@@ -23,7 +24,7 @@ export default function ClientesPage() {
 
   const fetchClientes = () => {
     axios
-      .get("http://localhost:5000/api/clientes", {
+      .get(`${apiBaseUrl}/api/clientes`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setClientes(res.data))
@@ -35,7 +36,7 @@ export default function ClientesPage() {
 
     // Obtener el usuario actual
     axios
-      .get("http://localhost:5000/api/users/me", {
+      .get(`${apiBaseUrl}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setCurrentUser(res.data))
@@ -51,7 +52,7 @@ export default function ClientesPage() {
 
   const handleGuardarCliente = () => {
     axios
-      .post("http://localhost:5000/api/clientes", nuevoCliente, {
+      .post(`${apiBaseUrl}/api/clientes`, nuevoCliente, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -70,7 +71,7 @@ export default function ClientesPage() {
   const handleEliminar = (id) => {
     if (window.confirm("¿Estás seguro de eliminar este cliente?")) {
       axios
-        .delete(`http://localhost:5000/api/clientes/${id}`, {
+        .delete(`${apiBaseUrl}/api/clientes/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then(() => {
@@ -93,7 +94,7 @@ export default function ClientesPage() {
 
   const handleGuardarEdicion = () => {
     axios
-      .put(`http://localhost:5000/api/clientes/${editandoId}`, editCliente, {
+      .put(`${apiBaseUrl}/api/clientes/${editandoId}`, editCliente, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then(() => {

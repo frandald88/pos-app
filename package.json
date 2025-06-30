@@ -1,0 +1,38 @@
+{
+  "name": "tupos-app",
+  "version": "1.0.0",
+  "description": "Aplicación POS para negocios pequeños y medianos",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "cd frontend && npm install && cd ../backend && npm install",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && node server.js",
+    "build-frontend": "cd frontend && npm run build",
+    "electron": "npm run build-frontend && electron .",
+    "clean-dist": "rimraf dist",
+    "dist": "npm run clean-dist && npm run build-frontend && electron-builder"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "electron": "^37.1.0",
+    "electron-builder": "^26.0.12",
+    "rimraf": "^6.0.1",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.tupos.app",
+    "files": [
+      "frontend/build/",
+      "backend/",
+      "main.js"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  },
+  "dependencies": {
+    "multer": "^2.0.1",
+    "pdfkit": "^0.17.1"
+  }
+}

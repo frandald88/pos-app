@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import apiBaseUrl from "../apiConfig";
 
 export default function EmployeesPage() {
   const [users, setUsers] = useState([]);
@@ -12,11 +13,13 @@ export default function EmployeesPage() {
   const [reportEndDate, setReportEndDate] = useState("");
   const [reportUser, setReportUser] = useState("");
   const [reportData, setReportData] = useState([]);
+  const [tiendaFiltro, setTiendaFiltro] = useState("");
+  const [tiendas, setTiendas] = useState([]);
 
   useEffect(() => {
     // Cargar usuario actual
     axios
-      .get("http://localhost:5000/api/users/me", {
+      .get(`${apiBaseUrl}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -25,9 +28,18 @@ export default function EmployeesPage() {
       })
       .catch(() => setMsg("Error al cargar el usuario actual ❌"));
 
+        axios
+          .get(`${apiBaseUrl}/api/tiendas`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => setTiendas(res.data))
+          .catch(() => console.error("Error al cargar tiendas"));
+
+
+
     // Cargar lista de usuarios
     axios
-      .get("http://localhost:5000/api/users", {
+      .get(`${apiBaseUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -39,35 +51,44 @@ export default function EmployeesPage() {
       .catch(() => setMsg("Error al cargar empleados ❌"));
   }, [token]);
 
-  const handleCheckIn = () => {
-    if (!selectedUser) {
-      setMsg("Selecciona un empleado primero ❌");
-      return;
-    }
-    axios
-      .post(
-        "http://localhost:5000/api/attendance/checkin",
-        { userId: selectedUser },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then(() => setMsg("Check-in exitoso ✅"))
-      .catch(() => setMsg("Error al hacer check-in ❌"));
-  };
+      const handleCheckIn = () => {
+        if (!selectedUser) {
+          setMsg("Selecciona un empleado primero ❌");
+          return;
+        }
 
-  const handleCheckOut = () => {
-    if (!selectedUser) {
-      setMsg("Selecciona un empleado primero ❌");
-      return;
-    }
-    axios
-      .post(
-        "http://localhost:5000/api/attendance/checkout",
-        { userId: selectedUser },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then(() => setMsg("Check-out exitoso ✅"))
-      .catch(() => setMsg("Error al hacer check-out ❌"));
-  };
+        axios
+          .post(
+            `${apiBaseUrl}/api/attendance/checkin`,
+            { userId: selectedUser, tiendaId: currentUser?.tienda },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then(() => setMsg("Check-in exitoso ✅"))
+          .catch((error) => {
+            const backendMsg =
+              error.response?.data?.msg || error.response?.data?.error || "Error al hacer check-in ❌";
+            setMsg(backendMsg);
+          });
+      };
+      const handleCheckOut = () => {
+        if (!selectedUser) {
+          setMsg("Selecciona un empleado primero ❌");
+          return;
+        }
+
+        axios
+          .post(
+            `${apiBaseUrl}/api/attendance/checkout`,
+            { userId: selectedUser },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then(() => setMsg("Check-out exitoso ✅"))
+          .catch((error) => {
+            const backendMsg =
+              error.response?.data?.msg || error.response?.data?.error || "Error al hacer check-out ❌";
+            setMsg(backendMsg);
+          });
+      };
 
   const handleAbsence = () => {
     if (!selectedUser || !absenceReason.trim()) {
@@ -76,7 +97,7 @@ export default function EmployeesPage() {
     }
     axios
       .post(
-        "http://localhost:5000/api/attendance/absence",
+        `${apiBaseUrl}/api/attendance/absence`,
         { userId: selectedUser, reason: absenceReason },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -94,7 +115,7 @@ export default function EmployeesPage() {
     }
 
     axios
-      .get("http://localhost:5000/api/attendance/report", {
+      .get(`${apiBaseUrl}/api/attendance/report`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           userId: reportUser,
@@ -187,6 +208,20 @@ export default function EmployeesPage() {
         ))}
       </select>
 
+      <label className="block text-sm">Tienda (opcional)</label>
+        <select
+          value={tiendaFiltro}
+          onChange={(e) => setTiendaFiltro(e.target.value)}
+          className="w-full p-2 border rounded mb-2"
+        >
+          <option value="">-- Todas --</option>
+          {tiendas.map((t) => (
+            <option key={t._id} value={t._id}>
+              {t.nombre}
+            </option>
+          ))}
+        </select>
+
       <label className="block text-sm">Fecha inicio</label>
       <input
         type="date"
@@ -218,6 +253,7 @@ export default function EmployeesPage() {
           <thead>
             <tr className="bg-gray-200">
               <th className="border px-2 py-1">Empleado</th>
+              <th className="border px-2 py-1">Tienda</th>
               <th className="border px-2 py-1">Fecha</th>
               <th className="border px-2 py-1">Hora Entrada</th>
               <th className="border px-2 py-1">Hora Salida</th>
@@ -227,40 +263,45 @@ export default function EmployeesPage() {
             </tr>
           </thead>
           <tbody>
-            {reportData.map((r) => (
-              <tr key={r._id}>
-                <td className="border px-2 py-1">{r.userId.username}</td>
-                <td className="border px-2 py-1">
-                  {new Date(r.date).toLocaleDateString()}
-                </td>
-                <td className="border px-2 py-1">
-                  {r.checkInTime
-                    ? new Date(r.checkInTime).toLocaleTimeString()
-                    : "-"}
-                </td>
-                <td className="border px-2 py-1">
-                  {r.checkOutTime
-                    ? new Date(r.checkOutTime).toLocaleTimeString()
-                    : "-"}
-                </td>
-                <td className="border px-2 py-1">
-                  {r.status === "Absent" ? "Sí" : "No"}
-                </td>
-                <td className="border px-2 py-1">{r.absenceReason || "-"}</td>
-                <td className="border px-2 py-1">
-                  {r.checkInTime && r.checkOutTime
-                    ? (() => {
-                        const diffMs =
-                          new Date(r.checkOutTime) - new Date(r.checkInTime);
-                        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-                        const minutes = Math.floor(
-                          (diffMs % (1000 * 60 * 60)) / (1000 * 60)
-                        );
-                        return `${hours}h ${minutes}m`;
-                      })()
-                    : "-"}
-                </td>
-              </tr>
+            {reportData
+              .filter(r => !tiendaFiltro || (r.userId.tienda && r.userId.tienda._id === tiendaFiltro))
+              .map((r) => (
+                <tr key={r._id}>
+                  <td className="border px-2 py-1">{r.userId.username}</td>
+                  <td className="border px-2 py-1">
+                    {r.userId.tienda ? r.userId.tienda.nombre : "-"}
+                  </td>
+                  <td className="border px-2 py-1">
+                    {new Date(r.date).toLocaleDateString()}
+                  </td>
+                  <td className="border px-2 py-1">
+                    {r.checkInTime
+                      ? new Date(r.checkInTime).toLocaleTimeString()
+                      : "-"}
+                  </td>
+                  <td className="border px-2 py-1">
+                    {r.checkOutTime
+                      ? new Date(r.checkOutTime).toLocaleTimeString()
+                      : "-"}
+                  </td>
+                  <td className="border px-2 py-1">
+                    {r.status === "Absent" ? "Sí" : "No"}
+                  </td>
+                  <td className="border px-2 py-1">{r.absenceReason || "-"}</td>
+                  <td className="border px-2 py-1">
+                    {r.checkInTime && r.checkOutTime
+                      ? (() => {
+                          const diffMs =
+                            new Date(r.checkOutTime) - new Date(r.checkInTime);
+                          const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                          const minutes = Math.floor(
+                            (diffMs % (1000 * 60 * 60)) / (1000 * 60)
+                          );
+                          return `${hours}h ${minutes}m`;
+                        })()
+                      : "-"}
+                  </td>
+                </tr>
             ))}
           </tbody>
         </table>
