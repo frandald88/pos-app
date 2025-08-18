@@ -1,27 +1,42 @@
+// ðŸ“ /frontend/src/App.js
+// REEMPLAZA COMPLETAMENTE tu App.js actual con este contenido
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import UsersPage from "./pages/UsersPage";
+
+// Páginas principales (mantenidas en pages/)
 import LoginPage from "./pages/LoginPage";
-import ProductsPage from "./pages/ProductsPage";
-import SalesPage from "./pages/SalesPage";
-import ReportPage from "./pages/ReportPage";
-import AdminLayout from "./components/AdminLayout";
-import ClientesPage from "./pages/ClientesPage";
-import EmployeesPage from "./pages/EmployeesPage";
-import RoleProtectedRoute from "./components/RoleProtectedRoute";
-import ExpensesPage from "./pages/ExpensesPage";
-import TiendasPage from "./pages/TiendasPage";
-import OrdersPage from "./pages/OrdersPage";
-import EmployeeHistoryPage from "./pages/EmployeeHistoryPage";  // ✅ Nuevo
-import OrderTrackingPage from "./pages/OrderTrackingPage";
-import ReturnsPage from "./pages/ReturnsPage";
-import CajaPage from "./pages/CajaPage";
+
+// Componentes compartidos (movidos a shared/)
+import AdminLayout from "./shared/components/Layout/AdminLayout";
+import RoleProtectedRoute from "./shared/components/Layout/RoleProtectedRoute";
+
+// Core modules
+import UsersPage from "./core/users/pages/UsersPage";
+import ProductsPage from "./core/products/pages/ProductsPage";
+import SalesPage from "./core/sales/pages/SalesPage";
+import TiendasPage from "./core/tiendas/pages/TiendasPage";
+
+// Optional modules
+import ClientesPage from "./modules/clientes/pages/ClientesPage";
+import EmpleadosPage from "./modules/empleados/pages/EmpleadosPage";
+import EmployeeHistoryPage from "./modules/empleados/pages/EmployeeHistoryPage";
+import GastosPage from "./modules/gastos/pages/GastosPage";
+import OrdersPage from "./modules/delivery/pages/OrdersPage";
+import OrderTrackingPage from "./modules/delivery/pages/OrderTrackingPage";
+import DevolucionesPage from "./modules/devoluciones/pages/DevolucionesPage";
+import CajaPage from "./modules/caja/pages/CajaPage";
+import VacacionesRequestPage from "./modules/vacaciones/pages/VacacionesRequestPage";
+import VacacionesAdminPage from "./modules/vacaciones/pages/VacacionesAdminPage";
+import ReportesPage from "./modules/reportes/pages/ReportesPage";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Ruta de login */}
         <Route path="/" element={<LoginPage />} />
 
+        {/* Core modules - Tiendas */}
         <Route
           path="/admin/tiendas"
           element={
@@ -31,6 +46,7 @@ function App() {
           }
         />
 
+        {/* Core modules - Usuarios */}
         <Route
           path="/admin/usuarios"
           element={
@@ -42,6 +58,7 @@ function App() {
           }
         />
 
+        {/* Core modules - Productos */}
         <Route
           path="/admin/productos"
           element={
@@ -53,26 +70,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/admin/devoluciones"
-          element={
-            <AdminLayout>
-              <ReturnsPage />
-            </AdminLayout>
-          }
-        />
-
-        <Route
-          path="/admin/reportes"
-          element={
-            <AdminLayout>
-              <RoleProtectedRoute allowedRoles={["admin"]}>
-                <ReportPage />
-              </RoleProtectedRoute>
-            </AdminLayout>
-          }
-        />
-
+        {/* Core modules - Ventas */}
         <Route
           path="/admin/ventas"
           element={
@@ -82,6 +80,29 @@ function App() {
           }
         />
 
+        {/* Optional modules - Devoluciones */}
+        <Route
+          path="/admin/devoluciones"
+          element={
+            <AdminLayout>
+              <DevolucionesPage />
+            </AdminLayout>
+          }
+        />
+
+        {/* Optional modules - Reportes */}
+        <Route
+          path="/admin/reportes"
+          element={
+            <AdminLayout>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <ReportesPage />
+              </RoleProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
+        {/* Optional modules - Clientes */}
         <Route
           path="/admin/clientes"
           element={
@@ -91,24 +112,27 @@ function App() {
           }
         />
 
+        {/* Optional modules - Empleados */}
         <Route
           path="/admin/empleados"
           element={
             <AdminLayout>
-              <EmployeesPage />
+              <EmpleadosPage />
             </AdminLayout>
           }
         />
 
+        {/* Optional modules - Gastos */}
         <Route
           path="/admin/gastos"
           element={
             <AdminLayout>
-              <ExpensesPage />
+              <GastosPage />
             </AdminLayout>
           }
         />
 
+        {/* Optional modules - Delivery/Ã“rdenes */}
         <Route
           path="/admin/ordenes"
           element={
@@ -117,6 +141,7 @@ function App() {
             </AdminLayout>
           }
         />
+
         <Route
           path="/admin/seguimiento-pedidos"
           element={
@@ -126,7 +151,7 @@ function App() {
           }
         />
 
-        {/* ✅ Nueva Ruta para Historial de Empleados */}
+        {/* Optional modules - Historial de Empleados */}
         <Route
           path="/admin/historial-empleados"
           element={
@@ -138,12 +163,36 @@ function App() {
           }
         />
 
-            <Route
+        {/* Optional modules - Caja */}
+        <Route
           path="/admin/caja"
           element={
             <AdminLayout>
               <RoleProtectedRoute allowedRoles={["admin"]}>
-                <CajaPage/>
+                <CajaPage />
+              </RoleProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
+        {/* Optional modules - Vacaciones */}
+        <Route
+          path="/vacaciones"
+          element={
+            <AdminLayout> 
+              <RoleProtectedRoute allowedRoles={["admin", "vendedor", "repartidor"]}>
+                <VacacionesRequestPage />
+              </RoleProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
+        <Route
+          path="/admin/vacaciones"
+          element={
+            <AdminLayout>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <VacacionesAdminPage />
               </RoleProtectedRoute>
             </AdminLayout>
           }
