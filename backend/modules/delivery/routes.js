@@ -8,7 +8,7 @@ const { verifyToken, requireAdmin } = require('../../shared/middleware/authMiddl
 // ✅ MIGRADO + MEJORADO: Crear nueva orden
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { proveedor, producto, cantidad, unidad, fechaEmision, tienda } = req.body;
+    const { proveedor, producto, cantidad, unidad, fechaEmision, tienda, assignedTo } = req.body;
     
     // Validaciones
     if (!proveedor || !producto || !cantidad || !fechaEmision) {
@@ -34,14 +34,16 @@ router.post('/', verifyToken, async (req, res) => {
       fechaEmision: emisionDate,
       status: 'pendiente',
       createdBy: req.userId,
-      tienda
+      tienda,
+      assignedTo: assignedTo || null
     });
 
     await newOrder.save();
     
     const populatedOrder = await Order.findById(newOrder._id)
       .populate('createdBy', 'username')
-      .populate('tienda', 'nombre');
+      .populate('tienda', 'nombre')
+      .populate('assignedTo', 'username role');
     
     res.status(201).json({ 
       message: 'Orden creada exitosamente',
@@ -94,6 +96,7 @@ router.get('/', verifyToken, async (req, res) => {
     const orders = await Order.find(filter)
       .populate('createdBy', 'username')
       .populate('tienda', 'nombre')
+      .populate('assignedTo', 'username role')
       .sort({ fechaEmision: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -146,7 +149,7 @@ router.get('/mine', verifyToken, async (req, res) => {
 // ✅ MIGRADO + MEJORADO: Actualizar status, fechaEntrega y nota
 router.put('/:id', verifyToken, async (req, res) => {
   try {
-    const { status, fechaEntrega, nota } = req.body;
+    const { status, fechaEntrega, nota, assignedTo } = req.body;
     
     // Verificar que la orden existe
     const order = await Order.findById(req.params.id);
@@ -154,11 +157,16 @@ router.put('/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Orden no encontrada' });
     }
     
-    // Solo admin o el creador pueden actualizar
+    // Solo admin, creador o usuario asignado pueden actualizar
     const currentUser = await User.findById(req.userId);
-    if (currentUser.role !== 'admin' && order.createdBy.toString() !== req.userId) {
+    
+    const canUpdate = currentUser.role === 'admin' || 
+                     order.createdBy.toString() === req.userId ||
+                     (order.assignedTo && order.assignedTo.toString() === req.userId);
+    
+    if (!canUpdate) {
       return res.status(403).json({ 
-        message: 'Solo puedes actualizar tus propias órdenes o ser administrador' 
+        message: 'No tienes permisos para actualizar esta orden' 
       });
     }
     
@@ -189,12 +197,17 @@ router.put('/:id', verifyToken, async (req, res) => {
       updateFields.nota = nota.trim();
     }
     
+    if (assignedTo !== undefined) {
+      updateFields.assignedTo = assignedTo || null;
+    }
+    
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id, 
       updateFields,
       { new: true }
     ).populate('createdBy', 'username')
-     .populate('tienda', 'nombre');
+     .populate('tienda', 'nombre')
+     .populate('assignedTo', 'username role');
     
     res.json({ 
       message: 'Orden actualizada exitosamente',
@@ -243,12 +256,63 @@ router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// ✅ NUEVO: Obtener tiendas para órdenes (todos los usuarios) - DEBE IR ANTES DE /:id
+router.get('/tiendas', verifyToken, async (req, res) => {
+  try {
+    const Tienda = require('../../core/tiendas/model');
+    const tiendas = await Tienda.find({}, 'nombre').sort({ nombre: 1 });
+    
+    res.json(tiendas);
+  } catch (err) {
+    console.error('Error fetching tiendas for orders:', err);
+    res.status(500).json({ message: 'Error al obtener tiendas', error: err.message });
+  }
+});
+
+// ✅ NUEVO: Obtener usuarios para asignación (vendedores y repartidores)
+router.get('/users', verifyToken, async (req, res) => {
+  try {
+    const { tiendaId } = req.query;
+    
+    // Obtener información del usuario actual
+    const currentUser = await User.findById(req.userId).populate('tienda');
+    
+    let filter = { role: { $in: ['vendedor', 'repartidor'] } };
+    
+    // Control de acceso por rol
+    if (currentUser.role === 'admin') {
+      // Admin puede filtrar por tienda específica o ver todos
+      if (tiendaId) {
+        filter.tienda = tiendaId;
+      }
+    } else {
+      // Vendedores y repartidores solo ven usuarios de su propia tienda
+      if (currentUser.tienda) {
+        filter.tienda = currentUser.tienda._id;
+      } else {
+        // Si no tiene tienda asignada, no ve ningún usuario
+        return res.json([]);
+      }
+    }
+    
+    const users = await User.find(filter, 'username role tienda')
+      .populate('tienda', 'nombre')
+      .sort({ username: 1 });
+    
+    res.json(users);
+  } catch (err) {
+    console.error('Error fetching users for assignment:', err);
+    res.status(500).json({ message: 'Error al obtener usuarios', error: err.message });
+  }
+});
+
 // ✅ NUEVO: Obtener orden por ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate('createdBy', 'username')
-      .populate('tienda', 'nombre');
+      .populate('tienda', 'nombre')
+      .populate('assignedTo', 'username role');
     
     if (!order) {
       return res.status(404).json({ message: 'Orden no encontrada' });

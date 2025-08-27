@@ -25,6 +25,11 @@ const orderSchema = new mongoose.Schema({
   tienda: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Tienda' 
+  },
+  assignedTo: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User',
+    required: false
   }
 }, { timestamps: true });
 

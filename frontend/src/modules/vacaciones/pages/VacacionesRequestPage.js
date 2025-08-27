@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiBaseUrl from "../../../config/api";
 
 export default function EmployeeVacationRequestPage() {
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
@@ -17,6 +19,8 @@ export default function EmployeeVacationRequestPage() {
   const [replacement, setReplacement] = useState("");
   const [tienda, setTienda] = useState("");
   const [msg, setMsg] = useState("");
+  const [daysSummary, setDaysSummary] = useState(null);
+  const [updatingDays, setUpdatingDays] = useState(false);
 
   // Función para manejar errores de autenticación
   const handleAuthError = (error) => {
@@ -28,6 +32,60 @@ export default function EmployeeVacationRequestPage() {
       setTimeout(() => window.location.href = "/login", 2000);
     } else {
       setMsg(`❌ Error: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  // ✅ NUEVA FUNCIÓN: Cargar resumen de días tomados
+  const loadDaysSummary = (userId) => {
+    axios
+      .get(`${apiBaseUrl}/api/vacations/days-summary/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setDaysSummary(res.data);
+        console.log('✅ Days summary loaded:', res.data);
+      })
+      .catch((error) => {
+        console.error('❌ Error loading days summary:', error);
+        setDaysSummary(null);
+      });
+  };
+
+  // ✅ NUEVA FUNCIÓN: Actualizar días tomados automáticamente (solo admin)
+  const updateTakenDays = async () => {
+    if (currentUser?.role !== 'admin') {
+      setMsg('❌ Solo los administradores pueden actualizar días tomados');
+      return;
+    }
+
+    setUpdatingDays(true);
+    setMsg('');
+
+    try {
+      const response = await axios.post(`${apiBaseUrl}/api/vacations/update-taken-days`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setMsg(`✅ ${response.data.message}`);
+      
+      // Recargar datos después de la actualización
+      const targetId = selectedEmployeeId || currentUser?._id;
+      if (targetId) {
+        axios
+          .get(`${apiBaseUrl}/api/vacations/days-available/${targetId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            setDaysAvailable(res.data);
+            loadDaysSummary(targetId);
+          })
+          .catch(console.error);
+      }
+    } catch (error) {
+      console.error('Error updating taken days:', error);
+      setMsg(`❌ ${error.response?.data?.message || 'Error actualizando días tomados'}`);
+    } finally {
+      setUpdatingDays(false);
     }
   };
 
@@ -211,6 +269,9 @@ export default function EmployeeVacationRequestPage() {
         .then((res) => {
           setDaysAvailable(res.data);
           console.log('✅ Days available loaded:', res.data);
+          
+          // También cargar el resumen de días
+          loadDaysSummary(targetId);
         })
         .catch((error) => {
           console.error('❌ Error loading available days:', error);
@@ -375,7 +436,19 @@ export default function EmployeeVacationRequestPage() {
   if (initialLoading) {
     return (
       <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Solicitar Vacaciones</h2>
+        {/* Header con botón de regreso */}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate('/admin/empleados')}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver a Empleados
+          </button>
+          <h2 className="text-xl font-bold">🏖️ Solicitar Vacaciones</h2>
+        </div>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <span className="ml-2 text-gray-600">Cargando...</span>
@@ -388,15 +461,35 @@ export default function EmployeeVacationRequestPage() {
   if (!token) {
     return (
       <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Solicitar Vacaciones</h2>
+        {/* Header con botón de regreso */}
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate('/admin/empleados')}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver a Empleados
+          </button>
+          <h2 className="text-xl font-bold">🏖️ Solicitar Vacaciones</h2>
+        </div>
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <p>🔐 No hay token de autenticación. Por favor, inicia sesión.</p>
-          <button 
-            onClick={() => window.location.href = "/login"}
-            className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            Ir al Login
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button 
+              onClick={() => window.location.href = "/login"}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Ir al Login
+            </button>
+            <button 
+              onClick={() => navigate('/admin/empleados')}
+              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+            >
+              Volver a Empleados
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -404,7 +497,19 @@ export default function EmployeeVacationRequestPage() {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Solicitar Vacaciones</h2>
+      {/* Header con botón de regreso */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate('/admin/empleados')}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Volver a Empleados
+        </button>
+        <h2 className="text-xl font-bold">🏖️ Solicitar Vacaciones</h2>
+      </div>
 
       {/* Información del usuario actual */}
       {currentUser && (
@@ -423,7 +528,19 @@ export default function EmployeeVacationRequestPage() {
       {/* Información de días disponibles */}
       {daysAvailable ? (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-          <h3 className="font-medium text-green-800 mb-2">📅 Información de Vacaciones</h3>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-medium text-green-800">📅 Información de Vacaciones</h3>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={updateTakenDays}
+                disabled={updatingDays}
+                className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+              >
+                {updatingDays ? 'Actualizando...' : 'Actualizar Días Tomados'}
+              </button>
+            )}
+          </div>
+          
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <p className="text-green-600">Años de servicio</p>
@@ -442,6 +559,41 @@ export default function EmployeeVacationRequestPage() {
               <p className="font-bold text-green-800">{daysAvailable.availableDays} días</p>
             </div>
           </div>
+
+          {/* ✅ NUEVO: Resumen detallado de días tomados */}
+          {daysSummary && (
+            <div className="mt-4 pt-3 border-t border-green-200">
+              <h4 className="font-medium text-green-800 mb-2">📊 Resumen Detallado {daysSummary.year}</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <p className="text-green-600">Días tomados (registrados)</p>
+                  <p className="font-bold text-green-800">{daysSummary.summary.totalRecordedTaken} días</p>
+                </div>
+                <div>
+                  <p className="text-green-600">Días tomados (calculados)</p>
+                  <p className="font-bold text-green-800">{daysSummary.summary.calculatedTaken} días</p>
+                </div>
+                <div>
+                  <p className="text-green-600">Días pendientes</p>
+                  <p className="font-bold text-blue-800">{daysSummary.summary.pendingToTake} días</p>
+                </div>
+                <div>
+                  <p className="text-green-600">Total aprobado</p>
+                  <p className="font-bold text-green-800">{daysSummary.summary.totalApproved} días</p>
+                </div>
+              </div>
+
+              {/* Mostrar diferencia si existe */}
+              {daysSummary.summary.totalRecordedTaken !== daysSummary.summary.calculatedTaken && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-yellow-800 text-xs">
+                    ⚠️ Discrepancia detectada: {Math.abs(daysSummary.summary.totalRecordedTaken - daysSummary.summary.calculatedTaken)} días de diferencia.
+                    {currentUser?.role === 'admin' && ' Usa "Actualizar Días Tomados" para sincronizar.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : currentUser && (currentUser.role !== "admin" || selectedEmployeeId) ? (
         <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">

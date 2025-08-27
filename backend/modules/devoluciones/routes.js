@@ -71,11 +71,19 @@ router.post('/', verifyToken, async (req, res) => {
           }
         }
       } else {
-        // Para pagos únicos, el método debe coincidir
-        if (refundMethod !== sale.method) {
+        // Para pagos únicos, permitir devolver en efectivo o por el método original
+        const allowedMethods = [sale.method];
+        
+        // Si la venta fue con tarjeta o transferencia, también permitir efectivo
+        if (sale.method === 'tarjeta' || sale.method === 'transferencia') {
+          allowedMethods.push('efectivo');
+        }
+        
+        if (!allowedMethods.includes(refundMethod)) {
           return res.status(400).json({ 
-            message: `La devolución debe hacerse por ${sale.method} (método original de pago). Si necesita usar otro método, justifique la excepción.`,
+            message: `La devolución debe hacerse por ${allowedMethods.join(' o ')} (métodos permitidos para esta venta).`,
             originalMethod: sale.method,
+            allowedMethods: allowedMethods,
             requestedMethod: refundMethod
           });
         }
@@ -197,9 +205,24 @@ router.post('/', verifyToken, async (req, res) => {
       // Si está dañado o usado, no se devuelve al stock
     }
     
-    // Actualizar el total de devoluciones en la venta
-    sale.totalReturned = currentReturned + refundAmount;
+    // ✅ NUEVA LÓGICA: Actualizar el total de devoluciones y establecer status inteligente
+    console.log('🔍 ANTES - Sale status:', sale.status, 'totalReturned:', sale.totalReturned);
+    const newTotalReturned = currentReturned + refundAmount;
+    sale.totalReturned = newTotalReturned;
+    
+    // ✅ LÓGICA INTELIGENTE: Status según el tipo de devolución
+    if (newTotalReturned >= sale.total) {
+      // Devolución total
+      sale.status = 'cancelada';
+      console.log('📦 DEVOLUCIÓN TOTAL - Marcando como cancelada');
+    } else {
+      // Devolución parcial
+      sale.status = 'parcialmente_devuelta';
+      console.log('📦 DEVOLUCIÓN PARCIAL - Marcando como parcialmente_devuelta');
+    }
+    
     await sale.save();
+    console.log('✅ DESPUÉS - Sale status:', sale.status, 'totalReturned:', sale.totalReturned, 'remaining:', sale.total - sale.totalReturned);
     
     // Respuesta con datos poblados
     const populatedReturn = await Return.findById(returnRecord._id)
@@ -318,6 +341,33 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+// ✅ NUEVO: Obtener devoluciones por saleId
+router.get('/by-sale/:saleId', verifyToken, async (req, res) => {
+  try {
+    const returns = await Return.find({ saleId: req.params.saleId })
+      .populate('saleId', 'total date method type items tienda')
+      .populate('processedBy', 'username')
+      .populate('tienda', 'nombre')
+      .sort({ date: -1 });
+    
+    if (!returns || returns.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron devoluciones para esta venta' });
+    }
+    
+    res.json({
+      returns,
+      sale: returns[0].saleId, // Información de la venta
+      totalReturned: returns.reduce((sum, ret) => sum + ret.refundAmount, 0)
+    });
+  } catch (error) {
+    console.error('Error obteniendo devoluciones por venta:', error);
+    res.status(500).json({ 
+      message: 'Error al obtener devoluciones', 
+      error: error.message 
+    });
+  }
+});
+
 // ✅ NUEVO: Obtener devolución por ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
@@ -375,11 +425,18 @@ router.patch('/:id/status', verifyToken, requireAdmin, async (req, res) => {
         }
       }
       
-      // Revertir total devuelto en la venta
-      await Sale.findByIdAndUpdate(
-        returnRecord.saleId,
-        { $inc: { totalReturned: -returnRecord.refundAmount } }
-      );
+      // Revertir total devuelto en la venta y restaurar status anterior si corresponde
+      const sale = await Sale.findById(returnRecord.saleId);
+      const newTotalReturned = sale.totalReturned - returnRecord.refundAmount;
+      
+      const updateData = { $inc: { totalReturned: -returnRecord.refundAmount } };
+      
+      // Si no queda ninguna devolución, restaurar a estado entregado
+      if (newTotalReturned <= 0 && sale.status === 'cancelada') {
+        updateData.status = 'entregado_y_cobrado';
+      }
+      
+      await Sale.findByIdAndUpdate(returnRecord.saleId, updateData);
     }
     
     const updatedReturn = await Return.findByIdAndUpdate(

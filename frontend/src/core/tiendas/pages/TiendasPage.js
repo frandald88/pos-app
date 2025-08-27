@@ -9,6 +9,12 @@ export default function TiendasPage() {
   const [msg, setMsg] = useState("");
   const [editTienda, setEditTienda] = useState(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false);
+  const [tiendaEditando, setTiendaEditando] = useState({ nombre: "", direccion: "", telefono: "" });
+  const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
+  const [tiendaEliminar, setTiendaEliminar] = useState(null);
+  const [relacionesData, setRelacionesData] = useState(null);
+  const [cargandoRelaciones, setCargandoRelaciones] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -58,27 +64,117 @@ export default function TiendasPage() {
     });
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("¿Estás seguro de eliminar esta tienda?")) {
-      setCargando(true);
-      axios.delete(`${apiBaseUrl}/api/tiendas/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(() => {
-        setMsg("Tienda eliminada exitosamente ✅");
-        fetchTiendas();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch(() => {
-        setMsg("Error al eliminar tienda ❌");
-        setCargando(false);
+  // ✅ NUEVO: Iniciar proceso de eliminación con verificaciones
+  const handleDelete = async (tienda) => {
+    setTiendaEliminar(tienda);
+    setCargandoRelaciones(true);
+    setMostrarModalEliminar(true);
+    
+    try {
+      const res = await axios.get(`${apiBaseUrl}/api/tiendas/${tienda._id}/relationships`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      setRelacionesData(res.data);
+    } catch (error) {
+      setMsg("Error al verificar relaciones ❌");
+      setMostrarModalEliminar(false);
+    } finally {
+      setCargandoRelaciones(false);
     }
+  };
+
+  // ✅ NUEVO: Archivar tienda (soft delete)
+  const handleArchivarTienda = async () => {
+    setCargando(true);
+    try {
+      await axios.patch(`${apiBaseUrl}/api/tiendas/${tiendaEliminar._id}/archive`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMsg("Tienda archivada exitosamente ✅");
+      setMostrarModalEliminar(false);
+      fetchTiendas();
+      setTimeout(() => setMsg(""), 3000);
+    } catch (error) {
+      setMsg("Error al archivar tienda ❌");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // ✅ NUEVO: Eliminar permanentemente con confirmación
+  const handleEliminarPermanente = async () => {
+    if (!window.confirm("⚠️ ADVERTENCIA: Esta acción es IRREVERSIBLE. ¿Confirmas eliminar permanentemente?")) {
+      return;
+    }
+    
+    setCargando(true);
+    try {
+      await axios.delete(`${apiBaseUrl}/api/tiendas/${tiendaEliminar._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { forceDelete: true }
+      });
+      setMsg("Tienda eliminada permanentemente ✅");
+      setMostrarModalEliminar(false);
+      fetchTiendas();
+      setTimeout(() => setMsg(""), 3000);
+    } catch (error) {
+      setMsg("Error al eliminar tienda ❌");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  // ✅ NUEVO: Cerrar modal de eliminación
+  const handleCerrarModalEliminar = () => {
+    setMostrarModalEliminar(false);
+    setTiendaEliminar(null);
+    setRelacionesData(null);
   };
 
   const handleEdit = (tienda) => {
     setEditTienda(tienda);
     setNuevaTienda(tienda);
     setMostrarFormulario(true);
+  };
+
+  // ✅ Nuevas funciones para modal de edición
+  const handleEditModal = (tienda) => {
+    setTiendaEditando({ ...tienda });
+    setEditTienda(tienda);
+    setMostrarModalEdicion(true);
+  };
+
+  const handleCerrarModal = () => {
+    setMostrarModalEdicion(false);
+    setTiendaEditando({ nombre: "", direccion: "", telefono: "" });
+    setEditTienda(null);
+  };
+
+  const handleChangeModal = (e) => {
+    setTiendaEditando({ ...tiendaEditando, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateModal = () => {
+    if (!tiendaEditando.nombre || !tiendaEditando.direccion) {
+      setMsg("Por favor completa los campos requeridos ❌");
+      return;
+    }
+
+    setCargando(true);
+    axios.put(`${apiBaseUrl}/api/tiendas/${editTienda._id}`, tiendaEditando, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then(() => {
+      setMsg("Tienda actualizada exitosamente ✅");
+      handleCerrarModal();
+      fetchTiendas();
+      setCargando(false);
+      setTimeout(() => setMsg(""), 3000);
+    })
+    .catch(() => {
+      setMsg("Error al actualizar tienda ❌");
+      setCargando(false);
+    });
   };
 
   const handleUpdate = () => {
@@ -389,7 +485,7 @@ export default function TiendasPage() {
                     {/* Acciones */}
                     <div className="flex gap-3">
                       <button
-                        onClick={() => handleEdit(tienda)}
+                        onClick={() => handleEditModal(tienda)}
                         className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
                         style={{ backgroundColor: '#46546b' }}
                         disabled={cargando}
@@ -397,7 +493,7 @@ export default function TiendasPage() {
                         ✏️ Editar
                       </button>
                       <button
-                        onClick={() => handleDelete(tienda._id)}
+                        onClick={() => handleDelete(tienda)}
                         className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
                         disabled={cargando}
                       >
@@ -411,86 +507,266 @@ export default function TiendasPage() {
           )}
         </div>
 
-        {/* Vista de tabla para pantallas grandes (opcional) */}
-        {filteredTiendas.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden mt-8 hidden xl:block">
-            <div className="p-6 border-b" style={{ borderColor: '#e5e7eb' }}>
-              <h3 className="text-lg font-semibold" style={{ color: '#23334e' }}>
-                Vista de Tabla
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr style={{ backgroundColor: '#f4f6fa' }}>
-                    <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: '#23334e' }}>
-                      Tienda
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: '#23334e' }}>
-                      Dirección
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold" style={{ color: '#23334e' }}>
-                      Teléfono
-                    </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold" style={{ color: '#23334e' }}>
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTiendas.map((tienda, index) => (
-                    <tr 
-                      key={tienda._id} 
-                      className={`border-t hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                      style={{ borderColor: '#e5e7eb' }}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#23334e', color: 'white' }}>
-                            🏪
-                          </div>
-                          <div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              {tienda.nombre}
-                            </div>
-                            <div className="text-sm" style={{ color: '#697487' }}>
-                              ID: #{tienda._id.slice(-8)}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4" style={{ color: '#46546b' }}>
-                        {tienda.direccion}
-                      </td>
-                      <td className="px-6 py-4" style={{ color: '#46546b' }}>
-                        {tienda.telefono || "No especificado"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => handleEdit(tienda)}
-                            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                            style={{ backgroundColor: '#46546b' }}
-                            disabled={cargando}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => handleDelete(tienda._id)}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
-                            disabled={cargando}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* ✅ Modal de Edición */}
+        {mostrarModalEdicion && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleCerrarModal}
+          >
+            <div 
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
+                    Editar Tienda
+                  </h2>
+                  <button
+                    onClick={handleCerrarModal}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Formulario */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Nombre de la Tienda *
+                    </label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={tiendaEditando.nombre}
+                      onChange={handleChangeModal}
+                      placeholder="Ingresa el nombre"
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{ 
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e'
+                      }}
+                      disabled={cargando}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Dirección *
+                    </label>
+                    <input
+                      type="text"
+                      name="direccion"
+                      value={tiendaEditando.direccion}
+                      onChange={handleChangeModal}
+                      placeholder="Ingresa la dirección"
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{ 
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e'
+                      }}
+                      disabled={cargando}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Teléfono (Opcional)
+                    </label>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      value={tiendaEditando.telefono}
+                      onChange={handleChangeModal}
+                      placeholder="Ingresa el teléfono"
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{ 
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e'
+                      }}
+                      disabled={cargando}
+                    />
+                  </div>
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-3 pt-6 mt-6 border-t" style={{ borderColor: '#e5e7eb' }}>
+                  <button
+                    onClick={handleCerrarModal}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium transition-colors hover:bg-gray-50"
+                    disabled={cargando}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleUpdateModal}
+                    className="flex-1 px-4 py-3 text-white font-medium rounded-lg transition-colors hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: '#23334e' }}
+                    disabled={cargando}
+                  >
+                    {cargando ? "Guardando..." : "Guardar Cambios"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
+
+        {/* ✅ Modal de Eliminación Inteligente */}
+        {mostrarModalEliminar && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleCerrarModalEliminar}
+          >
+            <div 
+              className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-red-600">
+                    ⚠️ Eliminar Tienda
+                  </h2>
+                  <button
+                    onClick={handleCerrarModalEliminar}
+                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Información de la tienda */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    Tienda a eliminar:
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <div><strong>Nombre:</strong> {tiendaEliminar?.nombre}</div>
+                    <div><strong>Dirección:</strong> {tiendaEliminar?.direccion}</div>
+                    {tiendaEliminar?.telefono && (
+                      <div><strong>Teléfono:</strong> {tiendaEliminar.telefono}</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Verificación de relaciones */}
+                {cargandoRelaciones ? (
+                  <div className="text-center py-6">
+                    <div className="text-2xl mb-2">🔍</div>
+                    <p className="text-gray-600">Verificando datos asociados...</p>
+                  </div>
+                ) : relacionesData ? (
+                  <div className="mb-6">
+                    {relacionesData.hasRelationships ? (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                        <h4 className="text-yellow-800 font-medium mb-3 flex items-center gap-2">
+                          ⚠️ Esta tienda tiene datos asociados
+                        </h4>
+                        <div className="space-y-2 text-sm">
+                          {relacionesData.details.usuarios > 0 && (
+                            <div className="text-yellow-700">
+                              • <strong>{relacionesData.details.usuarios}</strong> usuario(s)
+                            </div>
+                          )}
+                          {relacionesData.details.empleadosHistorial > 0 && (
+                            <div className="text-yellow-700">
+                              • <strong>{relacionesData.details.empleadosHistorial}</strong> registro(s) de historial laboral
+                            </div>
+                          )}
+                          {relacionesData.details.asistencias > 0 && (
+                            <div className="text-yellow-700">
+                              • <strong>{relacionesData.details.asistencias}</strong> registro(s) de asistencia
+                            </div>
+                          )}
+                          {relacionesData.details.horarios > 0 && (
+                            <div className="text-yellow-700">
+                              • <strong>{relacionesData.details.horarios}</strong> horario(s) configurado(s)
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3 text-xs text-yellow-600">
+                          Total: <strong>{relacionesData.total}</strong> registros asociados
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <h4 className="text-green-800 font-medium mb-2 flex items-center gap-2">
+                          ✅ Tienda sin datos asociados
+                        </h4>
+                        <p className="text-green-700 text-sm">
+                          Esta tienda puede eliminarse de forma segura.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Opciones de eliminación */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900">Opciones disponibles:</h4>
+                      
+                      {/* Opción recomendada: Archivar */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h5 className="text-blue-800 font-medium mb-2">📁 Archivar Tienda (Recomendado)</h5>
+                        <p className="text-blue-700 text-sm mb-3">
+                          La tienda se ocultará del sistema pero todos los datos se conservan para auditoría.
+                          Puede restaurarse más tarde si es necesario.
+                        </p>
+                        <button
+                          onClick={handleArchivarTienda}
+                          className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          disabled={cargando}
+                        >
+                          {cargando ? "Archivando..." : "📁 Archivar Tienda"}
+                        </button>
+                      </div>
+
+                      {/* Opción peligrosa: Eliminar permanente */}
+                      {!relacionesData.hasRelationships && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                          <h5 className="text-red-800 font-medium mb-2">🗑️ Eliminar Permanentemente</h5>
+                          <p className="text-red-700 text-sm mb-3">
+                            ⚠️ Esta acción es IRREVERSIBLE. La tienda será eliminada completamente.
+                          </p>
+                          <button
+                            onClick={handleEliminarPermanente}
+                            className="w-full px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                            disabled={cargando}
+                          >
+                            {cargando ? "Eliminando..." : "🗑️ Eliminar Permanentemente"}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Mensaje para tiendas con datos */}
+                      {relacionesData.hasRelationships && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <p className="text-gray-700 text-sm">
+                            <strong>💡 Sugerencia:</strong> Para eliminar permanentemente, 
+                            primero reasigna los usuarios a otras tiendas y limpia los datos asociados.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Botón cancelar */}
+                <div className="border-t pt-4">
+                  <button
+                    onClick={handleCerrarModalEliminar}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg font-medium transition-colors hover:bg-gray-50"
+                    disabled={cargando}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

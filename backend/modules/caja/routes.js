@@ -49,7 +49,8 @@ router.get('/reporte', verifyToken, requireAdmin, async (req, res) => {
     // Filtros base
     const filtroVentas = { 
       createdAt: { $gte: inicio, $lte: fin },
-      status: 'entregado_y_cobrado' // ← Solo ventas completadas
+      // ✅ MEJORADO: Incluir ventas completadas y parcialmente devueltas
+      status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta'] }
     };
     const filtroGastos = { createdAt: { $gte: inicio, $lte: fin }, status: 'aprobado' };
 
@@ -96,7 +97,8 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
               {
                 $group: {
                   _id: "$method",
-                  total: { $sum: "$total" },
+                  // ✅ NUEVO: Para ventas parcialmente devueltas, usar total neto
+                  total: { $sum: { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] } },
                   cantidad: { $sum: 1 }
                 }
               }
@@ -106,9 +108,21 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
               { $match: { paymentType: "mixed" } },
               { $unwind: "$mixedPayments" },
               {
+                $addFields: {
+                  // ✅ NUEVO: Calcular factor de ajuste por devoluciones para pagos mixtos
+                  adjustmentFactor: {
+                    $divide: [
+                      { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] },
+                      "$total"
+                    ]
+                  }
+                }
+              },
+              {
                 $group: {
                   _id: "$mixedPayments.method",
-                  total: { $sum: "$mixedPayments.amount" },
+                  // ✅ NUEVO: Ajustar monto proporcional por devoluciones
+                  total: { $sum: { $multiply: ["$mixedPayments.amount", "$adjustmentFactor"] } },
                   cantidad: { $sum: 1 }
                 }
               }
@@ -207,8 +221,7 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
       promedioMetodosPorVenta: 0
     };
 
-    // 📊 DEVOLUCIONES (si el módulo está activo y se incluyen)
-    let totalDevoluciones = 0;
+    // 📊 DEVOLUCIONES (solo para información - ya están integradas en las ventas netas)
     let detallesDevoluciones = { total: 0, cantidad: 0 };
 
     if (incluirDevoluciones === 'true') {
@@ -220,7 +233,7 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
     const filtroDevolucion = { date: { $gte: inicio, $lte: fin } };
     if (tiendaId) {
       const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
-      filtroDevolucion.tienda = tiendaObjectId; // Asumiendo que el campo se llama 'tienda'
+      filtroDevolucion.tienda = tiendaObjectId;
     }
     
     const devoluciones = await Return.aggregate([
@@ -229,9 +242,9 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
     ]);
         
         if (devoluciones[0]) {
-          totalDevoluciones = devoluciones[0].total;
+          // ✅ MOSTRAR devoluciones para información, pero NO las restamos del balance
           detallesDevoluciones = {
-            total: Number(totalDevoluciones.toFixed(2)),
+            total: Number(devoluciones[0].total.toFixed(2)),
             cantidad: devoluciones[0].cantidad
           };
         }
@@ -248,7 +261,8 @@ console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
       tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total).toFixed(2))
     };
 
-    const corteFinal = Number((totalVentas - totalGastos - totalDevoluciones).toFixed(2));
+    // ✅ CORRECCIÓN: No restar devoluciones porque ya están descontadas de totalVentas
+    const corteFinal = Number((totalVentas - totalGastos).toFixed(2));
 
     // 📊 ESTADÍSTICAS ADICIONALES
     const resumenGeneral = {

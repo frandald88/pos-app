@@ -96,7 +96,7 @@ const saleSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
   status: {
     type: String,
-    enum: ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'cancelada'],
+    enum: ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'cancelada', 'parcialmente_devuelta'],
     default: 'en_preparacion'
   },
   totalReturned: { type: Number, default: 0 },

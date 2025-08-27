@@ -97,7 +97,7 @@ router.get('/', verifyToken, async (req, res) => {
       }
     }
     
-    const users = await User.find(filter).select('username role tienda')
+    const users = await User.find(filter).select('username role tienda telefono')
       .populate('tienda', 'nombre');
     
     console.log('✅ Users found:', users.length, 'for role:', currentUser.role);
@@ -185,6 +185,7 @@ router.put('/:id', verifyToken, requireAdmin, async (req, res) => {
         _id: updatedUser._id,
         username: updatedUser.username,
         role: updatedUser.role,
+        telefono: updatedUser.telefono,
         tienda: updatedUser.tienda
       }
     });

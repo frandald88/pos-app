@@ -204,8 +204,19 @@ app.use((err, req, res, next) => {
 // 404 handler
 app.use((req, res) => {
   console.log(`❌ Route not found: ${req.method} ${req.originalUrl}`);
+  
+  // Proporcionar mensajes más amigables según la ruta
+  let friendlyMessage = 'Ruta no encontrada';
+  
+  if (req.originalUrl.includes('/api/attendance')) {
+    friendlyMessage = 'Error en el servicio de asistencia. Verifica tu conexión e intenta nuevamente.';
+  } else if (req.originalUrl.includes('/api/')) {
+    friendlyMessage = 'El servicio solicitado no está disponible. Contacta al administrador del sistema.';
+  }
+  
   res.status(404).json({ 
-    message: 'Route not found',
+    message: friendlyMessage,
+    error: 'ROUTE_NOT_FOUND',
     method: req.method,
     path: req.originalUrl,
     availableRoutes: [

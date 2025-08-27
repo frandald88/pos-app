@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema({
       message: 'Los usuarios que no son admin deben tener una tienda asignada'
     }
   },
+  // ✅ NUEVO CAMPO para días de vacaciones tomados
+  daysTaken: { type: Number, default: 0 },
   // ✅ CAMPOS para soft delete
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date },

@@ -15,13 +15,90 @@ export default function OrdersPage() {
     cantidad: "",
     unidad: "pza",
     fechaEmision: "",
+    tienda: "",
+    assignedTo: "",
   });
   const [editingOrder, setEditingOrder] = useState(null);
   const [editStatus, setEditStatus] = useState("");
   const [editFechaEntrega, setEditFechaEntrega] = useState("");
   const [editNota, setEditNota] = useState("");
+  const [editAssignedTo, setEditAssignedTo] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [userTienda, setUserTienda] = useState(null);
+  const [userId, setUserId] = useState("");
+  const [tiendas, setTiendas] = useState([]);
+  const [users, setUsers] = useState([]);
 
   const token = localStorage.getItem("token");
+
+  // Función para obtener información del usuario
+  const fetchUserInfo = () => {
+    axios
+      .get(`${apiBaseUrl}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setUserRole(res.data.role || "");
+        setUserTienda(res.data.tienda || null);
+        setUserId(res.data._id || "");
+        
+        // Si no es admin, establecer tienda automáticamente
+        if (res.data.role !== 'admin' && res.data.tienda) {
+          setForm(prevForm => ({
+            ...prevForm,
+            tienda: res.data.tienda._id
+          }));
+          // Cargar usuarios de su tienda
+          fetchUsers(res.data.tienda._id);
+        }
+      })
+      .catch((error) => {
+        console.error("Error obteniendo info del usuario:", error);
+      });
+  };
+
+  // Función para obtener tiendas (solo para admin)
+  const fetchTiendas = () => {
+    if (userRole !== 'admin') return;
+    
+    console.log('🔍 Cargando tiendas...');
+    axios
+      .get(`${apiBaseUrl}/api/orders/tiendas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        console.log('✅ Tiendas cargadas:', res.data);
+        setTiendas(res.data);
+      })
+      .catch((error) => {
+        console.error("❌ Error obteniendo tiendas:", error);
+        console.error("❌ Error response:", error.response?.data);
+      });
+  };
+
+  // Función para obtener usuarios (vendedores y repartidores)
+  const fetchUsers = (tiendaId = null) => {
+    console.log('🔍 Cargando usuarios para tienda:', tiendaId);
+    const params = new URLSearchParams();
+    if (tiendaId) {
+      params.append('tiendaId', tiendaId);
+    }
+    
+    const url = `${apiBaseUrl}/api/orders/users${params.toString() ? `?${params.toString()}` : ''}`;
+    
+    axios
+      .get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        console.log('✅ Usuarios cargados:', res.data);
+        setUsers(res.data);
+      })
+      .catch((error) => {
+        console.error("❌ Error obteniendo usuarios:", error);
+        setUsers([]);
+      });
+  };
 
   const fetchOrders = () => {
     setCargando(true);
@@ -53,14 +130,33 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+    fetchUserInfo();
   }, []);
 
+  // Efecto para cargar tiendas cuando se define el rol
+  useEffect(() => {
+    if (userRole === 'admin') {
+      fetchTiendas();
+      fetchUsers(); // Admin puede ver todos los usuarios inicialmente
+    }
+  }, [userRole]);
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    
+    // Si cambió la tienda, actualizar la lista de usuarios (solo para admin)
+    if (name === 'tienda' && userRole === 'admin') {
+      if (value) {
+        fetchUsers(value);
+      } else {
+        setUsers([]);
+      }
+    }
   };
 
   const handleSave = () => {
-    if (!form.proveedor || !form.producto || !form.cantidad) {
+    if (!form.proveedor || !form.producto || !form.cantidad || !form.tienda) {
       setMsg("Por favor completa todos los campos requeridos ❌");
       return;
     }
@@ -73,7 +169,7 @@ export default function OrdersPage() {
       .then((response) => {
         console.log('Create response:', response.data);
         setMsg("Orden creada exitosamente ✅");
-        setForm({ proveedor: "", producto: "", cantidad: "", unidad: "pza", fechaEmision: "" });
+        clearForm();
         setMostrarFormulario(false);
         fetchOrders();
         setTimeout(() => setMsg(""), 3000);
@@ -92,6 +188,7 @@ export default function OrdersPage() {
         status: editStatus,
         fechaEntrega: editFechaEntrega,
         nota: editNota,
+        assignedTo: editAssignedTo,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -102,6 +199,7 @@ export default function OrdersPage() {
         setEditStatus("");
         setEditFechaEntrega("");
         setEditNota("");
+        setEditAssignedTo("");
         fetchOrders();
         setTimeout(() => setMsg(""), 3000);
       })
@@ -152,6 +250,28 @@ export default function OrdersPage() {
 
   const getUnidadConfig = (unidad) => {
     return unidadOptions.find(u => u.value === unidad) || { label: unidad, icon: "📋" };
+  };
+
+  // Función para verificar si el usuario puede actualizar una orden
+  const canUpdateOrder = (order) => {
+    if (!userId || !userRole) return false;
+    
+    return userRole === 'admin' || 
+           order.createdBy?._id === userId ||
+           order.assignedTo?._id === userId;
+  };
+
+  // Función para limpiar el formulario
+  const clearForm = () => {
+    setForm({ 
+      proveedor: "", 
+      producto: "", 
+      cantidad: "", 
+      unidad: "pza", 
+      fechaEmision: "", 
+      tienda: userRole !== 'admin' && userTienda ? userTienda._id : "", 
+      assignedTo: "" 
+    });
   };
 
   // Filtrar órdenes
@@ -205,7 +325,12 @@ export default function OrdersPage() {
             </div>
             
             <button
-              onClick={() => setMostrarFormulario(!mostrarFormulario)}
+              onClick={() => {
+                if (mostrarFormulario) {
+                  clearForm();
+                }
+                setMostrarFormulario(!mostrarFormulario);
+              }}
               className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
               style={{ backgroundColor: '#23334e' }}
               disabled={cargando}
@@ -316,6 +441,42 @@ export default function OrdersPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                  Tienda *
+                </label>
+                {userRole === 'admin' ? (
+                  <select
+                    name="tienda"
+                    value={form.tienda}
+                    onChange={handleChange}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                    required
+                  >
+                    <option value="">Selecciona una tienda</option>
+                    {tiendas.map(tienda => (
+                      <option key={tienda._id} value={tienda._id}>
+                        🏪 {tienda.nombre}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div 
+                    className="w-full p-3 border rounded-lg bg-gray-100"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      color: '#46546b'
+                    }}
+                  >
+                    {userTienda ? `🏪 ${userTienda.nombre}` : 'Cargando tienda...'}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                   Fecha de Emisión
                 </label>
                 <input
@@ -330,6 +491,29 @@ export default function OrdersPage() {
                   }}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                  Asignar a (Opcional)
+                </label>
+                <select
+                  name="assignedTo"
+                  value={form.assignedTo}
+                  onChange={handleChange}
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                  style={{ 
+                    borderColor: '#e5e7eb',
+                    focusRingColor: '#23334e'
+                  }}
+                >
+                  <option value="">Sin asignar</option>
+                  {users.map(user => (
+                    <option key={user._id} value={user._id}>
+                      {user.role === 'vendedor' ? '🛒' : '🚚'} {user.username} ({user.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex gap-4 mt-6">
@@ -342,7 +526,10 @@ export default function OrdersPage() {
                 {cargando ? "Creando..." : "Crear Orden"}
               </button>
               <button
-                onClick={() => setMostrarFormulario(false)}
+                onClick={() => {
+                  clearForm();
+                  setMostrarFormulario(false);
+                }}
                 className="px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
                 style={{ 
                   backgroundColor: '#8c95a4',
@@ -535,6 +722,39 @@ export default function OrdersPage() {
                           #{order._id.slice(-8)}
                         </div>
                       </div>
+                      
+                      {order.tienda && (
+                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                            Tienda
+                          </div>
+                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                            🏪 {order.tienda.nombre}
+                          </div>
+                        </div>
+                      )}
+
+                      {order.createdBy && (
+                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                            Creado por
+                          </div>
+                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                            👤 {order.createdBy.username}
+                          </div>
+                        </div>
+                      )}
+
+                      {order.assignedTo && (
+                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                            Asignado a
+                          </div>
+                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                            {order.assignedTo.role === 'vendedor' ? '🛒' : '🚚'} {order.assignedTo.username}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Nota si existe */}
@@ -551,20 +771,27 @@ export default function OrdersPage() {
 
                     {/* Acciones */}
                     <div className="flex flex-wrap gap-3">
-                      <button
-                        onClick={() => {
-                          setEditingOrder(order);
-                          setEditStatus(order.status);
-                          setEditFechaEntrega(order.fechaEntrega ? order.fechaEntrega.substring(0, 10) : "");
-                          setEditNota(order.nota || "");
-                        }}
-                        className="px-6 py-2 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
-                        style={{ backgroundColor: '#46546b' }}
-                      >
-                        ✏️ Actualizar
-                      </button>
+                      {canUpdateOrder(order) ? (
+                        <button
+                          onClick={() => {
+                            setEditingOrder(order);
+                            setEditStatus(order.status);
+                            setEditFechaEntrega(order.fechaEntrega ? order.fechaEntrega.substring(0, 10) : "");
+                            setEditNota(order.nota || "");
+                            setEditAssignedTo(order.assignedTo?._id || "");
+                          }}
+                          className="px-6 py-2 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
+                          style={{ backgroundColor: '#46546b' }}
+                        >
+                          ✏️ Actualizar
+                        </button>
+                      ) : (
+                        <div className="px-6 py-2 rounded-lg font-medium text-gray-500 bg-gray-100 border border-gray-200">
+                          🔒 Sin permisos
+                        </div>
+                      )}
                       
-                      {(order.status === "completada" || order.status === "cancelada") && (
+                      {(order.status === "completada" || order.status === "cancelada") && userRole === "admin" && (
                         <button
                           onClick={() => handleDelete(order._id)}
                           className="px-6 py-2 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
@@ -624,6 +851,28 @@ export default function OrdersPage() {
                       focusRingColor: '#23334e'
                     }}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Asignar a
+                  </label>
+                  <select
+                    value={editAssignedTo}
+                    onChange={(e) => setEditAssignedTo(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                  >
+                    <option value="">Sin asignar</option>
+                    {users.map(user => (
+                      <option key={user._id} value={user._id}>
+                        {user.role === 'vendedor' ? '🛒' : '🚚'} {user.username} ({user.role})
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

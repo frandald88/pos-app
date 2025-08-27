@@ -41,6 +41,12 @@ const vacationRequestSchema = new mongoose.Schema({
   employeeInfo: {
     username: String,
     role: String
+  },
+  
+  // ✅ NUEVO: Control de días tomados automáticamente
+  daysTakenUpdated: { 
+    type: Boolean, 
+    default: false 
   }
 }, { timestamps: true });
 

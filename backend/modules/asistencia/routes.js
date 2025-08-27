@@ -5,6 +5,23 @@ const User = require('../../core/users/model');
 const Schedule = require('../schedules/model'); // ✅ NUEVO: Importar modelo de horarios
 const { verifyToken, requireAdmin } = require('../../shared/middleware/authMiddleware');
 
+// ✅ NUEVO: Función helper para convertir minutos a formato legible
+function formatMinutesToHoursAndMinutes(totalMinutes) {
+  if (totalMinutes < 60) {
+    return `${totalMinutes} minuto${totalMinutes !== 1 ? 's' : ''}`;
+  }
+  
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  let result = `${hours} hora${hours !== 1 ? 's' : ''}`;
+  if (minutes > 0) {
+    result += ` ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+  }
+  
+  return result;
+}
+
 // ✅ NUEVO: Función helper para verificar horarios
 async function getEmployeeScheduleInfo(userId, checkInTime = new Date()) {
   try {
@@ -67,17 +84,22 @@ router.post("/checkin", verifyToken, async (req, res) => {
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
 
-    // Verificar si ya hizo check-in hoy
-    const existing = await Attendance.findOne({
+    // ✅ NUEVO: Buscar o crear registro de asistencia del día
+    let attendance = await Attendance.findOne({
       userId,
       date: { $gte: startOfDay },
     });
 
-    if (existing && existing.checkInTime) {
-      return res.status(400).json({ 
-        message: "Ya hizo check-in hoy",
-        checkInTime: existing.checkInTime
-      });
+    // Si existe, verificar si puede hacer check-in
+    if (attendance) {
+      const canCheckIn = attendance.canCheckIn();
+      if (!canCheckIn.canCheckIn) {
+        return res.status(400).json({ 
+          message: "Ya estás registrado como presente. Haz check-out primero si necesitas salir.",
+          currentStatus: attendance.getCurrentStatus(),
+          reason: canCheckIn.reason
+        });
+      }
     }
 
     // Buscar la tienda del usuario
@@ -96,6 +118,14 @@ router.post("/checkin", verifyToken, async (req, res) => {
     const now = new Date();
     const scheduleInfo = await getEmployeeScheduleInfo(userId, now);
     
+    // ✅ VALIDACIÓN: Verificar si el usuario tiene horario asignado
+    if (!scheduleInfo.hasSchedule) {
+      return res.status(400).json({ 
+        message: "No tienes un horario asignado. Contacta al administrador para que te asigne un horario antes de hacer check-in.",
+        error: "NO_SCHEDULE_ASSIGNED"
+      });
+    }
+    
     // Verificar si es día laboral
     if (scheduleInfo.hasSchedule && !scheduleInfo.isWorkday) {
       return res.status(400).json({ 
@@ -107,48 +137,74 @@ router.post("/checkin", verifyToken, async (req, res) => {
       });
     }
 
-    // Crear o actualizar registro de asistencia
-    const attendance = existing || new Attendance({
-      userId,
-      date: new Date(),
-      tienda: user.tienda,
-    });
-
-    attendance.checkInTime = now;
-    attendance.status = "Present";
-
-    // ✅ MEJORADO: Determinar si llegó tarde usando horario personalizado
-    let lateLimit;
-    let toleranceUsed = 0;
-    
-    if (scheduleInfo.hasSchedule && scheduleInfo.lateLimit) {
-      lateLimit = scheduleInfo.lateLimit;
-      toleranceUsed = scheduleInfo.tolerance || 0;
-    } else {
-      // Fallback al comportamiento anterior (9:00 AM)
-      lateLimit = scheduleInfo.defaultLateLimit || new Date(now);
-      lateLimit.setHours(9, 0, 0, 0);
+    // ✅ NUEVO: Crear o actualizar registro de asistencia
+    if (!attendance) {
+      attendance = new Attendance({
+        userId,
+        date: startOfDay,
+        tienda: user.tienda,
+        timeEntries: [],
+        status: "Present"
+      });
     }
+
+    // ✅ NUEVO: Determinar el tipo de entrada
+    const { entryType } = req.body; // 'work', 'break', 'lunch'
+    const validEntryType = ['work', 'break', 'lunch'].includes(entryType) ? entryType : 'work';
+
+    // Agregar nueva entrada de tiempo
+    const newEntry = {
+      checkInTime: now,
+      type: validEntryType,
+      notes: req.body.notes || ""
+    };
+
+    attendance.timeEntries.push(newEntry);
+
+    // ✅ MEJORADO: Determinar si llegó tarde solo para la primera entrada del día
+    const isFirstEntryOfDay = attendance.timeEntries.length === 1;
     
-    if (now > lateLimit) {
-      attendance.status = "Late";
-      const minutesLate = Math.ceil((now - lateLimit) / (1000 * 60));
-      attendance.notes = `Llegada tarde a las ${now.toLocaleTimeString('es-MX')} (${minutesLate} min tarde)`;
+    if (isFirstEntryOfDay && validEntryType === 'work') {
+      let lateLimit;
+      let toleranceUsed = 0;
       
-      if (toleranceUsed > 0) {
-        attendance.notes += ` - Tolerancia de ${toleranceUsed} min aplicada`;
-      }
-    } else if (scheduleInfo.hasSchedule && scheduleInfo.todaySchedule) {
-      const [scheduleHours, scheduleMinutes] = scheduleInfo.todaySchedule.startTime.split(':').map(Number);
-      const scheduledTime = new Date(now);
-      scheduledTime.setHours(scheduleHours, scheduleMinutes, 0, 0);
-      
-      if (now <= scheduledTime) {
-        attendance.notes = "Llegada puntual";
+      if (scheduleInfo.hasSchedule && scheduleInfo.lateLimit) {
+        lateLimit = scheduleInfo.lateLimit;
+        toleranceUsed = scheduleInfo.tolerance || 0;
       } else {
-        const minutesWithinTolerance = Math.ceil((now - scheduledTime) / (1000 * 60));
-        attendance.notes = `Llegada dentro de tolerancia (${minutesWithinTolerance} min después del horario)`;
+        // Fallback al comportamiento anterior (9:00 AM)
+        lateLimit = scheduleInfo.defaultLateLimit || new Date(now);
+        lateLimit.setHours(9, 0, 0, 0);
       }
+      
+      if (now > lateLimit) {
+        attendance.status = "Late";
+        const minutesLate = Math.ceil((now - lateLimit) / (1000 * 60));
+        newEntry.notes = `Llegada tarde (${formatMinutesToHoursAndMinutes(minutesLate)} tarde)`;
+        
+        if (toleranceUsed > 0) {
+          newEntry.notes += ` - Tolerancia de ${formatMinutesToHoursAndMinutes(toleranceUsed)} aplicada`;
+        }
+      } else if (scheduleInfo.hasSchedule && scheduleInfo.todaySchedule) {
+        const [scheduleHours, scheduleMinutes] = scheduleInfo.todaySchedule.startTime.split(':').map(Number);
+        const scheduledTime = new Date(now);
+        scheduledTime.setHours(scheduleHours, scheduleMinutes, 0, 0);
+        
+        if (now <= scheduledTime) {
+          newEntry.notes = "Llegada puntual";
+        } else {
+          const minutesWithinTolerance = Math.ceil((now - scheduledTime) / (1000 * 60));
+          newEntry.notes = `Llegada dentro de tolerancia (${formatMinutesToHoursAndMinutes(minutesWithinTolerance)} después del horario)`;
+        }
+      }
+    } else {
+      // Para entradas posteriores, agregar nota descriptiva
+      const entryLabels = {
+        'work': 'Regreso al trabajo',
+        'break': 'Inicio de descanso',
+        'lunch': 'Salida a almorzar'
+      };
+      newEntry.notes = newEntry.notes || entryLabels[validEntryType] || 'Entrada';
     }
 
     await attendance.save();
@@ -156,16 +212,20 @@ router.post("/checkin", verifyToken, async (req, res) => {
     res.json({ 
       message: "Check-in registrado exitosamente",
       attendance: {
-        checkInTime: attendance.checkInTime,
+        checkInTime: newEntry.checkInTime,
         status: attendance.status,
         tienda: user.tienda,
-        notes: attendance.notes
+        notes: newEntry.notes,
+        entryType: validEntryType,
+        currentStatus: attendance.getCurrentStatus(),
+        totalEntries: attendance.timeEntries.length,
+        hoursWorked: attendance.hoursWorked
       },
       scheduleInfo: {
         hasCustomSchedule: scheduleInfo.hasSchedule,
         scheduledStartTime: scheduleInfo.todaySchedule?.startTime,
-        tolerance: toleranceUsed,
-        lateLimit: lateLimit?.toLocaleTimeString('es-MX')
+        tolerance: scheduleInfo.tolerance || 0,
+        isWorkdayToday: scheduleInfo.isWorkday
       }
     });
   } catch (err) {
@@ -184,49 +244,80 @@ router.post("/checkout", verifyToken, async (req, res) => {
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
 
+    // ✅ VALIDACIÓN: Verificar si el usuario tiene horario asignado
+    const scheduleInfo = await getEmployeeScheduleInfo(userId, new Date());
+    if (!scheduleInfo.hasSchedule) {
+      return res.status(400).json({ 
+        message: "No tienes un horario asignado. Contacta al administrador para que te asigne un horario antes de hacer check-out.",
+        error: "NO_SCHEDULE_ASSIGNED"
+      });
+    }
+
     const attendance = await Attendance.findOne({
       userId,
       date: { $gte: startOfDay },
     });
 
-    if (!attendance || !attendance.checkInTime) {
+    if (!attendance || !attendance.timeEntries || attendance.timeEntries.length === 0) {
       return res.status(400).json({ 
         message: "No hizo check-in hoy. Debe hacer check-in antes del check-out." 
       });
     }
 
-    if (attendance.checkOutTime) {
+    // ✅ NUEVO: Verificar si puede hacer check-out
+    const canCheckOut = attendance.canCheckOut();
+    if (!canCheckOut.canCheckOut) {
       return res.status(400).json({ 
-        message: "Ya hizo check-out hoy",
-        checkOutTime: attendance.checkOutTime
+        message: "Ya hiciste check-out. Debes hacer check-in primero si regresas.",
+        currentStatus: attendance.getCurrentStatus(),
+        reason: canCheckOut.reason
       });
     }
 
     const now = new Date();
-    attendance.checkOutTime = now;
     
-    // ✅ NUEVO: Obtener horario para información adicional
-    const scheduleInfo = await getEmployeeScheduleInfo(userId, now);
+    // ✅ NUEVO: Actualizar la última entrada con check-out
+    const lastEntry = attendance.timeEntries[attendance.timeEntries.length - 1];
+    lastEntry.checkOutTime = now;
+    
+    // ✅ NUEVO: Determinar tipo de salida y notas
+    const { exitType } = req.body; // 'end_day', 'break', 'lunch'
+    const validExitType = ['end_day', 'break', 'lunch'].includes(exitType) ? exitType : 'break';
+    
+    // Agregar notas según el tipo de salida
     let scheduleNotes = "";
     
-    if (scheduleInfo.hasSchedule && scheduleInfo.todaySchedule && scheduleInfo.todaySchedule.endTime) {
+    if (validExitType === 'end_day' && scheduleInfo.hasSchedule && scheduleInfo.todaySchedule && scheduleInfo.todaySchedule.endTime) {
+      // Solo verificar horario de salida si es el final del día
       const [endHours, endMinutes] = scheduleInfo.todaySchedule.endTime.split(':').map(Number);
       const scheduledEndTime = new Date(now);
       scheduledEndTime.setHours(endHours, endMinutes, 0, 0);
       
       if (now < scheduledEndTime) {
         const minutesEarly = Math.ceil((scheduledEndTime - now) / (1000 * 60));
-        scheduleNotes = ` - Salida ${minutesEarly} min antes del horario`;
+        scheduleNotes = `Salida temprana (${formatMinutesToHoursAndMinutes(minutesEarly)} antes del horario)`;
       } else if (now > scheduledEndTime) {
         const minutesOvertime = Math.ceil((now - scheduledEndTime) / (1000 * 60));
-        scheduleNotes = ` - Tiempo extra: ${minutesOvertime} min`;
+        scheduleNotes = `Tiempo extra trabajado (${formatMinutesToHoursAndMinutes(minutesOvertime)})`;
       } else {
-        scheduleNotes = " - Salida puntual";
+        scheduleNotes = "Salida puntual";
       }
+    } else {
+      // Para otros tipos de salida
+      const exitLabels = {
+        'break': 'Salida por descanso',
+        'lunch': 'Salida a almorzar',
+        'end_day': 'Fin de jornada laboral'
+      };
+      scheduleNotes = exitLabels[validExitType] || 'Salida';
+    }
+    
+    if (req.body.notes) {
+      lastEntry.notes = (lastEntry.notes || '') + (lastEntry.notes ? ' - ' : '') + req.body.notes;
     }
     
     if (scheduleNotes) {
-      attendance.notes = (attendance.notes || "") + scheduleNotes;
+      lastEntry.notes = (lastEntry.notes || '') + (lastEntry.notes ? ' - ' : '') + scheduleNotes;
     }
     
     await attendance.save(); // El middleware pre('save') calculará las horas trabajadas
@@ -234,16 +325,20 @@ router.post("/checkout", verifyToken, async (req, res) => {
     res.json({ 
       message: "Check-out registrado exitosamente",
       attendance: {
-        checkInTime: attendance.checkInTime,
-        checkOutTime: attendance.checkOutTime,
+        checkInTime: lastEntry.checkInTime,
+        checkOutTime: lastEntry.checkOutTime,
         hoursWorked: attendance.hoursWorked,
+        totalBreakTime: attendance.totalBreakTime,
         status: attendance.status,
-        notes: attendance.notes
+        notes: lastEntry.notes,
+        exitType: validExitType,
+        currentStatus: attendance.getCurrentStatus(),
+        totalEntries: attendance.timeEntries.length
       },
       scheduleInfo: {
         hasCustomSchedule: scheduleInfo.hasSchedule,
         scheduledEndTime: scheduleInfo.todaySchedule?.endTime,
-        notes: scheduleNotes
+        isWorkdayToday: scheduleInfo.isWorkday
       }
     });
   } catch (err) {
@@ -275,6 +370,56 @@ router.get("/schedule-check", verifyToken, async (req, res) => {
     console.error("Error verificando horario:", err);
     res.status(500).json({ 
       message: "Error al verificar horario", 
+      error: err.message 
+    });
+  }
+});
+
+// ✅ NUEVO: Endpoint para obtener estado actual y entradas del día
+router.get("/status", verifyToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    
+    const attendance = await Attendance.findOne({
+      userId,
+      date: { $gte: startOfDay },
+    }).populate('userId', 'username role').populate('tienda', 'nombre');
+    
+    if (!attendance) {
+      return res.json({
+        hasAttendance: false,
+        currentStatus: { status: 'not_started', message: 'No ha iniciado jornada' },
+        canCheckIn: true,
+        canCheckOut: false,
+        timeEntries: [],
+        hoursWorked: 0,
+        totalBreakTime: 0
+      });
+    }
+    
+    const currentStatus = attendance.getCurrentStatus();
+    const canCheckIn = attendance.canCheckIn();
+    const canCheckOut = attendance.canCheckOut();
+    
+    res.json({
+      hasAttendance: true,
+      currentStatus,
+      canCheckIn: canCheckIn.canCheckIn,
+      canCheckOut: canCheckOut.canCheckOut,
+      timeEntries: attendance.timeEntries,
+      hoursWorked: attendance.hoursWorked,
+      totalBreakTime: attendance.totalBreakTime,
+      status: attendance.status,
+      isActive: attendance.isActive,
+      user: attendance.userId,
+      tienda: attendance.tienda
+    });
+  } catch (err) {
+    console.error("Error obteniendo estado:", err);
+    res.status(500).json({ 
+      message: "Error al obtener estado", 
       error: err.message 
     });
   }
@@ -322,8 +467,15 @@ router.post("/absence", verifyToken, requireAdmin, async (req, res) => {
       });
     }
 
-    // ✅ NUEVO: Verificar si era día laboral
+    // ✅ VALIDACIÓN: Verificar si el usuario tiene horario asignado
     const scheduleInfo = await getEmployeeScheduleInfo(userId, startOfDay);
+    if (!scheduleInfo.hasSchedule) {
+      return res.status(400).json({ 
+        message: "El empleado no tiene un horario asignado. Debe asignarle un horario antes de registrar ausencias.",
+        error: "NO_SCHEDULE_ASSIGNED"
+      });
+    }
+
     let absenceNotes = reason.trim();
     
     if (scheduleInfo.hasSchedule && !scheduleInfo.isWorkday) {

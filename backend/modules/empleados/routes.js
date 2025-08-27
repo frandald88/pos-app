@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const EmployeeHistory = require('./model');
 const Attendance = require('../asistencia/model');
 const User = require('../../core/users/model');
@@ -68,7 +69,8 @@ router.patch('/history/:id/restore', verifyToken, requireAdmin, async (req, res)
   }
 });
 
-// Ranking de empleados con menos faltas (EXISTENTE - SIN CAMBIOS)
+
+// Ranking de empleados con menos faltas (CORREGIDO - FUNCIONA CORRECTAMENTE)
 router.get('/history/ranking/faltas', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { startDate, endDate, tiendaId, limit = 20 } = req.query;
@@ -84,9 +86,20 @@ router.get('/history/ranking/faltas', verifyToken, requireAdmin, async (req, res
       return res.status(400).json({ message: 'La fecha de inicio debe ser anterior a la fecha de fin' });
     }
 
-    const matchFilter = { date: { $gte: start, $lte: end } };
-    if (tiendaId) matchFilter.tienda = tiendaId;
-
+    const matchFilter = { 
+      date: { $gte: start, $lte: end },
+      userId: { $ne: null } // ✅ CRÍTICO: Excluir registros sin usuario para aggregation
+    };
+    
+    if (tiendaId && tiendaId.trim() !== '') {
+      try {
+        const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
+        matchFilter.tienda = tiendaObjectId;
+      } catch (error) {
+        return res.status(400).json({ message: 'ID de tienda inválido' });
+      }
+    }
+    
     const ranking = await Attendance.aggregate([
       { $match: matchFilter },
       {
@@ -110,13 +123,13 @@ router.get('/history/ranking/faltas', verifyToken, requireAdmin, async (req, res
       {
         $unwind: {
           path: "$empleado",
-          preserveNullAndEmptyArrays: true
+          preserveNullAndEmptyArrays: false // ✅ CORREGIDO: No incluir usuarios eliminados
         }
       },
       {
         $project: {
-          empleado: { $ifNull: ["$empleado.username", "Usuario eliminado"] },
-          role: { $ifNull: ["$empleado.role", "N/A"] },
+          empleado: "$empleado.username", // ✅ SIMPLIFICADO: Ya no puede ser null
+          role: "$empleado.role", // ✅ SIMPLIFICADO: Ya no puede ser null
           totalDias: 1,
           faltas: 1,
           tardes: 1,

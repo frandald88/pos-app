@@ -8,33 +8,87 @@ export default function ReturnsPage() {
   const [returnedItems, setReturnedItems] = useState([]);
   const [refundAmount, setRefundAmount] = useState(0);
   const [msg, setMsg] = useState("");
+  const [processingMsg, setProcessingMsg] = useState(""); // Mensaje local del procesamiento
   const [cargando, setCargando] = useState(false);
   const [buscando, setBuscando] = useState(false);
+  const [existingReturns, setExistingReturns] = useState(null); // Para devoluciones existentes
   const token = localStorage.getItem("token");
   const [refundMethod, setRefundMethod] = useState("efectivo");
   const [mixedRefunds, setMixedRefunds] = useState([]); // Para pagos mixtos
   const [refundBreakdown, setRefundBreakdown] = useState({}); // Desglose de devolución
 
+  // Función para limpiar ceros a la izquierda (excepto decimales válidos)
+  const cleanLeadingZeros = (value) => {
+    // Si está vacío o es solo un punto, devolver como está
+    if (!value || value === '.' || value === '0.') return value;
+    
+    // Convertir a string y eliminar espacios
+    const str = value.toString().trim();
+    
+    // Si es solo "0", mantenerlo
+    if (str === '0') return '0';
+    
+    // Si empieza con "0." (decimal válido), mantenerlo
+    if (str.startsWith('0.')) return str;
+    
+    // Eliminar ceros a la izquierda de números enteros
+    const cleaned = str.replace(/^0+/, '');
+    
+    // Si queda vacío después de eliminar ceros, devolver "0"
+    return cleaned === '' ? '0' : cleaned;
+  };
+
+  // Función para manejar input en tiempo real y prevenir ceros a la izquierda
+  const handleNumberInput = (e, callback) => {
+    const value = e.target.value;
+    const cleaned = cleanLeadingZeros(value);
+    
+    // Si el valor cambió, actualizar el input inmediatamente
+    if (cleaned !== value) {
+      e.target.value = cleaned;
+    }
+    
+    // Ejecutar el callback con el valor limpio
+    callback(cleaned);
+  };
+
   const calculateDiscountedPrice = (item, originalTotal, originalDiscount) => {
     const itemSubtotal = item.price * item.quantity;
-    const discountPercentage = originalDiscount / (originalTotal + originalDiscount);
+    const discountPercentage = originalDiscount / originalTotal;
     const itemDiscount = itemSubtotal * discountPercentage;
     return (item.price - (itemDiscount / item.quantity));
   };
 
   const fetchSale = () => {
     if (!saleId.trim()) {
-      setMsg("Por favor ingresa un ID de venta válido ❌");
+      setMsg("Se requiere ingresar el ID de la venta para procesar la devolución ❌");
       return;
     }
 
     setBuscando(true);
+    setExistingReturns(null);
+    setSale(null);
+    setReturnedItems([]);
+    setMsg("");
+    
+    // Primero verificar si ya existen devoluciones para esta venta
     axios
-      .get(`${apiBaseUrl}/api/sales/${saleId}`, {
+      .get(`${apiBaseUrl}/api/returns/by-sale/${saleId}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setSale(res.data);
+        // Si existen devoluciones, mostrar el reporte
+        setExistingReturns(res.data);
+        setBuscando(false);
+      })
+      .catch(() => {
+        // Si no existen devoluciones, continuar con el flujo normal
+        axios
+          .get(`${apiBaseUrl}/api/sales/${saleId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            setSale(res.data);
 
         // ✅ CALCULAR PRECIOS CON DESCUENTO
         const discountedItems = res.data.items.map((item) => {
@@ -58,33 +112,37 @@ export default function ReturnsPage() {
         setBuscando(false);
         // Calcular automáticamente el monto total de la venta como sugerencia
         setRefundAmount(res.data.total);
-      })
-      .catch(() => {
-        setMsg("Venta no encontrada. Verifica el ID ❌");
-        setBuscando(false);
+          })
+          .catch(() => {
+            setMsg("Venta no encontrada. Verifica el ID ❌");
+            setBuscando(false);
+          });
       });
   };
 
   const handleSubmit = () => {
+    // Limpiar mensajes previos
+    setProcessingMsg("");
+    
     const itemsToReturn = returnedItems
       .filter((item) => item.quantity > 0)
-      .map(({ productId, name, quantity, unitPrice, reason }) => ({
+      .map(({ productId, name, quantity, unitPrice, discountedPrice, reason }) => ({
         productId,
         name,
         quantity,
-        originalPrice: unitPrice,
-        refundPrice: unitPrice,
+        originalPrice: unitPrice, // Precio original sin descuento
+        refundPrice: discountedPrice || unitPrice, // ✅ USAR: Precio con descuento aplicado
         reason: reason?.trim() || "No especificado",
         condition: "Nuevo"
       }));
 
     if (itemsToReturn.length === 0) {
-      setMsg("Debes seleccionar al menos un producto y cantidad a devolver ❌");
+      setProcessingMsg("Debes seleccionar al menos un producto y cantidad a devolver ❌");
       return;
     }
 
     if (refundAmount <= 0) {
-      setMsg("El monto de reembolso debe ser mayor a 0 ❌");
+      setProcessingMsg("El monto debe ser mayor a 0 ❌");
       return;
     }
 
@@ -108,7 +166,7 @@ export default function ReturnsPage() {
       
       if (selectedRefunds.length === 0) {
         console.log('❌ ERROR: No hay refunds seleccionados');
-        setMsg("Debes seleccionar al menos un método de pago para la devolución ❌");
+        setProcessingMsg("Debes seleccionar al menos un método de pago para la devolución ❌");
         return;
       }
       
@@ -118,14 +176,14 @@ export default function ReturnsPage() {
 
       const difference = Math.abs(totalSelectedAmount - refundAmount);
       if (difference > 0.01) {
-        setMsg(`❌ Error: Los métodos seleccionados suman $${totalSelectedAmount.toFixed(2)} pero el monto a reembolsar es $${refundAmount.toFixed(2)}. Deben coincidir exactamente.`);
+        setProcessingMsg(`❌ Error: Los métodos seleccionados suman $${totalSelectedAmount.toFixed(2)} pero el monto a reembolsar es $${refundAmount.toFixed(2)}. Deben coincidir exactamente.`);
         return;
       }
 
       for (const refund of selectedRefunds) {
         const maxForMethod = mixedRefunds.find(m => m.method === refund.method)?.maxAmount || 0;
         if (refund.selectedAmount > maxForMethod) {
-          setMsg(`❌ Error: Para ${refund.method} seleccionaste $${refund.selectedAmount} pero el máximo disponible es $${maxForMethod.toFixed(2)}`);
+          setProcessingMsg(`❌ Error: Para ${refund.method} seleccionaste $${refund.selectedAmount} pero el máximo disponible es $${maxForMethod.toFixed(2)}`);
           return;
         }
       }
@@ -143,23 +201,32 @@ export default function ReturnsPage() {
       .post(`${apiBaseUrl}/api/returns`, submitData, { 
         headers: { Authorization: `Bearer ${token}` } 
       })
-      .then(() => {
-        setMsg("Devolución registrada exitosamente ✅");
+      .then((res) => {
+        // ✅ NUEVO: Determinar tipo de devolución y mostrar mensaje específico
+        const saleUpdated = res.data.saleUpdated;
+        const isPartialReturn = saleUpdated && saleUpdated.remaining > 0;
+        
+        const message = isPartialReturn 
+          ? `✅ Devolución parcial registrada exitosamente. Restante: $${saleUpdated.remaining.toFixed(2)}`
+          : "✅ Devolución total registrada exitosamente";
+        
+        setMsg(message);
+        setProcessingMsg(""); // Limpiar mensaje de procesamiento
         setSale(null);
         setSaleId("");
         setRefundAmount(0);
         setReturnedItems([]);
         setMixedRefunds([]); // ✅ Limpiar también mixedRefunds
         setCargando(false);
-        setTimeout(() => setMsg(""), 3000);
+        setTimeout(() => setMsg(""), 5000); // Mostrar por más tiempo
       })
       .catch((error) => {
         setCargando(false);
         console.log('❌ Error completo:', error.response?.data);
         if (error.response && error.response.data.message) {
-          setMsg(error.response.data.message + " ❌");
+          setProcessingMsg(error.response.data.message + " ❌");
         } else {
-          setMsg("Error inesperado al crear devolución ❌");
+          setProcessingMsg("Error inesperado al crear devolución ❌");
         }
       });
   };
@@ -167,7 +234,11 @@ export default function ReturnsPage() {
   const updateItemQuantity = (index, field, value) => {
     setReturnedItems((prev) => {
       const updated = [...prev];
-      updated[index][field] = field === "quantity" ? Number(value) : value;
+      if (field === "quantity") {
+        updated[index][field] = value === '' ? 0 : Number(value);
+      } else {
+        updated[index][field] = value;
+      }
       return updated;
     });
   };
@@ -203,7 +274,12 @@ export default function ReturnsPage() {
     console.log(`🔍 Cambiando ${field} del índice ${index} a:`, value);
     setMixedRefunds(prev => {
       const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
+      
+      if (field === 'selectedAmount') {
+        updated[index] = { ...updated[index], [field]: value === '' ? 0 : Number(value) };
+      } else {
+        updated[index] = { ...updated[index], [field]: value };
+      }
       
       if (field === 'selected' && !value) {
         updated[index].selectedAmount = 0;
@@ -213,6 +289,195 @@ export default function ReturnsPage() {
       return updated;
     });
   };
+
+  // Función para formatear fechas
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('es-MX', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Si existen devoluciones, mostrar el reporte
+  if (existingReturns) {
+    return (
+      <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 
+              className="text-3xl font-bold mb-2"
+              style={{ color: '#23334e' }}
+            >
+              Reporte de Devolución
+            </h1>
+            <p style={{ color: '#697487' }} className="text-lg">
+              Esta venta ya tiene devoluciones registradas
+            </p>
+          </div>
+
+          {/* Información de la venta original */}
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4" style={{ color: '#23334e' }}>
+              Información de la Venta Original
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                  ID de Venta
+                </div>
+                <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                  {existingReturns.sale._id}
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                  Total Original
+                </div>
+                <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                  ${existingReturns.sale.total.toFixed(2)}
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                  Total Devuelto
+                </div>
+                <div className="text-lg font-bold text-red-600">
+                  ${existingReturns.totalReturned.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Devoluciones registradas */}
+          <div className="space-y-6">
+            {existingReturns.returns.map((returnRecord, index) => (
+              <div key={returnRecord._id} className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold" style={{ color: '#23334e' }}>
+                      Devolución #{index + 1}
+                    </h3>
+                    <p className="text-sm" style={{ color: '#697487' }}>
+                      {formatDate(returnRecord.date)}
+                    </p>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-red-600">
+                      ${returnRecord.refundAmount.toFixed(2)}
+                    </div>
+                    <div className="text-sm" style={{ color: '#697487' }}>
+                      Método: {returnRecord.refundMethod === 'efectivo' ? '💵 Efectivo' : 
+                               returnRecord.refundMethod === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <div className="text-sm" style={{ color: '#697487' }}>
+                    Procesado por: <span className="font-medium">{returnRecord.processedBy.username}</span>
+                  </div>
+                </div>
+
+                {/* Productos devueltos */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
+                    Productos Devueltos
+                  </h4>
+                  <div className="space-y-3">
+                    {returnRecord.returnedItems.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className="flex justify-between items-start p-4 rounded-lg border"
+                        style={{ borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium" style={{ color: '#23334e' }}>
+                              {item.name}
+                            </span>
+                            <span 
+                              className="px-2 py-1 text-xs rounded-full"
+                              style={{ backgroundColor: '#e5e7eb', color: '#46546b' }}
+                            >
+                              x{item.quantity}
+                            </span>
+                          </div>
+                          {item.reason && (
+                            <div className="text-sm italic p-2 rounded mt-2" style={{ color: '#697487', backgroundColor: '#f4f6fa' }}>
+                              💬 {item.reason}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {(() => {
+                            // ✅ CORRECCIÓN: Para transacciones existentes, calcular precio con descuento
+                            const venta = existingReturns.sale;
+                            let precioConDescuento = item.refundPrice;
+                            
+                            if (venta && venta.discount > 0) {
+                              // Buscar el item original en la venta
+                              const itemOriginal = venta.items?.find(saleItem => 
+                                saleItem.name === item.name || 
+                                (item.productId && saleItem.productId && saleItem.productId.toString() === item.productId.toString())
+                              );
+                              
+                              if (itemOriginal) {
+                                // Calcular precio con descuento usando la misma lógica
+                                const totalSinDescuento = venta.items.reduce((sum, saleItem) => sum + (saleItem.price * saleItem.quantity), 0);
+                                const itemSubtotal = itemOriginal.price * itemOriginal.quantity;
+                                const discountPercentage = venta.discount / totalSinDescuento;
+                                const itemDiscount = itemSubtotal * discountPercentage;
+                                precioConDescuento = itemOriginal.price - (itemDiscount / itemOriginal.quantity);
+                              }
+                            }
+                            
+                            return (
+                              <>
+                                <div className="font-bold" style={{ color: '#23334e' }}>
+                                  ${(precioConDescuento * item.quantity).toFixed(2)}
+                                </div>
+                                <div className="text-sm" style={{ color: '#697487' }}>
+                                  ${precioConDescuento.toFixed(2)} c/u
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Botón para nueva búsqueda */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => {
+                setSaleId("");
+                setExistingReturns(null);
+                setMsg("");
+              }}
+              className="px-8 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
+              style={{ backgroundColor: '#23334e' }}
+            >
+              🔍 Buscar Otra Venta
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
@@ -270,7 +535,7 @@ export default function ReturnsPage() {
                 onClick={fetchSale}
                 className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                 style={{ backgroundColor: '#23334e' }}
-                disabled={buscando || !saleId.trim()}
+                disabled={buscando}
               >
                 {buscando ? (
                   <div className="flex items-center gap-2">
@@ -379,15 +644,20 @@ export default function ReturnsPage() {
                             </span>
                           </div>
                           <div>
-                            <span style={{ color: '#697487' }}>Precio unitario: </span>
+                            <span style={{ color: '#697487' }}>Precio pagado: </span>
                             <span className="font-medium" style={{ color: '#23334e' }}>
-                              ${item.unitPrice.toFixed(2)}
+                              ${(item.discountedPrice || item.unitPrice).toFixed(2)}
+                              {item.discountedPrice && (
+                                <span className="text-xs ml-1" style={{ color: '#ef4444' }}>
+                                  (con descuento)
+                                </span>
+                              )}
                             </span>
                           </div>
                           <div>
-                            <span style={{ color: '#697487' }}>Total vendido: </span>
+                            <span style={{ color: '#697487' }}>Total pagado: </span>
                             <span className="font-medium" style={{ color: '#23334e' }}>
-                              ${(item.maxQuantity * item.unitPrice).toFixed(2)}
+                              ${(item.maxQuantity * (item.discountedPrice || item.unitPrice)).toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -404,9 +674,12 @@ export default function ReturnsPage() {
                             min="0"
                             max={item.maxQuantity}
                             value={item.quantity}
-                            onChange={(e) =>
-                              updateItemQuantity(index, "quantity", e.target.value)
-                            }
+                            onChange={(e) => handleNumberInput(e, (value) => 
+                              updateItemQuantity(index, "quantity", value)
+                            )}
+                            onInput={(e) => handleNumberInput(e, (value) => 
+                              updateItemQuantity(index, "quantity", value)
+                            )}
                             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
                             style={{ 
                               borderColor: '#e5e7eb',
@@ -443,9 +716,13 @@ export default function ReturnsPage() {
                               ${(item.quantity * (item.discountedPrice || item.unitPrice)).toFixed(2)}
                             </div>
                             <div className="text-xs" style={{ color: '#697487' }}>
-                              Precio original: ${item.unitPrice.toFixed(2)} c/u
-                              {item.discountedPrice && (
-                                <span> | Con descuento: ${item.discountedPrice.toFixed(2)} c/u</span>
+                              {item.discountedPrice ? (
+                                <span>
+                                  ${(item.discountedPrice).toFixed(2)} c/u 
+                                  <span style={{ color: '#ef4444' }}> (precio con descuento aplicado)</span>
+                                </span>
+                              ) : (
+                                <span>${item.unitPrice.toFixed(2)} c/u</span>
                               )}
                             </div>
                           </div>
@@ -474,7 +751,12 @@ export default function ReturnsPage() {
                       step="0.01"
                       min="0"
                       value={refundAmount}
-                      onChange={(e) => setRefundAmount(Number(e.target.value))}
+                      onChange={(e) => handleNumberInput(e, (value) => 
+                        setRefundAmount(value === '' ? 0 : Number(value))
+                      )}
+                      onInput={(e) => handleNumberInput(e, (value) => 
+                        setRefundAmount(value === '' ? 0 : Number(value))
+                      )}
                       className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
                       style={{ 
                         borderColor: '#e5e7eb',
@@ -531,7 +813,12 @@ export default function ReturnsPage() {
                                 min="0"
                                 max={payment.maxAmount}
                                 value={payment.selectedAmount}
-                                onChange={(e) => handleMixedPaymentChange(index, 'selectedAmount', Number(e.target.value))}
+                                onChange={(e) => handleNumberInput(e, (value) => 
+                                  handleMixedPaymentChange(index, 'selectedAmount', value)
+                                )}
+                                onInput={(e) => handleNumberInput(e, (value) => 
+                                  handleMixedPaymentChange(index, 'selectedAmount', value)
+                                )}
                                 className="w-20 p-1 text-sm border rounded"
                                 placeholder="0.00"
                               />
@@ -545,7 +832,7 @@ export default function ReturnsPage() {
                     </div>
                   ) : (
                     <div>
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                      <div className="p-3 rounded-lg mb-4" style={{ backgroundColor: '#f4f6fa' }}>
                         <p className="text-sm" style={{ color: '#697487' }}>
                           Método original de pago:
                         </p>
@@ -554,7 +841,72 @@ export default function ReturnsPage() {
                           sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
                         </p>
                       </div>
-                      <input type="hidden" value={sale.method} />
+
+                      {/* Opciones de devolución según método original */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium" style={{ color: '#46546b' }}>
+                          Selecciona método de devolución:
+                        </p>
+                        
+                        {sale.method === 'efectivo' ? (
+                          // Solo efectivo para ventas en efectivo
+                          <div className="p-3 border rounded-lg" style={{ borderColor: '#e5e7eb' }}>
+                            <div className="flex items-center space-x-3">
+                              <input
+                                type="radio"
+                                id="refund-efectivo"
+                                name="refundMethod"
+                                value="efectivo"
+                                checked={refundMethod === 'efectivo'}
+                                onChange={(e) => setRefundMethod(e.target.value)}
+                                className="h-4 w-4"
+                                style={{ accentColor: '#23334e' }}
+                              />
+                              <label htmlFor="refund-efectivo" className="text-sm font-medium">
+                                💵 Efectivo
+                              </label>
+                            </div>
+                          </div>
+                        ) : (
+                          // Opción original + efectivo para tarjeta/transferencia
+                          <div className="space-y-2">
+                            <div className="p-3 border rounded-lg" style={{ borderColor: '#e5e7eb' }}>
+                              <div className="flex items-center space-x-3">
+                                <input
+                                  type="radio"
+                                  id={`refund-${sale.method}`}
+                                  name="refundMethod"
+                                  value={sale.method}
+                                  checked={refundMethod === sale.method}
+                                  onChange={(e) => setRefundMethod(e.target.value)}
+                                  className="h-4 w-4"
+                                  style={{ accentColor: '#23334e' }}
+                                />
+                                <label htmlFor={`refund-${sale.method}`} className="text-sm font-medium">
+                                  {sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'} (método original)
+                                </label>
+                              </div>
+                            </div>
+                            <div className="p-3 border rounded-lg" style={{ borderColor: '#e5e7eb' }}>
+                              <div className="flex items-center space-x-3">
+                                <input
+                                  type="radio"
+                                  id="refund-efectivo-alt"
+                                  name="refundMethod"
+                                  value="efectivo"
+                                  checked={refundMethod === 'efectivo'}
+                                  onChange={(e) => setRefundMethod(e.target.value)}
+                                  className="h-4 w-4"
+                                  style={{ accentColor: '#23334e' }}
+                                />
+                                <label htmlFor="refund-efectivo-alt" className="text-sm font-medium">
+                                  💵 Efectivo
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -583,13 +935,20 @@ export default function ReturnsPage() {
                 </div>
               )}
 
+              {/* Mensaje de error del procesamiento */}
+              {processingMsg && (
+                <div className="mt-6 p-4 rounded-lg border-l-4 bg-red-50 border-red-400">
+                  <p className="text-red-800 font-medium">{processingMsg}</p>
+                </div>
+              )}
+
               {/* Botón de procesar devolución */}
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={handleSubmit}
                   className="px-8 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                   style={{ backgroundColor: '#23334e' }}
-                  disabled={cargando || refundAmount <= 0 || returnedItems.filter(item => item.quantity > 0).length === 0}
+                  disabled={cargando || returnedItems.filter(item => item.quantity > 0).length === 0}
                 >
                   {cargando ? (
                     <div className="flex items-center gap-2">

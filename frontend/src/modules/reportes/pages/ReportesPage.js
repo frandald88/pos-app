@@ -19,11 +19,15 @@ export default function ReportsPage() {
   const [showGraph, setShowGraph] = useState(false);
   const [tiendas, setTiendas] = useState([]);
   const [tiendaFiltro, setTiendaFiltro] = useState("");
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [tipoReporte, setTipoReporte] = useState("ventas");
   const [selectedSales, setSelectedSales] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showMixedDetails, setShowMixedDetails] = useState(false);
   const [mixedPaymentData, setMixedPaymentData] = useState(null);
+  const [copiedTooltip, setCopiedTooltip] = useState({ show: false, id: '', position: { x: 0, y: 0 } });
+  const [deleteTooltip, setDeleteTooltip] = useState({ show: false, message: '', position: { x: 0, y: 0 } });
 
   const generarRangoFechas = () => {
   const ahora = new Date();
@@ -65,12 +69,29 @@ export default function ReportsPage() {
   }, [periodo]);
 
   useEffect(() => {
+    // Cargar tiendas
     axios
       .get(`${apiBaseUrl}/api/tiendas`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => setTiendas(res.data))
       .catch(() => console.error("Error al cargar tiendas"));
+    
+    // ✅ NUEVO: Cargar categorías
+    axios
+      .get(`${apiBaseUrl}/api/products/categories-with-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        // Si el backend devuelve conteos, ordenar por uso
+        if (Array.isArray(res.data) && res.data[0]?._id) {
+          const sortedCategories = res.data.map(item => item._id);
+          setCategorias(sortedCategories);
+        } else {
+          setCategorias(res.data.sort());
+        }
+      })
+      .catch(() => console.error("Error al cargar categorías"));
   }, [token]);
 
   const handleGenerar = () => {
@@ -91,6 +112,7 @@ export default function ReportsPage() {
       inicio: fechaInicio,
       fin: fechaFin,
       tiendaId: tiendaFiltro,
+      categoria: categoriaFiltro, // ✅ NUEVO: Filtro de categoría
       desglosarMixtos: showMixedDetails 
     };
     
@@ -134,12 +156,29 @@ export default function ReportsPage() {
     });
 };
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = (text, event) => {
     navigator.clipboard.writeText(text).then(() => {
-      setMsg(`ID copiado: ${text.slice(-8)}`);
-      setTimeout(() => setMsg(""), 3000);
+      // Obtener posición del click
+      const rect = event.target.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      
+      setCopiedTooltip({
+        show: true,
+        id: text.slice(-8),
+        position: {
+          x: rect.left + scrollLeft + rect.width / 2,
+          y: rect.top + scrollTop - 10
+        }
+      });
+      
+      // Ocultar tooltip después de 2 segundos
+      setTimeout(() => {
+        setCopiedTooltip({ show: false, id: '', position: { x: 0, y: 0 } });
+      }, 2000);
     }).catch(() => {
       setMsg("Error al copiar ID");
+      setTimeout(() => setMsg(""), 3000);
     });
   };
 
@@ -158,13 +197,111 @@ export default function ReportsPage() {
     ? ventas
     : [];
 
+  // ✅ CORREGIDO: Calcular totales agrupando por venta completa, no por producto
   const totalGeneral = tipoReporte === "ventas"
-    ? safeArray(ventasFiltradas).reduce((sum, v) => sum + (v.totalProducto || 0), 0)
+    ? (() => {
+        // Debug: Ver estructura completa
+        console.log('DEBUG - Total de registros:', safeArray(ventasFiltradas).length);
+        console.log('DEBUG - Primer registro completo:', safeArray(ventasFiltradas)[0]);
+        
+        // Simplificar: usar directamente totalVenta de cada registro
+        let totalCalculado = 0;
+        const ventasProcesadas = new Set();
+        
+        safeArray(ventasFiltradas).forEach(v => {
+          console.log('DEBUG - Procesando registro:', {
+            ventaId: v.ventaId || v._id,
+            status: v.status,
+            totalVenta: v.totalVenta,
+            totalReturned: v.totalReturned,
+            totalProducto: v.totalProducto
+          });
+          
+          // ✅ CORRECCIÓN: Incluir tanto ventas entregadas como parcialmente devueltas
+          if (v.status === 'entregado_y_cobrado' || v.status === 'parcialmente_devuelta') {
+            const ventaId = v.ventaId || v._id;
+            
+            // Solo procesar cada venta una vez
+            if (!ventasProcesadas.has(ventaId)) {
+              ventasProcesadas.add(ventaId);
+              
+              const totalVentaCompleta = v.totalVenta || 0;
+              const totalReturnedVenta = v.totalReturned || 0;
+              const totalNeto = Math.max(0, totalVentaCompleta - totalReturnedVenta);
+              
+              console.log('DEBUG - Agregando venta:', {
+                ventaId,
+                totalVentaCompleta,
+                totalReturnedVenta,
+                totalNeto
+              });
+              
+              totalCalculado += totalNeto;
+            }
+          }
+        });
+        
+        console.log('DEBUG - Total final calculado:', totalCalculado);
+        return totalCalculado;
+      })()
     : safeArray(devolucionesFiltradas).reduce((sum, v) => sum + (v.refundAmount || 0), 0);
 
   const ivaTotal = tipoReporte === "ventas"
-    ? safeArray(ventasFiltradas).reduce((sum, v) => sum + (v.ivaProducto || 0), 0)
+    ? (() => {
+        // Agrupar por venta ID para calcular IVA correctamente
+        const ventasUnicas = {};
+        safeArray(ventasFiltradas).forEach(v => {
+          const ventaId = v.ventaId || v._id;
+          // ✅ CORRECCIÓN: Incluir tanto ventas entregadas como parcialmente devueltas
+          if (!ventasUnicas[ventaId] && (v.status === 'entregado_y_cobrado' || v.status === 'parcialmente_devuelta')) {
+            // Agrupar el IVA total por venta
+            const ivaVentaTotal = safeArray(ventasFiltradas)
+              .filter(item => (item.ventaId || item._id) === ventaId)
+              .reduce((sum, item) => sum + (item.ivaProducto || 0), 0);
+              
+            ventasUnicas[ventaId] = {
+              totalVenta: v.totalVenta || 0,
+              totalReturned: v.totalReturned || 0,
+              ivaTotal: ivaVentaTotal
+            };
+          }
+        });
+        
+        // Calcular IVA neto descontando proporcional a devoluciones
+        return Object.values(ventasUnicas).reduce((sum, venta) => {
+          const totalVentaCompleta = venta.totalVenta;
+          const totalReturnedVenta = venta.totalReturned || 0;
+          const ivaVentaTotal = venta.ivaTotal;
+          
+          if (totalReturnedVenta > 0 && totalVentaCompleta > 0) {
+            // Calcular IVA proporcional a lo no devuelto
+            const porcentajeNoDevuelto = (totalVentaCompleta - totalReturnedVenta) / totalVentaCompleta;
+            return sum + (ivaVentaTotal * porcentajeNoDevuelto);
+          }
+          
+          return sum + ivaVentaTotal;
+        }, 0);
+      })()
     : 0;
+
+  const totalRegistros = tipoReporte === "ventas"
+    ? (() => {
+        // Contar ventas únicas, no líneas de productos
+        const ventasUnicas = new Set();
+        safeArray(ventasFiltradas).forEach(v => {
+          // ✅ CORRECCIÓN: Incluir tanto ventas entregadas como parcialmente devueltas
+          if (v.status === 'entregado_y_cobrado' || v.status === 'parcialmente_devuelta') {
+            const totalReturnedVenta = v.totalReturned || 0;
+            const totalVentaCompleta = v.totalVenta || 0;
+            // Solo contar si no fue completamente devuelta
+            if (!(totalReturnedVenta > 0 && totalReturnedVenta >= totalVentaCompleta)) {
+              ventasUnicas.add(v.ventaId || v._id);
+            }
+          }
+        });
+        return ventasUnicas.size;
+      })()
+    : devolucionesFiltradas.length;
 
   const generarDatosGrafica = () => {
     const agrupados = {};
@@ -226,7 +363,7 @@ export default function ReportsPage() {
     );
   };
 
-  const handleDeleteSelectedSales = () => {
+  const handleDeleteSelectedSales = (event) => {
     if (selectedSales.length === 0) {
       setMsg("Selecciona al menos una venta para eliminar");
       return;
@@ -239,13 +376,32 @@ export default function ReportsPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
-        setMsg(res.data.message);
+        // Obtener posición del botón
+        const rect = event.target.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        
+        setDeleteTooltip({
+          show: true,
+          message: `${selectedSales.length} venta(s) eliminada(s)`,
+          position: {
+            x: rect.left + scrollLeft + rect.width / 2,
+            y: rect.top + scrollTop - 10
+          }
+        });
+        
         setSelectedSales([]);
         handleGenerar();
+        
+        // Ocultar tooltip después de 3 segundos
+        setTimeout(() => {
+          setDeleteTooltip({ show: false, message: '', position: { x: 0, y: 0 } });
+        }, 3000);
       })
       .catch((err) => {
         console.error(err);
         setMsg("Error al eliminar ventas seleccionadas");
+        setTimeout(() => setMsg(""), 3000);
       });
   };
 
@@ -407,13 +563,33 @@ export default function ReportsPage() {
                   </select>
                 </div>
 
+                {/* ✅ NUEVO: Filtro de Categoría */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Categoría de Producto
+                  </label>
+                  <select 
+                    value={categoriaFiltro} 
+                    onChange={(e) => setCategoriaFiltro(e.target.value)} 
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                    style={{ focusRingColor: '#23334e' }}
+                  >
+                    <option value="">Todas las categorías</option>
+                    {categorias.map((cat) => (
+                      <option key={cat} value={cat}>
+                        📂 {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* ✅ NUEVO: Opción para desglosar pagos mixtos */}
                 {tipoReporte === "ventas" && (
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                       Opciones Avanzadas
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="space-y-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -422,10 +598,11 @@ export default function ReportsPage() {
                           className="rounded"
                           style={{ accentColor: '#23334e' }}
                         />
-                        <span className="text-sm" style={{ color: '#46546b' }}>
-                          Desglosar pagos mixtos
+                        <span className="text-sm font-medium" style={{ color: '#46546b' }}>
+                          Mostrar detalles de pagos mixtos
                         </span>
                       </label>
+                      
                     </div>
                   </div>
                 )}
@@ -633,6 +810,7 @@ export default function ReportsPage() {
                             <th className="text-left p-3 font-medium" style={{ color: '#23334e', minWidth: '100px' }}>Repartidor</th>
                             <th className="text-left p-3 font-medium" style={{ color: '#23334e', minWidth: '100px' }}>Tienda</th>
                             <th className="text-left p-3 font-medium" style={{ color: '#23334e', minWidth: '120px' }}>Cliente</th>
+                            <th className="text-center p-3 font-medium" style={{ color: '#23334e', minWidth: '120px' }}>Estado</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -655,7 +833,7 @@ export default function ReportsPage() {
                                 <td className="p-3">
                                   <div 
                                     className="cursor-pointer hover:bg-gray-200 p-2 rounded transition-colors duration-200"
-                                    onClick={() => copyToClipboard(venta.ventaId || venta._id)}
+                                    onClick={(e) => copyToClipboard(venta.ventaId || venta._id, e)}
                                     title="Clic para copiar ID completo"
                                   >
                                     <div className="font-mono text-xs font-medium" style={{ color: '#23334e' }}>
@@ -685,7 +863,7 @@ export default function ReportsPage() {
                                 {/* Usuario */}
                                 <td className="p-3">
                                   <span className="text-xs font-medium" style={{ color: '#697487' }}>
-                                    {venta.user || '-'}
+                                    {venta.user?.username || venta.user || '-'}
                                   </span>
                                 </td>
                                 
@@ -807,22 +985,138 @@ export default function ReportsPage() {
                                 {/* Repartidor */}
                                 <td className="p-3">
                                   <span className="text-xs" style={{ color: '#697487' }}>
-                                    {venta.repartidor || "-"}
+                                    {venta.repartidor?.nombre || venta.repartidor || "-"}
                                   </span>
                                 </td>
                                 
                                 {/* Tienda */}
                                 <td className="p-3">
                                   <span className="text-xs font-medium" style={{ color: '#697487' }}>
-                                    {venta.tienda || "-"}
+                                    {venta.tienda?.nombre || venta.tienda || "-"}
                                   </span>
                                 </td>
                                 
                                 {/* Cliente */}
                                 <td className="p-3">
                                   <span className="text-xs" style={{ color: '#697487' }}>
-                                    {venta.cliente || "-"}
+                                    {venta.cliente?.nombre || venta.cliente || "-"}
                                   </span>
+                                </td>
+
+                                {/* Estado de Venta y Devolución */}
+                                <td className="p-3 text-center">
+                                  <div className="flex flex-col gap-1">
+                                    {/* Estado de la venta */}
+                                    {(() => {
+                                      if (venta.status === 'entregado_y_cobrado') {
+                                        return (
+                                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            📦 Entregado
+                                          </span>
+                                        );
+                                      } else if (venta.status === 'parcialmente_devuelta') {
+                                        // ✅ NUEVO: Determinar estado por producto individual en devoluciones parciales
+                                        const productoDevuelto = (() => {
+                                          const totalReturned = venta.totalReturned || 0;
+                                          const precioProducto = venta.totalProducto || 0;
+                                          const totalVenta = venta.totalVenta || 0;
+                                          
+                                          console.log('Debug producto:', {
+                                            producto: venta.producto,
+                                            totalReturned,
+                                            precioProducto,
+                                            totalVenta,
+                                            ventaId: venta.ventaId
+                                          });
+                                          
+                                          // Para devolución parcial simple: si hay exactamente 2 productos con mismo precio
+                                          // El primero en aparecer se considera devuelto, el segundo entregado
+                                          if (Math.abs(totalReturned * 2 - totalVenta) < 1) {
+                                            // Son dos productos de igual precio, uno devuelto
+                                            // Usar el índice de la fila para determinar cuál es cuál
+                                            const filaIndex = ventasFiltradas.findIndex(v => 
+                                              v.ventaId === venta.ventaId && v.producto === venta.producto
+                                            );
+                                            const productosDeEstaVenta = ventasFiltradas.filter(v => v.ventaId === venta.ventaId);
+                                            const posicionEnVenta = productosDeEstaVenta.findIndex(v => v.producto === venta.producto);
+                                            
+                                            // El primer producto de la venta se considera devuelto
+                                            return posicionEnVenta === 0;
+                                          }
+                                          
+                                          // Lógica original para otros casos
+                                          const diferencia = Math.abs(totalReturned - precioProducto);
+                                          if (diferencia <= 0.5) {
+                                            return true; // Este producto fue devuelto
+                                          }
+                                          
+                                          const montoRestante = totalVenta - totalReturned;
+                                          const diferenciaRestante = Math.abs(montoRestante - precioProducto);
+                                          if (diferenciaRestante <= 0.5) {
+                                            return false; // Este producto NO fue devuelto
+                                          }
+                                          
+                                          return "indeterminado";
+                                        })();
+                                        
+                                        if (productoDevuelto === true) {
+                                          return (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                              ↩️ Producto Devuelto
+                                            </span>
+                                          );
+                                        } else if (productoDevuelto === false) {
+                                          return (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                              📦 Entregado
+                                            </span>
+                                          );
+                                        } else {
+                                          // Caso indeterminado - mostrar estado de venta parcial
+                                          return (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                              ↩️ Venta Parcial
+                                            </span>
+                                          );
+                                        }
+                                      } else if (venta.status === 'cancelada') {
+                                        return (
+                                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            ❌ Cancelado
+                                          </span>
+                                        );
+                                      } else {
+                                        return (
+                                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            ⏳ {venta.status || 'En proceso'}
+                                          </span>
+                                        );
+                                      }
+                                    })()}
+                                    
+                                    {/* Estado de devolución (solo si hay devolución) */}
+                                    {(() => {
+                                      const totalReturned = venta.totalReturned || 0;
+                                      const totalVenta = venta.totalVenta || venta.totalProducto || 0;
+                                      
+                                      if (totalReturned > 0) {
+                                        if (totalReturned >= totalVenta) {
+                                          return (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                              🔄 Devolución Completa
+                                            </span>
+                                          );
+                                        } else {
+                                          return (
+                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                              ↩️ Devolución Parcial
+                                            </span>
+                                          );
+                                        }
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
                                 </td>
                                 
                               </tr>
@@ -836,7 +1130,7 @@ export default function ReportsPage() {
                       <div className="flex flex-wrap gap-3 items-center">
                         {safeArray(selectedSales).length > 0 && (
                           <button
-                            onClick={handleDeleteSelectedSales}
+                            onClick={(e) => handleDeleteSelectedSales(e)}
                             className="px-4 py-2 bg-red-600 text-white rounded-md font-medium transition-colors duration-200 hover:bg-red-700"
                           >
                             Eliminar Seleccionadas ({selectedSales.length})
@@ -887,9 +1181,15 @@ export default function ReportsPage() {
         {/* Resumen/Totales */}
         {!loading && (safeArray(ventasFiltradas).length > 0 || safeArray(devolucionesFiltradas).length > 0) && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
+            <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               Resumen Ejecutivo
             </h3>
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                ℹ️ Se incluyen en el resumen las ventas con estado <strong>"Entregado"</strong> y <strong>"Parcialmente devuelta"</strong>. 
+                Para devoluciones parciales se contabiliza solo el monto neto (total - devuelto). Las ventas canceladas se muestran en la tabla pero no se contabilizan.
+              </p>
+            </div>
             
             {tipoReporte === "ventas" && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -913,7 +1213,7 @@ export default function ReportsPage() {
                 
                 <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                   <div className="text-2xl font-bold mb-2" style={{ color: '#23334e' }}>
-                    {ventasFiltradas.length}
+                    {totalRegistros}
                   </div>
                   <div className="text-sm font-medium" style={{ color: '#46546b' }}>
                     Total Registros
@@ -922,7 +1222,7 @@ export default function ReportsPage() {
                 
                 <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                   <div className="text-2xl font-bold mb-2" style={{ color: '#697487' }}>
-                    ${ventasFiltradas.length > 0 ? (totalGeneral / ventasFiltradas.length).toFixed(2) : '0.00'}
+                    ${totalRegistros > 0 ? (totalGeneral / totalRegistros).toFixed(2) : '0.00'}
                   </div>
                   <div className="text-sm font-medium" style={{ color: '#46546b' }}>
                     Promedio por Venta
@@ -955,6 +1255,52 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
+
+      {/* Tooltip para ID copiado */}
+      {copiedTooltip.show && (
+        <div 
+          className="fixed z-50 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: `${copiedTooltip.position.x}px`,
+            top: `${copiedTooltip.position.y}px`,
+            opacity: 1,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
+        >
+          ✅ ID copiado: {copiedTooltip.id}
+          <div 
+            className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0"
+            style={{
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid #16a34a'
+            }}
+          ></div>
+        </div>
+      )}
+
+      {/* Tooltip para venta eliminada */}
+      {deleteTooltip.show && (
+        <div 
+          className="fixed z-50 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full"
+          style={{
+            left: `${deleteTooltip.position.x}px`,
+            top: `${deleteTooltip.position.y}px`,
+            opacity: 1,
+            transition: 'opacity 0.2s ease-in-out'
+          }}
+        >
+          🗑️ {deleteTooltip.message} exitosamente
+          <div 
+            className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0"
+            style={{
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid #dc2626'
+            }}
+          ></div>
+        </div>
+      )}
     </div>
   );
 }

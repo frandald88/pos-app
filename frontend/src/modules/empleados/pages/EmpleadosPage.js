@@ -20,6 +20,12 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarReporte, setMostrarReporte] = useState(false);
+  const [reportMsg, setReportMsg] = useState("");
+  // ✅ NUEVO: Estados para múltiples check-ins/check-outs
+  const [attendanceStatus, setAttendanceStatus] = useState(null);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [entryType, setEntryType] = useState("work");
+  const [exitType, setExitType] = useState("break");
 
   useEffect(() => {
   // Cargar usuario actual
@@ -33,6 +39,9 @@ export default function EmployeesPage() {
       
       // ✅ MOVER LA LÓGICA AQUÍ - Después de cargar currentUser
       if (res.data.role === "admin") {
+        // Admin no debe tener usuario pre-seleccionado
+        setSelectedUser("");
+        
         // Solo admin puede ver todos los empleados
         axios
           .get(`${apiBaseUrl}/api/users`, {
@@ -61,9 +70,35 @@ export default function EmployeesPage() {
     .catch(() => console.error("Error al cargar tiendas"));
 }, [token]);
 
+  // ✅ NUEVO: Función para cargar estado actual de asistencia
+  const loadAttendanceStatus = () => {
+    if (!selectedUser || selectedUser.trim() === "") return;
+    
+    axios
+      .get(`${apiBaseUrl}/api/attendance/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        console.log('Estado de asistencia:', res.data);
+        setAttendanceStatus(res.data);
+        setTimeEntries(res.data.timeEntries || []);
+      })
+      .catch((error) => {
+        console.error('Error cargando estado de asistencia:', error);
+      });
+  };
+
+  // ✅ NUEVO: Cargar estado cuando cambie el usuario seleccionado
+  useEffect(() => {
+    if (selectedUser && selectedUser.trim() !== "") {
+      loadAttendanceStatus();
+    }
+  }, [selectedUser]);
+
   const handleCheckIn = () => {
-    if (!selectedUser) {
+    if (!selectedUser || selectedUser.trim() === "") {
       setMsg("Selecciona un empleado primero ❌");
+      setTimeout(() => setMsg(""), 3000);
       return;
     }
 
@@ -71,21 +106,35 @@ export default function EmployeesPage() {
     axios
       .post(
         `${apiBaseUrl}/api/attendance/checkin`,
-        { userId: selectedUser, tiendaId: currentUser?.tienda },
+        { 
+          userId: selectedUser, 
+          tiendaId: currentUser?.tienda,
+          entryType: entryType,
+          notes: ""
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((response) => {
         console.log('Check-in response:', response.data);
         setMsg("Check-in exitoso ✅");
+        loadAttendanceStatus(); // Recargar estado
         setTimeout(() => setMsg(""), 3000);
       })
       .catch((error) => {
         console.error('Check-in error:', error);
-        const backendMsg =
-          error.response?.data?.msg || 
-          error.response?.data?.message || 
-          error.response?.data?.error || 
-          "Error al hacer check-in ❌";
+        let backendMsg = "Error al hacer check-in ❌";
+        
+        if (error.response?.data?.error === "NO_SCHEDULE_ASSIGNED") {
+          backendMsg = error.response.data.message + " 📅";
+        } else if (error.response?.data?.error === "ROUTE_NOT_FOUND") {
+          backendMsg = error.response.data.message;
+        } else {
+          backendMsg = error.response?.data?.msg || 
+                      error.response?.data?.message || 
+                      error.response?.data?.error || 
+                      backendMsg;
+        }
+        
         setMsg(backendMsg);
       })
       .finally(() => {
@@ -94,8 +143,9 @@ export default function EmployeesPage() {
   };
 
   const handleCheckOut = () => {
-    if (!selectedUser) {
+    if (!selectedUser || selectedUser.trim() === "") {
       setMsg("Selecciona un empleado primero ❌");
+      setTimeout(() => setMsg(""), 3000);
       return;
     }
 
@@ -103,21 +153,34 @@ export default function EmployeesPage() {
     axios
       .post(
         `${apiBaseUrl}/api/attendance/checkout`,
-        { userId: selectedUser },
+        { 
+          userId: selectedUser,
+          exitType: exitType,
+          notes: ""
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then((response) => {
         console.log('Check-out response:', response.data);
         setMsg("Check-out exitoso ✅");
+        loadAttendanceStatus(); // Recargar estado
         setTimeout(() => setMsg(""), 3000);
       })
       .catch((error) => {
         console.error('Check-out error:', error);
-        const backendMsg =
-          error.response?.data?.msg || 
-          error.response?.data?.message || 
-          error.response?.data?.error || 
-          "Error al hacer check-out ❌";
+        let backendMsg = "Error al hacer check-out ❌";
+        
+        if (error.response?.data?.error === "NO_SCHEDULE_ASSIGNED") {
+          backendMsg = error.response.data.message + " 📅";
+        } else if (error.response?.data?.error === "ROUTE_NOT_FOUND") {
+          backendMsg = error.response.data.message;
+        } else {
+          backendMsg = error.response?.data?.msg || 
+                      error.response?.data?.message || 
+                      error.response?.data?.error || 
+                      backendMsg;
+        }
+        
         setMsg(backendMsg);
       })
       .finally(() => {
@@ -126,8 +189,15 @@ export default function EmployeesPage() {
   };
 
   const handleAbsence = () => {
-    if (!selectedUser || !absenceReason.trim()) {
-      setMsg("Selecciona un empleado y proporciona una razón de ausencia ❌");
+    if (!selectedUser || selectedUser.trim() === "") {
+      setMsg("Selecciona un empleado primero ❌");
+      setTimeout(() => setMsg(""), 3000);
+      return;
+    }
+    
+    if (!absenceReason.trim()) {
+      setMsg("Proporciona una razón de ausencia ❌");
+      setTimeout(() => setMsg(""), 3000);
       return;
     }
 
@@ -146,7 +216,20 @@ export default function EmployeesPage() {
       })
       .catch((error) => {
         console.error('Absence error:', error);
-        setMsg("Error al registrar falta ❌");
+        let backendMsg = "Error al registrar falta ❌";
+        
+        if (error.response?.data?.error === "NO_SCHEDULE_ASSIGNED") {
+          backendMsg = error.response.data.message + " 📅";
+        } else if (error.response?.data?.error === "ROUTE_NOT_FOUND") {
+          backendMsg = error.response.data.message;
+        } else {
+          backendMsg = error.response?.data?.msg || 
+                      error.response?.data?.message || 
+                      error.response?.data?.error || 
+                      backendMsg;
+        }
+        
+        setMsg(backendMsg);
       })
       .finally(() => {
         setLoading(false);
@@ -155,12 +238,20 @@ export default function EmployeesPage() {
 
   const loadAttendanceReport = () => {
     if (!reportStartDate || !reportEndDate) {
-      setMsg("Debes seleccionar una fecha de inicio y fin para el reporte ❌");
+      setReportMsg("Debes seleccionar una fecha de inicio y fin para el reporte ❌");
+      setTimeout(() => setReportMsg(""), 3000);
+      return;
+    }
+
+    // Validar que la fecha de fin no sea anterior a la fecha de inicio
+    if (reportStartDate > reportEndDate) {
+      setReportMsg("La fecha 'hasta' no puede ser anterior a la fecha 'desde' ❌");
+      setTimeout(() => setReportMsg(""), 3000);
       return;
     }
 
     setLoading(true);
-    setMsg("");
+    setReportMsg("");
 
     console.log('Loading report with params:', {
       userId: reportUser,
@@ -185,23 +276,23 @@ export default function EmployeesPage() {
         if (res.data && res.data.records) {
           setReportData(res.data.records);
           setReportStats(res.data.estadisticas);
-          setMsg(`Reporte generado exitosamente ✅ - ${res.data.records.length} registros encontrados`);
+          setReportMsg(`Reporte generado exitosamente ✅ - ${res.data.records.length} registros encontrados`);
         } else if (Array.isArray(res.data)) {
           setReportData(res.data);
           setReportStats(null);
-          setMsg(`Reporte generado exitosamente ✅ - ${res.data.length} registros encontrados`);
+          setReportMsg(`Reporte generado exitosamente ✅ - ${res.data.length} registros encontrados`);
         } else {
           setReportData([]);
           setReportStats(null);
-          setMsg("No se encontraron registros para las fechas seleccionadas");
+          setReportMsg("No se encontraron registros para las fechas seleccionadas 📋");
         }
-        setTimeout(() => setMsg(""), 3000);
+        setTimeout(() => setReportMsg(""), 5000);
       })
       .catch((error) => {
         console.error('Report error:', error);
         setReportData([]);
         setReportStats(null);
-        setMsg("Error al cargar el reporte ❌");
+        setReportMsg("Error al cargar el reporte ❌");
       })
       .finally(() => {
         setLoading(false);
@@ -294,6 +385,80 @@ export default function EmployeesPage() {
           </div>
         )}
 
+        {/* ✅ NUEVO: Estado actual de asistencia */}
+        {attendanceStatus && selectedUser && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
+              📊 Estado Actual de Asistencia
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>Estado</div>
+                <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                  {attendanceStatus.currentStatus?.message || 'No iniciado'}
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>Horas Trabajadas</div>
+                <div className="text-lg font-bold text-green-600">
+                  {attendanceStatus.hoursWorked || 0}h
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>Tiempo en Descansos</div>
+                <div className="text-lg font-bold text-blue-600">
+                  {Math.round((attendanceStatus.totalBreakTime || 0) / 60 * 100) / 100}h
+                </div>
+              </div>
+              
+              <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                <div className="text-sm font-medium" style={{ color: '#697487' }}>Entradas del Día</div>
+                <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                  {timeEntries.length}
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de entradas del día */}
+            {timeEntries.length > 0 && (
+              <div>
+                <h4 className="text-md font-semibold mb-3" style={{ color: '#46546b' }}>
+                  📝 Registro del Día
+                </h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {timeEntries.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+                        <div>
+                          <div className="text-sm font-medium">
+                            {entry.type === 'work' ? '💼 Trabajo' : 
+                             entry.type === 'break' ? '☕ Descanso' : 
+                             entry.type === 'lunch' ? '🍽️ Almuerzo' : 'Entrada'}
+                          </div>
+                          <div className="text-xs text-gray-600">{entry.notes}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">
+                          {new Date(entry.checkInTime).toLocaleTimeString('es-MX')}
+                          {entry.checkOutTime && ` - ${new Date(entry.checkOutTime).toLocaleTimeString('es-MX')}`}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {entry.duration ? `${Math.round(entry.duration / 60 * 100) / 100}h` : 'En curso'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Control de asistencia principal */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
@@ -319,7 +484,7 @@ export default function EmployeesPage() {
                 <option value="">-- Selecciona un empleado --</option>
                 {visibleUsers.map((u) => (
                   <option key={u._id} value={u._id}>
-                    👤 {u.username} ({u.role === 'vendedor' ? '🛒 Vendedor' : '🚚 Repartidor'})
+                    {u.username} • {u.role === 'vendedor' ? 'Vendedor' : 'Repartidor'}
                   </option>
                 ))}
               </select>
@@ -331,35 +496,87 @@ export default function EmployeesPage() {
               )}
             </div>
 
-            {/* Botones de acción */}
+            {/* ✅ NUEVO: Selectores de tipo */}
             <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Tipo de Entrada
+                  </label>
+                  <select
+                    value={entryType}
+                    onChange={(e) => setEntryType(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                  >
+                    <option value="work">💼 Trabajo</option>
+                    <option value="break">☕ Regreso de descanso</option>
+                    <option value="lunch">🍽️ Regreso de almuerzo</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Tipo de Salida
+                  </label>
+                  <select
+                    value={exitType}
+                    onChange={(e) => setExitType(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                  >
+                    <option value="break">☕ Salir por descanso</option>
+                    <option value="lunch">🍽️ Salir a almorzar</option>
+                    <option value="end_day">🏠 Terminar jornada</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={handleCheckIn}
                   className="flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
-                  style={{ backgroundColor: '#10b981' }}
-                  disabled={loading || !selectedUser}
+                  style={{ 
+                    backgroundColor: loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckIn) ? '#9ca3af' : '#10b981',
+                    cursor: loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckIn) ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckIn)}
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   ) : (
                     "🟢"
                   )}
-                  Check-in
+                  {attendanceStatus?.canCheckIn ? 
+                    (attendanceStatus.currentStatus?.status === 'not_started' ? 'Iniciar Jornada' : 'Regresar') : 
+                    'Check-in'
+                  }
                 </button>
 
                 <button
                   onClick={handleCheckOut}
                   className="flex items-center justify-center gap-2 px-6 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
-                  style={{ backgroundColor: '#3b82f6' }}
-                  disabled={loading || !selectedUser}
+                  style={{ 
+                    backgroundColor: loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckOut) ? '#9ca3af' : '#3b82f6',
+                    cursor: loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckOut) ? 'not-allowed' : 'pointer'
+                  }}
+                  disabled={loading || !selectedUser || selectedUser.trim() === "" || (attendanceStatus && !attendanceStatus.canCheckOut)}
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   ) : (
                     "🔴"
                   )}
-                  Check-out
+                  {exitType === 'end_day' ? 'Terminar Jornada' : 
+                   exitType === 'lunch' ? 'Salir a Almorzar' : 
+                   'Salir por Descanso'
+                  }
                 </button>
               </div>
               
@@ -399,8 +616,11 @@ export default function EmployeesPage() {
               <button
                 onClick={handleAbsence}
                 className="w-full px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg"
-                style={{ backgroundColor: '#ef4444' }}
-                disabled={loading || !selectedUser || !absenceReason.trim()}
+                style={{ 
+                  backgroundColor: loading || !selectedUser || selectedUser.trim() === "" || !absenceReason.trim() ? '#9ca3af' : '#ef4444',
+                  cursor: loading || !selectedUser || selectedUser.trim() === "" || !absenceReason.trim() ? 'not-allowed' : 'pointer'
+                }}
+                disabled={loading || !selectedUser || selectedUser.trim() === "" || !absenceReason.trim()}
               >
                 {loading ? "Registrando Falta..." : "Registrar Ausencia"}
               </button>
@@ -434,7 +654,7 @@ export default function EmployeesPage() {
                     <option value="">Todos los empleados</option>
                     {users.map((u) => (
                       <option key={u._id} value={u._id}>
-                        👤 {u.username} ({u.role})
+                        {u.username} • {u.role}
                       </option>
                     ))}
                   </select>
@@ -456,7 +676,7 @@ export default function EmployeesPage() {
                     <option value="">Todas las tiendas</option>
                     {tiendas.map((t) => (
                       <option key={t._id} value={t._id}>
-                        🏪 {t.nombre}
+                        {t.nombre}
                       </option>
                     ))}
                   </select>
@@ -467,26 +687,45 @@ export default function EmployeesPage() {
                     Período
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      value={reportStartDate}
-                      onChange={(e) => setReportStartDate(e.target.value)}
-                      className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                      style={{ 
-                        borderColor: '#e5e7eb',
-                        focusRingColor: '#23334e'
-                      }}
-                    />
-                    <input
-                      type="date"
-                      value={reportEndDate}
-                      onChange={(e) => setReportEndDate(e.target.value)}
-                      className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                      style={{ 
-                        borderColor: '#e5e7eb',
-                        focusRingColor: '#23334e'
-                      }}
-                    />
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: '#697487' }}>
+                        Desde
+                      </label>
+                      <input
+                        type="date"
+                        value={reportStartDate}
+                        onChange={(e) => {
+                          const newStartDate = e.target.value;
+                          setReportStartDate(newStartDate);
+                          
+                          // Si la fecha de fin es anterior a la nueva fecha de inicio, ajustarla
+                          if (reportEndDate && newStartDate > reportEndDate) {
+                            setReportEndDate(newStartDate);
+                          }
+                        }}
+                        className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors w-full"
+                        style={{ 
+                          borderColor: '#e5e7eb',
+                          focusRingColor: '#23334e'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: '#697487' }}>
+                        Hasta
+                      </label>
+                      <input
+                        type="date"
+                        value={reportEndDate}
+                        onChange={(e) => setReportEndDate(e.target.value)}
+                        min={reportStartDate}
+                        className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors w-full"
+                        style={{ 
+                          borderColor: '#e5e7eb',
+                          focusRingColor: '#23334e'
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -500,6 +739,19 @@ export default function EmployeesPage() {
                 >
                   {loading ? "Generando Reporte..." : "📈 Generar Reporte"}
                 </button>
+                
+                {/* Mensaje específico del reporte */}
+                {reportMsg && (
+                  <div className={`mt-4 p-4 rounded-lg border-l-4 ${
+                    reportMsg.includes('✅') 
+                      ? 'bg-green-50 border-green-400 text-green-800' 
+                      : reportMsg.includes('📋')
+                      ? 'bg-blue-50 border-blue-400 text-blue-800'
+                      : 'bg-red-50 border-red-400 text-red-800'
+                  }`}>
+                    <p className="font-medium">{reportMsg}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -642,44 +894,69 @@ export default function EmployeesPage() {
                             style={{ borderColor: '#e5e7eb' }}
                           >
                             <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ backgroundColor: '#23334e', color: 'white' }}>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium" style={{ backgroundColor: '#23334e', color: 'white' }}>
                                   👤
                                 </div>
-                                <div>
-                                  <div className="font-medium" style={{ color: '#23334e' }}>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold text-sm" style={{ color: '#23334e' }}>
                                     {record.userId?.username || "Usuario eliminado"}
                                   </div>
-                                  <div className="text-xs" style={{ color: '#697487' }}>
-                                    {record.userId?.role === 'vendedor' ? '🛒 Vendedor' : 
-                                     record.userId?.role === 'repartidor' ? '🚚 Repartidor' : 
-                                     '❓ Rol desconocido'}
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-sm">
+                                      {record.userId?.role === 'vendedor' ? '🛒' : 
+                                       record.userId?.role === 'repartidor' ? '🚚' : 
+                                       '❓'}
+                                    </span>
+                                    <span className="text-xs font-medium" style={{ color: '#697487' }}>
+                                      {record.userId?.role === 'vendedor' ? 'Vendedor' : 
+                                       record.userId?.role === 'repartidor' ? 'Repartidor' : 
+                                       'Rol desconocido'}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4" style={{ color: '#46546b' }}>
-                              🏪 {record.tienda?.nombre || "Sin asignar"}
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">🏪</span>
+                                <span className="text-sm font-medium" style={{ color: '#46546b' }}>
+                                  {record.tienda?.nombre || "Sin asignar"}
+                                </span>
+                              </div>
                             </td>
-                            <td className="px-6 py-4" style={{ color: '#46546b' }}>
-                              {formatDate(record.date)}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className={`px-3 py-1 text-xs rounded-full font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}>
-                                {statusConfig.icon} {statusConfig.label}
+                            <td className="px-6 py-4">
+                              <span className="text-sm font-medium" style={{ color: '#46546b' }}>
+                                {formatDate(record.date)}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-center font-mono" style={{ color: '#46546b' }}>
-                              {formatTime(record.checkInTime)}
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex justify-center">
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full font-medium ${statusConfig.bgColor} ${statusConfig.textColor}`}>
+                                  <span className="text-sm">{statusConfig.icon}</span>
+                                  <span>{statusConfig.label}</span>
+                                </span>
+                              </div>
                             </td>
-                            <td className="px-6 py-4 text-center font-mono" style={{ color: '#46546b' }}>
-                              {formatTime(record.checkOutTime)}
+                            <td className="px-6 py-4 text-center">
+                              <span className="font-mono text-sm font-medium" style={{ color: '#46546b' }}>
+                                {formatTime(record.checkInTime)}
+                              </span>
                             </td>
-                            <td className="px-6 py-4 text-center font-bold" style={{ color: '#23334e' }}>
-                              {record.hoursWorked ? `${record.hoursWorked}h` : "-"}
+                            <td className="px-6 py-4 text-center">
+                              <span className="font-mono text-sm font-medium" style={{ color: '#46546b' }}>
+                                {formatTime(record.checkOutTime)}
+                              </span>
                             </td>
-                            <td className="px-6 py-4" style={{ color: '#697487' }}>
-                              {record.absenceReason || record.notes || "-"}
+                            <td className="px-6 py-4 text-center">
+                              <span className="text-sm font-bold" style={{ color: '#23334e' }}>
+                                {record.hoursWorked ? `${record.hoursWorked}h` : "-"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm" style={{ color: '#697487' }}>
+                                {record.absenceReason || record.notes || "-"}
+                              </span>
                             </td>
                           </tr>
                         );

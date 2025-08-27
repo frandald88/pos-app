@@ -25,15 +25,33 @@ router.get('/', verifyToken, async (req, res) => {
     
     const filter = {};
     
+    // Obtener información del usuario para verificar rol y tienda
+    const currentUser = await User.findById(req.userId).populate('tienda');
+    
+    // Control de acceso por tienda según rol
+    if (currentUser.role !== 'admin') {
+      // Usuarios no admin solo ven ventas de su tienda
+      if (currentUser.tienda) {
+        filter.tienda = currentUser.tienda._id;
+      } else {
+        // Si el usuario no tiene tienda asignada, no ve ninguna venta
+        return res.json({
+          sales: [],
+          pagination: { total: 0, page: 1, limit: 0, pages: 0 },
+          filter: filter
+        });
+      }
+    } else if (tiendaId) {
+      // Admin puede filtrar por tienda específica
+      filter.tienda = tiendaId;
+    }
+    // Si es admin y no especifica tiendaId, ve todas las ventas
+    
     if (status) {
       const validStatuses = ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'cancelada'];
       if (validStatuses.includes(status)) {
         filter.status = status;
       }
-    }
-    
-    if (tiendaId) {
-      filter.tienda = tiendaId;
     }
     
     if (startDate && endDate) {
@@ -75,6 +93,21 @@ router.get('/', verifyToken, async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
     
+    // Agregar información de devoluciones para ventas canceladas con totalReturned > 0
+    const Return = require('../../modules/devoluciones/model');
+    for (let sale of sales) {
+      if (sale.status === 'cancelada' && sale.totalReturned > 0) {
+        const returnInfo = await Return.findOne({ saleId: sale._id })
+          .populate('processedBy', 'username')
+          .sort({ date: -1 });
+        
+        if (returnInfo) {
+          sale._doc.returnedBy = returnInfo.processedBy;
+          sale._doc.returnedDate = returnInfo.date;
+        }
+      }
+    }
+    
     const total = await Sale.countDocuments(filter);
     
     res.json({
@@ -85,12 +118,32 @@ router.get('/', verifyToken, async (req, res) => {
         limit: parseInt(limit),
         pages: Math.ceil(total / parseInt(limit))
       },
-      filter: filter
+      filter: filter,
+      userRole: currentUser.role, // Agregar rol del usuario para el frontend
+      userTienda: currentUser.tienda
     });
     
   } catch (err) {
     console.error('Error fetching sales:', err);
     res.status(500).json({ message: 'Error al obtener ventas', error: err.message });
+  }
+});
+
+// ✅ NUEVO: Obtener tiendas para filtro (solo admin)
+router.get('/tiendas', verifyToken, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.userId);
+    
+    if (currentUser.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo administradores pueden acceder a esta información' });
+    }
+    
+    const tiendas = await Tienda.find({}, 'nombre').sort({ nombre: 1 });
+    
+    res.json(tiendas);
+  } catch (err) {
+    console.error('Error fetching tiendas:', err);
+    res.status(500).json({ message: 'Error al obtener tiendas', error: err.message });
   }
 });
 
@@ -436,6 +489,13 @@ router.put('/:id/status', verifyToken, async (req, res) => {
     const currentSale = await Sale.findById(req.params.id);
     if (!currentSale) {
       return res.status(404).json({ message: 'Venta no encontrada' });
+    }
+    
+    // Prevenir cambios de estado en ventas canceladas por devolución
+    if (currentSale.totalReturned > 0 && currentSale.status === 'cancelada') {
+      return res.status(400).json({ 
+        message: 'No se puede cambiar el estado de una venta cancelada por devolución' 
+      });
     }
     
     if (status === 'cancelada' && currentSale.status !== 'cancelada') {

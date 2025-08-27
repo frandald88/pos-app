@@ -10,15 +10,26 @@ export default function OrderTrackingPage() {
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const token = localStorage.getItem("token");
-  const [allSales, setAllSales] = useState([]); 
+  const [allSales, setAllSales] = useState([]);
+  const [userRole, setUserRole] = useState("");
+  const [selectedTienda, setSelectedTienda] = useState("");
+  const [tiendas, setTiendas] = useState([]); 
 
   const fetchSales = () => {
   setLoading(true);
   setError("");
   
+  // Construir URL con parámetros de filtro
+  const params = new URLSearchParams();
+  if (selectedTienda) {
+    params.append('tiendaId', selectedTienda);
+  }
+  
+  const url = `${apiBaseUrl}/api/sales${params.toString() ? `?${params.toString()}` : ''}`;
+  
   // Cargar todas las ventas una vez
   axios
-    .get(`${apiBaseUrl}/api/sales`, {
+    .get(url, {
       headers: { Authorization: `Bearer ${token}` },
     })
     .then((res) => {
@@ -26,6 +37,11 @@ export default function OrderTrackingPage() {
       
       if (res.data && res.data.sales) {
         allSalesData = res.data.sales;
+        
+        // Obtener rol del usuario del response
+        if (res.data.userRole) {
+          setUserRole(res.data.userRole);
+        }
       } else if (Array.isArray(res.data)) {
         allSalesData = res.data;
       }
@@ -49,9 +65,30 @@ export default function OrderTrackingPage() {
     });
 };
 
+  // Función para cargar tiendas (solo para admin)
+  const fetchTiendas = () => {
+    axios
+      .get(`${apiBaseUrl}/api/sales/tiendas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setTiendas(res.data);
+      })
+      .catch((err) => {
+        console.error("Error cargando tiendas:", err);
+      });
+  };
+
   useEffect(() => {
     fetchSales();
-  }, [selectedStatus]);
+  }, [selectedStatus, selectedTienda]);
+
+  useEffect(() => {
+    // Cargar tiendas cuando se detecta que el usuario es admin
+    if (userRole === 'admin') {
+      fetchTiendas();
+    }
+  }, [userRole]);
 
   const updateStatus = (saleId, newStatus) => {
     setUpdatingOrderId(saleId);
@@ -83,6 +120,7 @@ export default function OrderTrackingPage() {
     { value: "listo_para_envio", label: "Listo para entrega", icon: "📦", color: "#3b82f6" },
     { value: "enviado", label: "Enviado", icon: "🚚", color: "#8b5cf6" },
     { value: "entregado_y_cobrado", label: "Entregado", icon: "✅", color: "#10b981" },
+    { value: "parcialmente_devuelta", label: "Parcialmente devuelta", icon: "↩️", color: "#f97316" },
     { value: "cancelada", label: "Cancelada", icon: "❌", color: "#ef4444" },
   ];
 
@@ -173,6 +211,32 @@ export default function OrderTrackingPage() {
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex flex-col sm:flex-row gap-4">
+              {/* Selector de tienda para admin */}
+              {userRole === 'admin' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Filtrar por tienda
+                  </label>
+                  <select
+                    value={selectedTienda}
+                    onChange={(e) => setSelectedTienda(e.target.value)}
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
+                    style={{ 
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                    disabled={loading}
+                  >
+                    <option value="">🏪 Todas las tiendas</option>
+                    {tiendas.map((tienda) => (
+                      <option key={tienda._id} value={tienda._id}>
+                        🏪 {tienda.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                   Filtrar por estado
@@ -257,6 +321,17 @@ export default function OrderTrackingPage() {
             {filteredSales.map((sale) => {
               const statusConfig = getStatusConfig(sale.status);
               
+              // Debug: Log ventas con devoluciones
+              if (sale.totalReturned > 0) {
+                console.log('🔍 Venta con devolución:', {
+                  id: sale._id.slice(-8),
+                  status: sale.status,
+                  totalReturned: sale.totalReturned,
+                  remaining: sale.total - sale.totalReturned,
+                  isPartialReturn: sale.status === 'parcialmente_devuelta'
+                });
+              }
+              
               return (
                 <div key={sale._id} className="bg-white rounded-xl shadow-lg border transition-all duration-200 hover:shadow-xl">
                   {/* Header del pedido */}
@@ -271,7 +346,9 @@ export default function OrderTrackingPage() {
                             className="px-3 py-1 text-sm rounded-full font-medium text-white"
                             style={{ backgroundColor: statusConfig.color }}
                           >
-                            {statusConfig.icon} {statusConfig.label}
+                            {sale.status === 'parcialmente_devuelta' ? `↩️ ${statusConfig.label}` : 
+                             sale.totalReturned > 0 && sale.status === 'cancelada' ? '🔄 Cancelada por Devolución' : 
+                             `${statusConfig.icon} ${statusConfig.label}`}
                           </span>
                         </div>
                         <p className="text-sm" style={{ color: '#697487' }}>
@@ -288,6 +365,16 @@ export default function OrderTrackingPage() {
                             Descuento: {formatCurrency(sale.discount)}
                           </div>
                         )}
+                        {sale.totalReturned > 0 && (
+                          <div className="text-sm text-orange-600">
+                            Devuelto: {formatCurrency(sale.totalReturned)}
+                            {sale.status === 'parcialmente_devuelta' && (
+                              <div className="text-sm text-green-600">
+                                Restante: {formatCurrency(sale.total - sale.totalReturned)}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -300,7 +387,9 @@ export default function OrderTrackingPage() {
                           Tipo de Venta
                         </div>
                         <div className="font-bold" style={{ color: '#23334e' }}>
-                          {sale.type === 'domicilio' ? '🏠 Domicilio' : '🏪 En tienda'}
+                          {sale.type === 'domicilio' ? '🏠 A Domicilio' : 
+                           sale.type === 'mostrador' ? '🏪 Mostrador' :
+                           sale.type === 'recoger' ? '📦 A Recoger' : sale.type}
                         </div>
                       </div>
                       
@@ -309,9 +398,29 @@ export default function OrderTrackingPage() {
                           Método de Pago
                         </div>
                         <div className="font-bold" style={{ color: '#23334e' }}>
-                          {sale.method === 'efectivo' ? '💵 Efectivo' : 
-                           sale.method === 'tarjeta' ? '💳 Tarjeta' : 
-                           sale.method === 'transferencia' ? '🏦 Transferencia' : sale.method}
+                          {sale.paymentType === 'mixed' && sale.mixedPayments ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1 mb-1">
+                                <span className="text-sm">🔄 Pago Mixto</span>
+                              </div>
+                              {sale.mixedPayments.map((payment, idx) => (
+                                <div key={idx} className="flex justify-between items-center text-sm">
+                                  <span>
+                                    {payment.method === 'efectivo' ? '💵 Efectivo' : 
+                                     payment.method === 'tarjeta' ? '💳 Tarjeta' : 
+                                     payment.method === 'transferencia' ? '🏦 Transferencia' : payment.method}
+                                  </span>
+                                  <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span>
+                              {sale.method === 'efectivo' ? '💵 Efectivo' : 
+                               sale.method === 'tarjeta' ? '💳 Tarjeta' : 
+                               sale.method === 'transferencia' ? '🏦 Transferencia' : sale.method}
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -394,7 +503,47 @@ export default function OrderTrackingPage() {
 
                     {/* Acciones según estado */}
                     <div className="flex flex-wrap gap-3">
-                      {sale.status === "en_preparacion" && (
+                      {sale.status === "parcialmente_devuelta" ? (
+                        // Ventas parcialmente devueltas
+                        <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                          <div className="flex items-center gap-2 text-orange-700 mb-2">
+                            <span className="text-lg">↩️</span>
+                            <span className="font-medium">
+                              Devolución parcial de {formatCurrency(sale.totalReturned)} • Restante: {formatCurrency(sale.total - sale.totalReturned)}
+                            </span>
+                          </div>
+                          {sale.returnedBy && (
+                            <div className="text-sm text-orange-600 ml-6">
+                              Procesada por: <span className="font-medium">{sale.returnedBy.username}</span>
+                              {sale.returnedDate && (
+                                <span className="ml-2">
+                                  • {formatDate(sale.returnedDate)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : sale.totalReturned > 0 && sale.status === "cancelada" ? (
+                        // Ventas canceladas por devolución total
+                        <div className="p-4 rounded-lg bg-red-50 border border-red-200">
+                          <div className="flex items-center gap-2 text-red-700 mb-2">
+                            <span className="text-lg">🔄</span>
+                            <span className="font-medium">
+                              Esta venta fue cancelada debido a una devolución total de {formatCurrency(sale.totalReturned)}
+                            </span>
+                          </div>
+                          {sale.returnedBy && (
+                            <div className="text-sm text-orange-600 ml-6">
+                              Procesada por: <span className="font-medium">{sale.returnedBy.username}</span>
+                              {sale.returnedDate && (
+                                <span className="ml-2">
+                                  • {formatDate(sale.returnedDate)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : sale.status === "en_preparacion" && (
                         <>
                           <button
                             onClick={() => updateStatus(sale._id, "listo_para_envio")}

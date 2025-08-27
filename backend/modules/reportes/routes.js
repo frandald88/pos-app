@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
   try {
     console.log("Parámetros recibidos:", req.query);
-    const { tipoVenta, inicio, fin, tipo, tiendaId, limit = 1000 } = req.query;
+    const { tipoVenta, inicio, fin, tipo, tiendaId, categoria, limit = 1000 } = req.query;
     
     if (!inicio || !fin) {
       return res.status(400).json({
@@ -64,6 +64,8 @@ router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
         $gte: startDate,
         $lte: endDate,
       },
+      // ✅ MEJORADO: Incluir ventas entregadas, canceladas y parcialmente devueltas en reportes
+      status: { $in: ['entregado_y_cobrado', 'cancelada', 'parcialmente_devuelta'] }
     };
 
 
@@ -89,17 +91,113 @@ router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
 
     console.log("Filtro aplicado:", JSON.stringify(filtro, null, 2));
 
-    const ventas = await Sale.find(filtro)
-      .populate("user", "username")
-      .populate("deliveryPerson", "username")
-      .populate("cliente", "nombre")
-      .populate("items.productId", "sku")
-      .populate("tienda", "nombre")
-      .sort({ date: -1 })
-      .limit(parseInt(limit))
-      .lean();
+    // ✅ NUEVO: Si se filtra por categoría, usar agregación para filtrar productos por categoría
+    let ventas;
+    if (categoria && categoria.trim() !== '') {
+      console.log("Aplicando filtro de categoría:", categoria);
+      
+      ventas = await Sale.aggregate([
+        { $match: filtro },
+        { $unwind: "$items" },
+        {
+          $lookup: {
+            from: "products",
+            localField: "items.productId",
+            foreignField: "_id",
+            as: "productInfo"
+          }
+        },
+        { $match: { "productInfo.category": categoria } },
+        {
+          $group: {
+            _id: "$_id",
+            date: { $first: "$date" },
+            total: { $first: "$total" },
+            discount: { $first: "$discount" },
+            method: { $first: "$method" },
+            paymentType: { $first: "$paymentType" },
+            mixedPayments: { $first: "$mixedPayments" },
+            type: { $first: "$type" },
+            status: { $first: "$status" },
+            totalReturned: { $first: "$totalReturned" },
+            user: { $first: "$user" },
+            deliveryPerson: { $first: "$deliveryPerson" },
+            cliente: { $first: "$cliente" },
+            tienda: { $first: "$tienda" },
+            items: { $push: "$items" },
+            productInfo: { $push: { $arrayElemAt: ["$productInfo", 0] } }
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "user",
+            foreignField: "_id",
+            as: "user",
+            pipeline: [{ $project: { username: 1 } }]
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "deliveryPerson",
+            foreignField: "_id",
+            as: "deliveryPerson",
+            pipeline: [{ $project: { username: 1 } }]
+          }
+        },
+        {
+          $lookup: {
+            from: "clientes",
+            localField: "cliente",
+            foreignField: "_id",
+            as: "cliente",
+            pipeline: [{ $project: { nombre: 1 } }]
+          }
+        },
+        {
+          $lookup: {
+            from: "tiendas",
+            localField: "tienda",
+            foreignField: "_id",
+            as: "tienda",
+            pipeline: [{ $project: { nombre: 1 } }]
+          }
+        },
+        {
+          $addFields: {
+            user: { $arrayElemAt: ["$user", 0] },
+            deliveryPerson: { $arrayElemAt: ["$deliveryPerson", 0] },
+            cliente: { $arrayElemAt: ["$cliente", 0] },
+            tienda: { $arrayElemAt: ["$tienda", 0] }
+          }
+        },
+        { $sort: { date: -1 } },
+        { $limit: parseInt(limit) }
+      ]);
+    } else {
+      // Consulta normal sin filtro de categoría
+      ventas = await Sale.find(filtro)
+        .populate("user", "username")
+        .populate("deliveryPerson", "username")
+        .populate("cliente", "nombre")
+        .populate("items.productId", "sku category")
+        .populate("tienda", "nombre")
+        .sort({ date: -1 })
+        .limit(parseInt(limit))
+        .lean();
+    }
 
     console.log(`Ventas encontradas: ${ventas.length}`);
+    if (ventas.length > 0) {
+      console.log('DEBUG - Primera venta encontrada:', JSON.stringify({
+        _id: ventas[0]._id,
+        status: ventas[0].status,
+        total: ventas[0].total,
+        totalReturned: ventas[0].totalReturned,
+        date: ventas[0].date
+      }, null, 2));
+    }
 
     const taxRate = 0.10; // 10% IVA
     const resultados = [];
@@ -110,7 +208,9 @@ router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
       const descuentoTotal = venta.discount || 0;
       const totalSinDescuento = venta.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
-      totalVentasGenerales += venta.total;
+      // ✅ NUEVO: Para ventas parcialmente devueltas, usar el total neto (total - devoluciones)
+      const totalNeto = venta.total - (venta.totalReturned || 0);
+      totalVentasGenerales += totalNeto;
       totalDescuentosGenerales += descuentoTotal;
 
 
@@ -168,6 +268,8 @@ router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
           ivaProducto: Number(ivaTotalProducto.toFixed(2)),
           totalProducto: Number((subtotal + ivaTotalProducto).toFixed(2)),
           totalVenta: Number(venta.total.toFixed(2)),
+          totalReturned: Number((venta.totalReturned || 0).toFixed(2)),
+          totalNeto: Number((venta.total - (venta.totalReturned || 0)).toFixed(2)),
           descuento: Number(descuentoProducto.toFixed(2)),
           porcentajeDescuento: Number(porcentajeDescuento.toFixed(2)),
           repartidor: venta.deliveryPerson?.username || "-",
@@ -189,17 +291,20 @@ router.get("/ventas", verifyToken, requireAdmin, async (req, res) => {
       ventasPorTienda: {}
     };
 
-    // Agrupar por método de pago
+    // ✅ CORRECCIÓN: Agrupar por método usando total neto (total - totalReturned)
     ventas.forEach(venta => {
       let method = venta.method || 'mixto';
       if (venta.paymentType === 'mixed') {
         method = 'mixto';
       }
       
-      resumen.ventasPorMetodo[method] = (resumen.ventasPorMetodo[method] || 0) + venta.total;
-      resumen.ventasPorTipo[venta.type] = (resumen.ventasPorTipo[venta.type] || 0) + venta.total;
+      // ✅ USAR: Total neto en lugar del total original
+      const totalNeto = venta.total - (venta.totalReturned || 0);
+      
+      resumen.ventasPorMetodo[method] = (resumen.ventasPorMetodo[method] || 0) + totalNeto;
+      resumen.ventasPorTipo[venta.type] = (resumen.ventasPorTipo[venta.type] || 0) + totalNeto;
       const tiendaNombre = venta.tienda?.nombre || 'Sin tienda';
-      resumen.ventasPorTienda[tiendaNombre] = (resumen.ventasPorTienda[tiendaNombre] || 0) + venta.total;
+      resumen.ventasPorTienda[tiendaNombre] = (resumen.ventasPorTienda[tiendaNombre] || 0) + totalNeto;
     });
 
     res.json({

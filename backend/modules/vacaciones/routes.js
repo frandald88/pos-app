@@ -215,7 +215,10 @@ router.get('/days-available/:userId', verifyToken, async (req, res) => {
 
     const totalDays = calcularDiasDisponibles(fechaIngreso);
 
-    // Calcular días ya tomados (solo solicitudes aprobadas)
+    // Calcular días ya tomados usando el campo daysTaken del usuario (más preciso)
+    const daysTakenFromUser = user.daysTaken || 0;
+    
+    // También calcular días tomados de solicitudes aprobadas para comparación
     const usedDays = await VacationRequest.aggregate([
       { $match: { employee: user._id, status: 'aprobada' } },
       {
@@ -231,10 +234,13 @@ router.get('/days-available/:userId', verifyToken, async (req, res) => {
       { $group: { _id: null, total: { $sum: "$days" } } }
     ]);
 
-    const takenDays = usedDays[0]?.total || 0;
+    const calculatedTakenDays = usedDays[0]?.total || 0;
+    
+    // Usar los días registrados en el usuario como fuente principal
+    const takenDays = daysTakenFromUser;
     const availableDays = Math.max(0, totalDays - takenDays);
 
-    // ✅ MEJORADO: Respuesta con información adicional
+    // ✅ MEJORADO: Respuesta con información adicional y comparación
     res.json({ 
       employee: user.username,
       totalDays, 
@@ -244,7 +250,13 @@ router.get('/days-available/:userId', verifyToken, async (req, res) => {
       startDate: fechaIngreso,
       source: source,
       hasEmployeeHistory: !!employeeHistory,
-      employeeHistoryId: employeeHistory?._id || null
+      employeeHistoryId: employeeHistory?._id || null,
+      // ✅ NUEVO: Información de diagnóstico
+      diagnostics: {
+        daysTakenFromUser: Math.floor(daysTakenFromUser),
+        calculatedFromRequests: Math.floor(calculatedTakenDays),
+        needsSync: Math.floor(daysTakenFromUser) !== Math.floor(calculatedTakenDays)
+      }
     });
   } catch (err) {
     console.error('Error calculando días disponibles:', err);
@@ -308,23 +320,8 @@ router.post('/request', verifyToken, async (req, res) => {
       });
     }
 
-    // Calcular días ya usados
-    const usedDays = await VacationRequest.aggregate([
-      { $match: { employee: user._id, status: 'aprobada' } },
-      {
-        $project: {
-          days: {
-            $add: [
-              { $divide: [{ $subtract: ["$endDate", "$startDate"] }, 1000 * 60 * 60 * 24] },
-              1
-            ]
-          }
-        }
-      },
-      { $group: { _id: null, total: { $sum: "$days" } } }
-    ]);
-
-    const takenDays = usedDays[0]?.total || 0;
+    // ✅ CORREGIDO: Usar días tomados del usuario (consistente con /days-available)
+    const takenDays = user.daysTaken || 0;
     const availableDays = Math.max(0, totalDays - takenDays);
     const requestedDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
     
@@ -610,6 +607,149 @@ router.get('/verify/:userId', verifyToken, requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('Error verificando datos:', err);
     res.status(500).json({ message: 'Error verificando datos', error: err.message });
+  }
+});
+
+// ✅ NUEVO: Actualizar días tomados para vacaciones aprobadas que ya vencieron
+router.post('/update-taken-days', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Final del día de hoy
+    
+    // Buscar todas las solicitudes aprobadas que ya vencieron y aún no se han marcado como "tomadas"
+    const expiredRequests = await VacationRequest.find({
+      status: 'aprobada',
+      endDate: { $lt: today }, // Fecha de fin ya pasó
+      daysTakenUpdated: { $ne: true } // No se ha actualizado aún
+    }).populate('employee', 'username daysTaken');
+
+    console.log(`🔍 Found ${expiredRequests.length} expired approved vacation requests to process`);
+
+    let updatesCount = 0;
+    const updates = [];
+
+    for (const request of expiredRequests) {
+      if (!request.employee) {
+        console.log(`⚠️ Skipping request ${request._id}: employee not found`);
+        continue;
+      }
+
+      // Calcular días de la solicitud
+      const daysRequested = Math.ceil((request.endDate - request.startDate) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Actualizar días tomados del empleado
+      const currentDaysTaken = request.employee.daysTaken || 0;
+      const newDaysTaken = currentDaysTaken + daysRequested;
+      
+      await User.findByIdAndUpdate(request.employee._id, {
+        daysTaken: newDaysTaken
+      });
+      
+      // Marcar la solicitud como procesada
+      await VacationRequest.findByIdAndUpdate(request._id, {
+        daysTakenUpdated: true
+      });
+      
+      updates.push({
+        employee: request.employee.username,
+        requestId: request._id,
+        daysRequested,
+        previousDaysTaken: currentDaysTaken,
+        newDaysTaken,
+        vacationPeriod: {
+          startDate: request.startDate,
+          endDate: request.endDate
+        }
+      });
+      
+      updatesCount++;
+      console.log(`✅ Updated ${request.employee.username}: ${currentDaysTaken} + ${daysRequested} = ${newDaysTaken} days taken`);
+    }
+
+    res.json({
+      message: `Se actualizaron los días tomados para ${updatesCount} solicitudes vencidas`,
+      updatesCount,
+      totalProcessed: expiredRequests.length,
+      updates
+    });
+  } catch (err) {
+    console.error('Error updating taken days:', err);
+    res.status(500).json({ 
+      message: 'Error al actualizar días tomados', 
+      error: err.message 
+    });
+  }
+});
+
+// ✅ NUEVO: Obtener resumen de días tomados por empleado
+router.get('/days-summary/:userId', verifyToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Verificar permisos: admin o el propio empleado
+    const currentUser = await User.findById(req.userId);
+    if (currentUser.role !== 'admin' && req.userId !== userId) {
+      return res.status(403).json({ message: 'No tienes permisos para ver esta información' });
+    }
+
+    const user = await User.findById(userId).select('username daysTaken');
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Obtener solicitudes aprobadas del año actual
+    const currentYear = new Date().getFullYear();
+    const yearStart = new Date(currentYear, 0, 1);
+    const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
+    const approvedThisYear = await VacationRequest.find({
+      employee: userId,
+      status: 'aprobada',
+      startDate: { $gte: yearStart, $lte: yearEnd }
+    }).sort({ startDate: 1 });
+
+    const today = new Date();
+    let totalApprovedDays = 0;
+    let takenDays = 0;
+    let pendingDays = 0;
+
+    const breakdown = approvedThisYear.map(request => {
+      const days = Math.ceil((request.endDate - request.startDate) / (1000 * 60 * 60 * 24)) + 1;
+      totalApprovedDays += days;
+      
+      const isExpired = request.endDate < today;
+      if (isExpired) {
+        takenDays += days;
+      } else {
+        pendingDays += days;
+      }
+      
+      return {
+        requestId: request._id,
+        startDate: request.startDate,
+        endDate: request.endDate,
+        days,
+        status: isExpired ? 'tomadas' : 'pendientes'
+      };
+    });
+
+    res.json({
+      employee: user.username,
+      year: currentYear,
+      summary: {
+        totalRecordedTaken: user.daysTaken || 0,
+        calculatedTaken: takenDays,
+        pendingToTake: pendingDays,
+        totalApproved: totalApprovedDays
+      },
+      breakdown
+    });
+  } catch (err) {
+    console.error('Error getting days summary:', err);
+    res.status(500).json({ 
+      message: 'Error al obtener resumen de días', 
+      error: err.message 
+    });
   }
 });
 
