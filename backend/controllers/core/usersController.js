@@ -1,328 +1,266 @@
 const User = require('../../core/users/model');
-const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const mongoose = require('mongoose');
 
 class UsersController {
 
+  // ✅ CORREGIDO: Obtener datos del usuario logueado CON tienda
+  async getMe(req, res) {
+    try {
+      const user = await User.findById(req.userId)
+        .select('_id username role tienda')
+        .populate('tienda', 'nombre');
+      
+      if (!user) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+      
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ message: 'Error al obtener el usuario actual', error: err.message });
+    }
+  }
+
+  // ✅ CORREGIDO: Nuevo endpoint específico para reemplazos
+  async getReplacements(req, res) {
+    try {
+      const { tiendaId } = req.params;
+      
+      console.log('🔍 Fetching replacement users for store:', tiendaId);
+      
+      const users = await User.find({ 
+        tienda: tiendaId 
+      }).select('-password')
+        .populate('tienda', 'nombre');
+      
+      console.log('✅ Found users for replacements:', users.length);
+      
+      res.json(users);
+    } catch (error) {
+      console.error('❌ Error fetching replacement users:', error);
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // ✅ NUEVA: Ruta para usuarios eliminados ANTES de rutas con parámetros
+  async getDeleted(req, res) {
+    try {
+      const deletedUsers = await User.find({ isDeleted: true })
+        .setOptions({ includeDeleted: true })
+        .select('-password')
+        .populate('tienda', 'nombre')
+        .populate('deletedBy', 'username')
+        .sort({ deletedAt: -1 });
+
+      res.json(deletedUsers);
+    } catch (err) {
+      res.status(500).json({ 
+        message: 'Error al obtener usuarios eliminados', 
+        error: err.message 
+      });
+    }
+  }
+
+  // Obtener perfil del usuario
+  async getProfile(req, res) {
+    try {
+      const user = await User.findById(req.userId).populate('tienda', 'nombre');
+      res.json({
+        username: user.username,
+        role: user.role,
+        tienda: user.tienda?._id || null,
+        tiendaNombre: user.tienda?.nombre || null
+      });
+    } catch (error) {
+      console.error('Error al obtener perfil de usuario:', error);
+      res.status(500).json({ message: 'Error al obtener perfil' });
+    }
+  }
+
   // Obtener todos los usuarios (solo admin)
   async getAll(req, res) {
     try {
-      const { role, tiendaId, limit = 50, page = 1 } = req.query;
+      // Obtener la tienda del usuario actual
+      const currentUser = await User.findById(req.userId).select('tienda role');
       
-      // Construir filtros
-      const filter = {};
-      if (role && ['admin', 'vendedor', 'repartidor'].includes(role)) {
-        filter.role = role;
-      }
-      if (tiendaId && mongoose.Types.ObjectId.isValid(tiendaId)) {
-        filter.tienda = tiendaId;
-      }
-
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-
-      const users = await User.find(filter)
-        .select('-password')
-        .populate('tienda', 'nombre')
-        .sort({ username: 1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-
-      const total = await User.countDocuments(filter);
-
-      return successResponse(res, {
-        users,
-        pagination: {
-          total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          pages: Math.ceil(total / parseInt(limit))
+      let filter = {};
+      
+      // Si el usuario no es admin, filtrar por su tienda
+      if (currentUser.role !== 'admin') {
+        if (currentUser.tienda) {
+          filter.tienda = currentUser.tienda;
+        } else {
+          // Si el usuario no-admin no tiene tienda, no devolver usuarios
+          return res.json([]);
         }
-      }, 'Usuarios obtenidos exitosamente');
+      }
+      
+      const users = await User.find(filter).select('username role tienda telefono')
+        .populate('tienda', 'nombre');
+      
+      console.log('✅ Users found:', users.length, 'for role:', currentUser.role);
+      res.json(users);
+    } catch (err) {
+      console.error('❌ Error fetching users:', err);
+      res.status(500).json({ message: 'Error al obtener usuarios', error: err.message });
+    }
+  }
 
+  // MODIFICADO: Crear nuevo usuario
+  async create(req, res) {
+    try {
+      const { username, password, role, telefono, tienda } = req.body;
+          
+      // Validación: vendedores y repartidores deben tener tienda
+      if (role !== "admin" && !tienda) {
+        return res.status(400).json({ 
+          message: "Los usuarios que no son admin deben tener una tienda asignada" 
+        });
+      }
+          
+      const newUser = new User({ username, password, role, telefono, tienda });
+      const savedUser = await newUser.save();
+          
+      res.status(201).json({ 
+        message: "Usuario creado exitosamente",
+        _id: savedUser._id,
+        id: savedUser._id
+      });
     } catch (error) {
-      console.error('Error obteniendo usuarios:', error);
-      return errorResponse(res, 'Error al obtener usuarios', 500);
+      console.error("Error al crear usuario:", error);
+      res.status(400).json({ message: "Error al crear usuario", error: error.message });
+    }
+  }
+
+  // ✅ CORREGIDO: Actualizar usuario con mejor manejo de tienda para admins
+  async update(req, res) {
+    try {
+      const { username, role, telefono, tienda } = req.body;
+      
+      console.log('🔍 Updating user with data:', { username, role, telefono, tienda });
+      
+      // Construir objeto de actualización basado en el rol
+      const updateData = {
+        username,
+        role,
+        telefono
+      };
+      
+      // Solo manejar tienda si NO es admin
+      if (role !== 'admin') {
+        // Para usuarios no-admin, tienda es requerida
+        if (!tienda) {
+          return res.status(400).json({ 
+            message: "Los usuarios que no son admin deben tener una tienda asignada" 
+          });
+        }
+        updateData.tienda = tienda;
+      } else {
+        // Para admins, remover tienda explícitamente
+        updateData.$unset = { tienda: 1 };
+      }
+      
+      console.log('🔍 Final update data:', updateData);
+      
+      // Usar findByIdAndUpdate con validación deshabilitada para admins
+      const updatedUser = await User.findByIdAndUpdate(
+        req.params.id, 
+        updateData, 
+        { 
+          new: true,
+          runValidators: role !== 'admin' // Solo validar si no es admin
+        }
+      ).populate('tienda', 'nombre');
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+      
+      console.log('✅ User updated successfully:', updatedUser.username);
+      res.json({ 
+        message: 'Usuario actualizado exitosamente',
+        user: {
+          _id: updatedUser._id,
+          username: updatedUser.username,
+          role: updatedUser.role,
+          telefono: updatedUser.telefono,
+          tienda: updatedUser.tienda
+        }
+      });
+    } catch (err) {
+      console.error('❌ Error updating user:', err);
+      res.status(400).json({ 
+        message: 'Error al actualizar usuario', 
+        error: err.message 
+      });
+    }
+  }
+
+  // ✅ NUEVA: Ruta para restaurar usuarios
+  async restore(req, res) {
+    try {
+      const user = await User.findById(req.params.id).setOptions({ includeDeleted: true });
+      if (!user) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+
+      if (!user.isDeleted) {
+        return res.status(400).json({ message: 'El usuario no está eliminado' });
+      }
+
+      await user.restore();
+      
+      res.json({ 
+        message: 'Usuario restaurado exitosamente',
+        user: {
+          username: user.username,
+          role: user.role
+        }
+      });
+    } catch (err) {
+      res.status(400).json({ 
+        message: 'Error al restaurar usuario', 
+        error: err.message 
+      });
     }
   }
 
   // Obtener usuario por ID
   async getById(req, res) {
     try {
-      const { id } = req.params;
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return errorResponse(res, 'ID de usuario inválido', 400);
-      }
-
-      const user = await User.findById(id)
-        .select('-password')
-        .populate('tienda', 'nombre');
-
+      const user = await User.findById(req.params.id).populate('tienda', 'nombre');
       if (!user) {
-        return errorResponse(res, 'Usuario no encontrado', 404);
+        return res.status(404).json({ message: 'Usuario no encontrado' });
       }
-
-      return successResponse(res, user, 'Usuario obtenido exitosamente');
-
+      res.json(user);
     } catch (error) {
-      console.error('Error obteniendo usuario:', error);
-      return errorResponse(res, 'Error al obtener usuario', 500);
-    }
-  }
-
-  // Obtener datos del usuario actual
-  async getMe(req, res) {
-    try {
-      const user = await User.findById(req.userId)
-        .select('-password')
-        .populate('tienda', 'nombre');
-
-      if (!user) {
-        return errorResponse(res, 'Usuario no encontrado', 404);
-      }
-
-      return successResponse(res, {
-        _id: user._id,
-        username: user.username,
-        role: user.role,
-        telefono: user.telefono,
-        tienda: user.tienda
-      }, 'Datos del usuario actual obtenidos exitosamente');
-
-    } catch (error) {
-      console.error('Error obteniendo usuario actual:', error);
-      return errorResponse(res, 'Error al obtener el usuario actual', 500);
-    }
-  }
-
-  // Crear nuevo usuario
-  async create(req, res) {
-    try {
-      const { username, password, role, telefono, tienda } = req.body;
-
-      // Validaciones básicas
-      if (!username || !password) {
-        return errorResponse(res, 'Username y password son requeridos', 400);
-      }
-
-      if (!['admin', 'vendedor', 'repartidor'].includes(role)) {
-        return errorResponse(res, 'Rol inválido', 400);
-      }
-
-      // Validación: vendedores y repartidores deben tener tienda
-      if (role !== 'admin' && !tienda) {
-        return errorResponse(res, 'Los usuarios que no son admin deben tener una tienda asignada', 400);
-      }
-
-      // Verificar que la tienda existe si se proporciona
-      if (tienda && !mongoose.Types.ObjectId.isValid(tienda)) {
-        return errorResponse(res, 'ID de tienda inválido', 400);
-      }
-
-      // Verificar si el usuario ya existe
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
-        return errorResponse(res, 'El nombre de usuario ya está en uso', 400);
-      }
-
-      // Crear nuevo usuario
-      const newUser = new User({
-        username,
-        password,
-        role,
-        telefono,
-        tienda: role !== 'admin' ? tienda : null
-      });
-
-      await newUser.save();
-
-      // Obtener el usuario creado con la tienda poblada
-      const createdUser = await User.findById(newUser._id)
-        .select('-password')
-        .populate('tienda', 'nombre');
-
-      return successResponse(res, createdUser, 'Usuario creado exitosamente', 201);
-
-    } catch (error) {
-      console.error('Error creando usuario:', error);
-      if (error.code === 11000) {
-        return errorResponse(res, 'El nombre de usuario ya está en uso', 400);
-      }
-      return errorResponse(res, 'Error al crear usuario', 500);
-    }
-  }
-
-  // Actualizar usuario
-  async update(req, res) {
-    try {
-      const { id } = req.params;
-      const { username, role, telefono, tienda, password } = req.body;
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return errorResponse(res, 'ID de usuario inválido', 400);
-      }
-
-      const user = await User.findById(id);
-      if (!user) {
-        return errorResponse(res, 'Usuario no encontrado', 404);
-      }
-
-      // Validar rol si se proporciona
-      if (role && !['admin', 'vendedor', 'repartidor'].includes(role)) {
-        return errorResponse(res, 'Rol inválido', 400);
-      }
-
-      // Validar tienda si se proporciona
-      if (tienda && !mongoose.Types.ObjectId.isValid(tienda)) {
-        return errorResponse(res, 'ID de tienda inválido', 400);
-      }
-
-      // Preparar datos de actualización
-      const updateData = {};
-      if (username) updateData.username = username;
-      if (role) {
-        updateData.role = role;
-        updateData.tienda = role !== 'admin' ? tienda : null;
-      }
-      if (telefono !== undefined) updateData.telefono = telefono;
-      if (password) updateData.password = password;
-
-      // Actualizar usuario
-      await User.findByIdAndUpdate(id, updateData, { 
-        runValidators: true,
-        new: true
-      });
-
-      // Obtener usuario actualizado
-      const updatedUser = await User.findById(id)
-        .select('-password')
-        .populate('tienda', 'nombre');
-
-      return successResponse(res, updatedUser, 'Usuario actualizado exitosamente');
-
-    } catch (error) {
-      console.error('Error actualizando usuario:', error);
-      if (error.code === 11000) {
-        return errorResponse(res, 'El nombre de usuario ya está en uso', 400);
-      }
-      return errorResponse(res, 'Error al actualizar usuario', 500);
+      res.status(500).json({ message: 'Error al obtener usuario', error: error.message });
     }
   }
 
   // Eliminar usuario
   async delete(req, res) {
     try {
-      const { id } = req.params;
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return errorResponse(res, 'ID de usuario inválido', 400);
-      }
-
-      // Verificar que no se esté intentando eliminar a sí mismo
-      if (id === req.userId) {
-        return errorResponse(res, 'No puedes eliminar tu propia cuenta', 400);
-      }
-
-      const user = await User.findById(id);
+      const user = await User.findById(req.params.id);
       if (!user) {
-        return errorResponse(res, 'Usuario no encontrado', 404);
+        return res.status(404).json({ message: 'Usuario no encontrado' });
       }
 
-      await User.findByIdAndDelete(id);
-
-      return successResponse(res, {}, 'Usuario eliminado exitosamente');
-
-    } catch (error) {
-      console.error('Error eliminando usuario:', error);
-      return errorResponse(res, 'Error al eliminar usuario', 500);
-    }
-  }
-
-  // Obtener usuarios por tienda
-  async getByTienda(req, res) {
-    try {
-      const { tiendaId } = req.params;
-      const { role } = req.query;
-
-      if (!mongoose.Types.ObjectId.isValid(tiendaId)) {
-        return errorResponse(res, 'ID de tienda inválido', 400);
+      if (user.isDeleted) {
+        return res.status(400).json({ message: 'El usuario ya está eliminado' });
       }
 
-      const filter = { tienda: tiendaId };
-      if (role && ['vendedor', 'repartidor'].includes(role)) {
-        filter.role = role;
-      }
-
-      const users = await User.find(filter)
-        .select('-password')
-        .populate('tienda', 'nombre')
-        .sort({ username: 1 });
-
-      return successResponse(res, users, 'Usuarios de la tienda obtenidos exitosamente');
-
-    } catch (error) {
-      console.error('Error obteniendo usuarios por tienda:', error);
-      return errorResponse(res, 'Error al obtener usuarios de la tienda', 500);
-    }
-  }
-
-  // Actualizar perfil del usuario actual
-  async updateProfile(req, res) {
-    try {
-      const { telefono, password } = req.body;
-
-      const user = await User.findById(req.userId);
-      if (!user) {
-        return errorResponse(res, 'Usuario no encontrado', 404);
-      }
-
-      const updateData = {};
-      if (telefono !== undefined) updateData.telefono = telefono;
-      if (password) updateData.password = password;
-
-      await User.findByIdAndUpdate(req.userId, updateData, { runValidators: true });
-
-      const updatedUser = await User.findById(req.userId)
-        .select('-password')
-        .populate('tienda', 'nombre');
-
-      return successResponse(res, updatedUser, 'Perfil actualizado exitosamente');
-
-    } catch (error) {
-      console.error('Error actualizando perfil:', error);
-      return errorResponse(res, 'Error al actualizar perfil', 500);
-    }
-  }
-
-  // Obtener estadísticas de usuarios
-  async getStats(req, res) {
-    try {
-      const stats = await User.aggregate([
-        {
-          $group: {
-            _id: '$role',
-            count: { $sum: 1 }
-          }
-        }
-      ]);
-
-      const totalUsers = await User.countDocuments();
-      const activeUsers = await User.countDocuments({ 
-        // Aquí podrías agregar filtros para usuarios activos
+      await user.softDelete(req.userId);
+      
+      res.json({ 
+        message: 'Usuario eliminado exitosamente',
+        action: 'soft_deleted',
+        note: 'El usuario fue ocultado pero sus registros se mantuvieron para auditoría. Se puede restaurar desde la sección de usuarios eliminados.'
       });
-
-      return successResponse(res, {
-        totalUsers,
-        activeUsers,
-        usersByRole: stats.reduce((acc, stat) => {
-          acc[stat._id] = stat.count;
-          return acc;
-        }, {})
-      }, 'Estadísticas de usuarios obtenidas exitosamente');
-
-    } catch (error) {
-      console.error('Error obteniendo estadísticas:', error);
-      return errorResponse(res, 'Error al obtener estadísticas', 500);
+    } catch (err) {
+      res.status(400).json({ 
+        message: 'Error al eliminar usuario', 
+        error: err.message 
+      });
     }
   }
 }

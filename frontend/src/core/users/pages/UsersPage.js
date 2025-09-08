@@ -1,165 +1,52 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
 import apiBaseUrl from "../../../config/api";
 
-// ✅ Función pura movida fuera del componente para mejor rendimiento
-const formatPhoneNumber = (value, previousValue = '') => {
-  // Remover todo lo que no sea número
-  const numbers = value.replace(/\D/g, '');
-  
-  // No permitir que empiece con 0
-  if (numbers.startsWith('0')) {
-    return previousValue; // Mantener el valor anterior
-  }
-  
-  // Limitar a máximo 10 dígitos
-  const limitedNumbers = numbers.slice(0, 10);
-  
-  // Formatear como (xxx) xxx-xxxx
-  if (limitedNumbers.length >= 6) {
-    return `(${limitedNumbers.slice(0, 3)}) ${limitedNumbers.slice(3, 6)}-${limitedNumbers.slice(6)}`;
-  } else if (limitedNumbers.length >= 3) {
-    return `(${limitedNumbers.slice(0, 3)}) ${limitedNumbers.slice(3)}`;
-  } else if (limitedNumbers.length > 0) {
-    return `(${limitedNumbers}`;
-  }
-  
-  return limitedNumbers;
-};
+// ✅ Imports de la nueva estructura modular
+import { useUserState } from "../hooks/useUserState";
+import { useScheduleData } from "../hooks/useScheduleData";
+import { usePhoneFormatter } from "../hooks/usePhoneFormatter";
+import userService from "../services/userService";
 
 function UsersPage() {
-  // ✅ Estados principales (reducidos y organizados)
-  const [users, setUsers] = useState([]);
-  const [tiendas, setTiendas] = useState([]);
-  const [historyData, setHistoryData] = useState([]);
-  const [msg, setMsg] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filtroRole, setFiltroRole] = useState("");
-  const [filtroTienda, setFiltroTienda] = useState("");
+  // ✅ Estados usando hooks personalizados
+  const {
+    users, setUsers,
+    tiendas, setTiendas,
+    historyData, setHistoryData,
+    msg, setMsg,
+    cargando, setCargando,
+    mostrarFormulario, setMostrarFormulario,
+    searchTerm, setSearchTerm,
+    filtroRole, setFiltroRole,
+    filtroTienda, setFiltroTienda,
+    historialLaboral, setHistorialLaboral,
+    editHistorial, setEditHistorial,
+    uiState, setUiState,
+    personalData, setPersonalData,
+    editPersonalData, setEditPersonalData,
+    deletedUsers, setDeletedUsers,
+    form, setForm,
+    editingId, setEditingId,
+    token, setToken
+  } = useUserState();
+
+  // ✅ Datos de horarios usando hook personalizado
+  const {
+    dayNames,
+    defaultSchedule,
+    loadingSchedules, setLoadingSchedules,
+    scheduleData, setScheduleData,
+    scheduleFormType, setScheduleFormType,
+    selectedTemplateId, setSelectedTemplateId,
+    templateData, setTemplateData
+  } = useScheduleData();
+
+  // ✅ Formateo de teléfonos usando hook personalizado
+  const { formatPhoneNumber, getPhoneNumbers } = usePhoneFormatter();
   
-  // ✅ Estados consolidados para historial laboral
-  const [historialLaboral, setHistorialLaboral] = useState({
-    sueldoDiario: "",
-    seguroSocial: false,
-    startDate: "",
-    position: "Empleado",
-    notes: ""
-  });
-
-  // ✅ Estados consolidados para edición de historial
-  const [editHistorial, setEditHistorial] = useState({
-    id: null,
-    endDate: "",
-    seguro: false,
-    motivo: "",
-    razon: "",
-    sueldo: "",
-    position: "",
-    notes: ""
-  });
-
-  // ✅ Estados consolidados para modales y UI
-  const [uiState, setUiState] = useState({
-    showScheduleModal: false,
-    showTemplateForm: false,
-    editingTemplateId: null,
-    showDeleteModal: false,
-    deleteCandidate: null,
-    deleteError: null,
-    selectedEmployeeForSchedule: null,
-    editingScheduleId: null,
-    showDeletedUsers: false
-  });
-
-  // ✅ Estados consolidados para datos de plantillas y horarios
-  const [loadingSchedules, setLoadingSchedules] = useState(true);
-  const [scheduleData, setScheduleData] = useState({
-    templates: [],
-    employeeSchedules: [],
-    defaultTolerance: 15,
-    notes: "",
-    schedule: {
-      0: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 },
-      1: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      2: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      3: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      4: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      5: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      6: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 }
-    },
-    editingTemplateData: {
-      name: "",
-      description: "",
-      defaultTolerance: 15,
-      notes: "",
-      schedule: {
-        0: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 },
-        1: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-        2: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-        3: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-        4: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-        5: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-        6: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 }
-      }
-    }
-  });
-
-  // ✅ Estados consolidados para datos personales
-  const [personalData, setPersonalData] = useState({
-    nombre: "",
-    apellidoPaterno: "",
-    apellidoMaterno: "",
-    rfc: "",
-    curp: "",
-    numeroSeguroSocial: "",
-    attachments: []
-  });
-
-  // ✅ Estados consolidados para edición de datos personales
-  const [editPersonalData, setEditPersonalData] = useState({
-    nombre: "",
-    apellidoPaterno: "",
-    apellidoMaterno: "",
-    rfc: "",
-    curp: "",
-    numeroSeguroSocial: ""
-  });
-
-  const [deletedUsers, setDeletedUsers] = useState([]);
-  const deletedUsersRef = useRef(null); 
-
-  // ✅ Estados consolidados para formularios de horario
-  const [scheduleFormType, setScheduleFormType] = useState('template');
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-
-  // ✅ Estados consolidados para plantillas
-  const [templateData, setTemplateData] = useState({
-    name: "",
-    description: "",
-    defaultTolerance: 15,
-    notes: "",
-    schedule: {
-      0: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 },
-      1: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      2: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      3: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      4: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      5: { isWorkday: true, startTime: "09:00", endTime: "18:00", tolerance: 15 },
-      6: { isWorkday: false, startTime: "", endTime: "", tolerance: 0 }
-    }
-  });
-
-  const [form, setForm] = useState({
-    username: "",
-    password: "",
-    role: "vendedor",
-    tienda: "",
-    telefono: "",
-  });
-  const [editingId, setEditingId] = useState(null);
-  const [token, setToken] = useState(null);
+  // ✅ Referencias para elementos del DOM
+  const deletedUsersRef = useRef(null);
 
   // Inicializar token y escuchar cambios
   useEffect(() => {
@@ -175,9 +62,6 @@ function UsersPage() {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  // Constante para nombres de días
-  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   // ✅ Handlers optimizados para mejorar rendimiento del formulario
   const handleUsernameChange = useCallback((e) => {
@@ -1167,10 +1051,6 @@ const handleEdit = (user) => {
   setEditingId(user._id);
   setMostrarFormulario(true);
   // ✅ REMOVIDO: Ya no necesitamos scroll porque usamos modal
-};
-
-const getPhoneNumbers = (formattedPhone) => {
-  return formattedPhone.replace(/\D/g, '');
 };
 
   return (
