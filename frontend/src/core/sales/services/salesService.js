@@ -22,7 +22,19 @@ class SalesService {
         headers: this.getHeaders(),
         params
       });
-      return response.data;
+      // El controller devuelve un objeto con products, pagination, stats
+      // Pero el frontend solo necesita el array de products
+      let products;
+      if (response.data.data?.products) {
+        products = response.data.data.products;
+      } else if (response.data.products) {
+        products = response.data.products;
+      } else if (Array.isArray(response.data)) {
+        products = response.data;
+      } else {
+        products = [];
+      }
+      return products;
     } catch (error) {
       console.error('Error al cargar productos:', error);
       throw error;

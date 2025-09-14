@@ -1,324 +1,107 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import apiBaseUrl from "../../../config/api";
+import { useProductState } from '../hooks/useProductState';
+import { useProductActions } from '../hooks/useProductActions';
+import { productService } from '../services/productService';
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({
-      name: "",
-      sku: "",
-      price: "", // ✅ CAMBIADO: vacío en lugar de 0
-      stock: "", // ✅ CAMBIADO: vacío en lugar de 0
-      category: "",
-      tienda: ""
-  });
-  const [editingId, setEditingId] = useState(null);
-  const [msg, setMsg] = useState("");
-  const [search, setSearch] = useState("");
-  const [tiendas, setTiendas] = useState([]);
-  const [tiendaSeleccionada, setTiendaSeleccionada] = useState("");
-  const [userRole, setUserRole] = useState("");
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [cargando, setCargando] = useState(false);
-  const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [filtroTienda, setFiltroTienda] = useState("");
+  const state = useProductState();
+  const [modalError, setModalError] = useState("");
+  const {
+    products,
+    form,
+    setForm,
+    editingId,
+    setEditingId,
+    msg,
+    setMsg,
+    search,
+    setSearch,
+    tiendas,
+    tiendaSeleccionada,
+    setTiendaSeleccionada,
+    userRole,
+    mostrarFormulario,
+    setMostrarFormulario,
+    cargando,
+    setCargando,
+    filtroCategoria,
+    setFiltroCategoria,
+    filtroTienda,
+    setFiltroTienda,
+    skuAutogenerado,
+    usarSkuManual,
+    setUsarSkuManual,
+    categorias,
+    mostrarReabastecimiento,
+    setMostrarReabastecimiento,
+    productoSeleccionado,
+    setProductoSeleccionado,
+    cantidadRestock,
+    setCantidadRestock,
+    busquedaRestock,
+    setBusquedaRestock,
+    productosEncontrados,
+    mostrarProductosBajoStock,
+    setMostrarProductosBajoStock,
+    productosBajoStock,
+    mostrarTodasCategorias,
+    setMostrarTodasCategorias,
+    categoriasFiltradas,
+    setCategoriasFiltradas,
+    stockActualizado
+  } = state;
   
-  // ✅ ESTADOS para SKU autogenerado
-  const [skuAutogenerado, setSkuAutogenerado] = useState("");
-  const [usarSkuManual, setUsarSkuManual] = useState(false);
-
-  // ✅ ESTADOS para las mejoras de reabastecimiento
-  const [categorias, setCategorias] = useState([]);
-  const [mostrarReabastecimiento, setMostrarReabastecimiento] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState(null);
-  const [cantidadRestock, setCantidadRestock] = useState(""); // ✅ UNA SOLA DECLARACIÓN
-  const [nuevoPrecio, setNuevoPrecio] = useState("");
-  const [busquedaRestock, setBusquedaRestock] = useState("");
-  const [productosEncontrados, setProductosEncontrados] = useState([]);
-  const [mostrarProductosBajoStock, setMostrarProductosBajoStock] = useState(false);
-  const [productosBajoStock, setProductosBajoStock] = useState([]);
-  const [mostrarTodasCategorias, setMostrarTodasCategorias] = useState(false);
-  const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
-  const [stockActualizado, setStockActualizado] = useState(false);
   const token = localStorage.getItem("token");
+  const actions = useProductActions(state);
 
-  const filtrarCategorias = (termino) => {
-  if (!termino || termino.length < 2) {
-    setCategoriasFiltradas([]);
-    return;
-  }
-  
-  const filtradas = categorias.filter(cat => 
-    cat.toLowerCase().includes(termino.toLowerCase())
-  ).slice(0, 8); // Máximo 8 sugerencias
-  
-  setCategoriasFiltradas(filtradas);
-};
-
-useEffect(() => {
-  const handleClickOutside = () => {
-    setCategoriasFiltradas([]);
-  };
-  
-  document.addEventListener('click', handleClickOutside);
-  return () => document.removeEventListener('click', handleClickOutside);
-}, []);
-
-  // ✅ FUNCIÓN para obtener siguiente SKU
- const fetchNextSKU = () => {
-  // Solo obtener SKU si NO estamos editando y NO estamos usando SKU manual
-  if (editingId || usarSkuManual) {
-    return;
-  }
-  
-  axios
-    .get(`${apiBaseUrl}/api/products/next-sku`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => {
-      console.log('🔢 Nuevo SKU obtenido:', res.data.nextSKU);
-      setSkuAutogenerado(res.data.nextSKU);
-      // ✅ IMPORTANTE: Solo actualizar el formulario si NO estamos editando
-      if (!editingId && !usarSkuManual) {
-        setForm(prevForm => ({ ...prevForm, sku: res.data.nextSKU }));
-      }
-    })
-    .catch(() => console.error("Error al obtener SKU"));
-};
-
-  const fetchProducts = () => {
-    setCargando(true);
-    axios
-      .get(`${apiBaseUrl}/api/products`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setProducts(res.data);
-        setCargando(false);
-      })
-      .catch(() => {
-        setMsg("Error al cargar productos ❌");
-        setCargando(false);
-      });
-  };
-
-  const fetchTiendas = () => {
-    axios
-      .get(`${apiBaseUrl}/api/tiendas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setTiendas(res.data))
-      .catch(() => console.error("Error al cargar tiendas"));
-  };
-
-  const fetchUserProfile = () => {
-    axios
-      .get(`${apiBaseUrl}/api/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setUserRole(res.data.role))
-      .catch(() => console.error("Error al cargar perfil"));
-  };
-
-  // ✅ FUNCIÓN para obtener categorías
-  const fetchCategorias = () => {
-  axios
-    .get(`${apiBaseUrl}/api/products/categories-with-count`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => {
-      // Si el backend devuelve conteos, ordenar por uso
-      if (Array.isArray(res.data) && res.data[0]?.count !== undefined) {
-        const sortedCategories = res.data
-          .sort((a, b) => b.count - a.count) // Ordenar por count descendente
-          .map(item => item._id); // Extraer solo los nombres
-        setCategorias(sortedCategories);
-      } else {
-        // Fallback: orden alfabético
-        setCategorias(res.data.sort());
-      }
-    })
-    .catch(() => console.error("Error al cargar categorías"));
-};
-
-  // ✅ FUNCIÓN para obtener productos con bajo stock
-  const fetchProductosBajoStock = () => {
-    axios
-      .get(`${apiBaseUrl}/api/products/low-stock`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { limit: 20 }
-      })
-      .then((res) => setProductosBajoStock(res.data))
-      .catch(() => console.error("Error al cargar productos con bajo stock"));
-  };
-
-  // ✅ FUNCIÓN para buscar productos
-  const buscarProductos = (termino) => {
-    if (termino.length < 2) {
-      setProductosEncontrados([]);
-      return;
-    }
-    
-    axios
-      .get(`${apiBaseUrl}/api/products/search`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { q: termino }
-      })
-      .then((res) => setProductosEncontrados(res.data))
-      .catch(() => console.error("Error al buscar productos"));
-  };
+  const {
+    filtrarCategorias,
+    handleReabastecimiento,
+    limpiarFormularioCompleto,
+    verificarCambioStock,
+    fetchProducts,
+    fetchCategorias,
+    buscarProductos
+  } = actions;
 
   useEffect(() => {
-    fetchProducts();
-    fetchTiendas();
-    fetchUserProfile();
-    fetchCategorias();
-    fetchProductosBajoStock();
-    fetchNextSKU(); // ✅ Obtener SKU inicial
+    const handleClickOutside = () => {
+      setCategoriasFiltradas([]);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-    useEffect(() => {
-  if (!mostrarFormulario) {
-    setCategoriasFiltradas([]);
-    setMostrarTodasCategorias(false);
-    setStockActualizado(false);
-  }
-}, [mostrarFormulario]);
-
-
-
-const limpiarFormularioCompleto = () => {
-  console.log('🧹 Limpiando formulario completo...');
-  
-  // Limpiar formulario principal
-  setForm({ 
-    name: "", 
-    sku: "", 
-    price: "", 
-    stock: "", 
-    category: "", 
-    tienda: "" 
-  });
-
-
-  
-  // Limpiar estados de edición
-  setEditingId(null);
-  setTiendaSeleccionada("");
-  setMostrarFormulario(false);
-  
-  // Limpiar estados de SKU
-  setUsarSkuManual(false);
-  setSkuAutogenerado("");
-  
-  // Limpiar estados de categorías
-  setCategoriasFiltradas([]);
-  setMostrarTodasCategorias(false);
-  
-  // Limpiar estados de stock actualizado
-  setStockActualizado(false);
-  
-  // Obtener nuevo SKU para el próximo producto
-  fetchNextSKU();
-};
-
-  // ✅ FUNCIÓN para reabastecer stock
-const handleReabastecimiento = (e) => {
-  e.preventDefault();
-  
-  if (!productoSeleccionado || cantidadRestock === "" || parseInt(cantidadRestock) <= 0) {
-    setMsg("Selecciona un producto y cantidad válida ❌");
-    return;
-  }
-
-  setCargando(true);
-  
-  const payload = {
-    quantity: parseInt(cantidadRestock),
-    ...(nuevoPrecio && { price: parseFloat(nuevoPrecio) })
-  };
-
-  console.log('🔍 Reabastecimiento payload:', {
-    productId: productoSeleccionado._id,
-    currentStock: productoSeleccionado.stock,
-    addingQuantity: parseInt(cantidadRestock),
-    expectedNewStock: productoSeleccionado.stock + parseInt(cantidadRestock)
-  });
-
-  axios
-    .post(`${apiBaseUrl}/api/products/${productoSeleccionado._id}/restock`, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => {
-      console.log('✅ Reabastecimiento exitoso:', res.data);
-      
-      // ✅ NUEVA LÓGICA: Si estamos editando el mismo producto, actualizar el formulario
-      if (editingId && editingId === productoSeleccionado._id && res.data.product) {
-          console.log('🔄 Actualizando formulario de edición con nuevo stock:', res.data.product.stock);
-          setForm(prevForm => ({
-            ...prevForm,
-            stock: res.data.product.stock,
-            ...(res.data.product.price && { price: res.data.product.price })
-          }));
-          
-          // ✅ NUEVO: Mostrar confirmación visual
-          setStockActualizado(true);
-          setTimeout(() => setStockActualizado(false), 3000);
-        }
-      
-      setMsg(res.data.message + " ✅");
-      setProductoSeleccionado(null);
-      setCantidadRestock("");
-      setNuevoPrecio("");
-      setBusquedaRestock("");
-      setProductosEncontrados([]);
-      setMostrarReabastecimiento(false);
-      
-      // Actualizar listas
-      fetchProducts();
-      fetchProductosBajoStock();
-      
-      setTimeout(() => setMsg(""), 3000);
-    })
-    .catch((err) => {
-      console.error('❌ Error en reabastecimiento:', err.response?.data || err);
-      setMsg(`Error al reabastecer producto: ${err.response?.data?.message || err.message} ❌`);
-    })
-    .finally(() => {
-      setCargando(false);
-    });
-};
- 
-const verificarCambioStock = async (productId) => {
-  try {
-    const response = await axios.get(`${apiBaseUrl}/api/products/${productId}/debug`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log('📊 Stock después de reabastecimiento:', response.data.product.stock);
-  } catch (err) {
-    console.error('Error verificando stock:', err);
-  }
-};
+  useEffect(() => {
+    if (!mostrarFormulario) {
+      setCategoriasFiltradas([]);
+      setMostrarTodasCategorias(false);
+    }
+  }, [mostrarFormulario, setCategoriasFiltradas, setMostrarTodasCategorias]);
 
 const handleSubmit = (e) => {
   e.preventDefault();
+  
+  // Limpiar error del modal al intentar enviar
+  setModalError("");
 
   if (!form.name || !form.category) {
-    setMsg("Por favor completa todos los campos requeridos ❌");
+    setModalError("Por favor completa todos los campos requeridos ❌");
     return;
   }
 
   if (userRole === "admin" && !tiendaSeleccionada) {
-    setMsg("Selecciona una tienda ❌");
+    setModalError("Selecciona una tienda ❌");
     return;
   }
 
   setCargando(true);
 
-  // ✅ CORRECCIÓN PRINCIPAL: Payload diferente para crear vs editar
   const payload = editingId 
     ? {
-        // ❌ AL EDITAR: NO incluir stock (se maneja solo con reabastecimiento)
         name: form.name,
         sku: form.sku,
         price: form.price === "" ? 0 : parseFloat(form.price),
@@ -326,7 +109,6 @@ const handleSubmit = (e) => {
         ...(userRole === "admin" && { tienda: tiendaSeleccionada }),
       }
     : {
-        // ✅ AL CREAR: Incluir stock inicial
         name: form.name,
         sku: form.sku,
         price: form.price === "" ? 0 : parseFloat(form.price),
@@ -335,36 +117,53 @@ const handleSubmit = (e) => {
         ...(userRole === "admin" && { tienda: tiendaSeleccionada }),
       };
 
-  const url = editingId
-    ? `${apiBaseUrl}/api/products/${editingId}`
-    : `${apiBaseUrl}/api/products`;
-
-  const method = editingId ? "put" : "post";
-
   console.log('🔍 Payload enviado:', payload);
 
-  axios[method](url, payload, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-    .then(() => {
+  const apiCall = editingId 
+    ? productService.updateProduct(token, editingId, payload)
+    : productService.createProduct(token, payload);
+
+  apiCall
+    .then((response) => {
       setMsg(editingId ? "Producto actualizado exitosamente ✅" : "Producto creado exitosamente ✅");
-      
-      // ✅ CAMBIO PRINCIPAL: Usar función centralizada de limpieza
+      setModalError(""); // Limpiar error del modal en caso de éxito
       limpiarFormularioCompleto();
-      
-      // Actualizar listas
       fetchProducts();
       fetchCategorias();
       setTimeout(() => setMsg(""), 3000);
     })
     .catch((err) => {
       console.error('❌ Error al guardar producto:', err);
-      setMsg("Error al guardar producto ❌");
+      
+      // Manejar errores específicos del backend
+      if (err.response && err.response.data) {
+        const errorData = err.response.data;
+        
+        // Error de SKU duplicado o otros errores de validación
+        if (err.response.status === 400 && errorData.message) {
+          let errorMessage = `❌ ${errorData.message}`;
+          
+          // Si hay un SKU sugerido, mostrarlo también
+          if (errorData.data && errorData.data.suggestedSKU) {
+            errorMessage += ` | SKU sugerido: ${errorData.data.suggestedSKU}`;
+          }
+          
+          setModalError(errorMessage);
+        } else if (errorData.message) {
+          setModalError(`❌ ${errorData.message}`);
+        } else {
+          setModalError("Error al guardar producto ❌");
+        }
+      } else {
+        setModalError("Error al guardar producto ❌");
+      }
+      
       setCargando(false);
     });
 };
 
   const handleEdit = (p) => {
+    setModalError(""); // Limpiar cualquier error previo del modal
     setForm({
       name: p.name,
       sku: p.sku,
@@ -383,10 +182,7 @@ const handleSubmit = (e) => {
     if (!window.confirm("¿Estás seguro de eliminar este producto?")) return;
     
     setCargando(true);
-    axios
-      .delete(`${apiBaseUrl}/api/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    productService.deleteProduct(token, id)
       .then(() => {
         setMsg("Producto eliminado exitosamente ✅");
         fetchProducts();
@@ -401,6 +197,7 @@ const handleSubmit = (e) => {
 
   const handleCancelar = () => {
   console.log('❌ Cancelando formulario...');
+  setModalError(""); // Limpiar error del modal
   limpiarFormularioCompleto();
 };
 
@@ -408,13 +205,13 @@ const handleSubmit = (e) => {
     setMostrarReabastecimiento(false);
     setProductoSeleccionado(null);
     setCantidadRestock("");
-    setNuevoPrecio("");
     setBusquedaRestock("");
-    setProductosEncontrados([]);
+    state.setProductosEncontrados([]);
   };
 
+
   // Filtrar productos
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = (products || []).filter((p) => {
     const matchesSearch = 
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase()) ||
@@ -428,11 +225,12 @@ const handleSubmit = (e) => {
 
   // Estadísticas del inventario
   const getInventoryStats = () => {
+    const productArray = products || [];
     return {
-      total: products.length,
-      sinStock: products.filter(p => p.stock === 0).length,
-      bajoStock: products.filter(p => p.stock > 0 && p.stock <= 10).length,
-      valorTotal: products.reduce((sum, p) => sum + (p.price * p.stock), 0)
+      total: productArray.length,
+      sinStock: productArray.filter(p => p.stock === 0).length,
+      bajoStock: productArray.filter(p => p.stock > 0 && p.stock <= 10).length,
+      valorTotal: productArray.reduce((sum, p) => sum + (p.price * p.stock), 0)
     };
   };
 
@@ -523,8 +321,10 @@ const scrollToElement = (elementId, offset = 100) => {
               <button
                   onClick={() => {
                     if (mostrarFormulario) {
+                      setModalError(""); // Limpiar error del modal al cancelar
                       limpiarFormularioCompleto();
                     } else {
+                      setModalError(""); // Limpiar error del modal al abrir
                       limpiarFormularioCompleto();
                       setMostrarFormulario(true);
                     }
@@ -707,9 +507,9 @@ const scrollToElement = (elementId, offset = 100) => {
               <div className="p-4 sm:p-6">
             
             <form onSubmit={handleReabastecimiento}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Búsqueda de producto */}
-                <div className="lg:col-span-2">
+                <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                     Buscar Producto
                   </label>
@@ -742,7 +542,7 @@ const scrollToElement = (elementId, offset = 100) => {
                           onClick={() => {
                             setProductoSeleccionado(producto);
                             setBusquedaRestock(producto.name);
-                            setProductosEncontrados([]);
+                            state.setProductosEncontrados([]);
                           }}
                           className="p-4 border-b hover:bg-green-50 cursor-pointer transition-colors"
                         >
@@ -773,7 +573,7 @@ const scrollToElement = (elementId, offset = 100) => {
 
                 {/* Producto seleccionado */}
                 {productoSeleccionado && (
-                  <div className="lg:col-span-2 p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                     <h3 className="font-semibold text-green-800 mb-2">Producto Seleccionado:</h3>
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
@@ -821,30 +621,6 @@ const scrollToElement = (elementId, offset = 100) => {
                   )}
                 </div>
 
-                {/* Nuevo precio (opcional) */}
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Actualizar Precio (Opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={nuevoPrecio}
-                    onChange={(e) => setNuevoPrecio(e.target.value)}
-                    placeholder="Precio actual: $0.00"
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#10b981'
-                    }}
-                  />
-                  {productoSeleccionado && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      Precio actual: {formatCurrency(productoSeleccionado.price)}
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div className="flex gap-4 mt-6">
@@ -904,6 +680,35 @@ const scrollToElement = (elementId, offset = 100) => {
                 </div>
               </div>
               <div className="p-6">
+                
+                {/* Mensaje de error dentro del modal */}
+                {modalError && (
+                  <div className="mb-6 p-4 rounded-lg border-l-4 bg-red-50 border-red-400">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-red-800">
+                          {modalError}
+                        </p>
+                      </div>
+                      <div className="ml-auto pl-3">
+                        <button
+                          type="button"
+                          onClick={() => setModalError("")}
+                          className="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100 focus:outline-none"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
             
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1326,6 +1131,35 @@ const scrollToElement = (elementId, offset = 100) => {
                 </div>
               </div>
               <div className="p-6">
+                
+                {/* Mensaje de error dentro del modal */}
+                {modalError && (
+                  <div className="mb-6 p-4 rounded-lg border-l-4 bg-red-50 border-red-400">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-medium text-red-800">
+                          {modalError}
+                        </p>
+                      </div>
+                      <div className="ml-auto pl-3">
+                        <button
+                          type="button"
+                          onClick={() => setModalError("")}
+                          className="inline-flex rounded-md bg-red-50 p-1.5 text-red-500 hover:bg-red-100 focus:outline-none"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
             
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

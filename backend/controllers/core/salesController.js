@@ -140,6 +140,7 @@ class SalesController {
         status,
         method,
         type,
+        search,
         page = 1,
         limit = 50
       } = req.query;
@@ -170,11 +171,63 @@ class SalesController {
       }
       // Si es admin y no especifica tiendaId, ve todas las ventas
       
+      // Filtro de búsqueda - buscar en múltiples campos
+      if (search && search.trim() !== '') {
+        console.log('🔍 Applying search filter:', search);
+        const searchTerm = search.trim();
+        
+        try {
+          const searchRegex = new RegExp(searchTerm, 'i'); // Case insensitive
+          
+          filter.$or = [
+            { 'items.name': { $regex: searchRegex } }, // Buscar en nombres de productos
+            { 'cliente.nombre': { $regex: searchRegex } } // Buscar en nombre de cliente
+          ];
+          
+          // Si es ObjectId válido (24 caracteres hex), buscar exacto por ID
+          if (mongoose.Types.ObjectId.isValid(searchTerm) && searchTerm.length === 24) {
+            console.log('🔍 Adding exact ObjectId search for:', searchTerm);
+            filter.$or.push({ _id: new mongoose.Types.ObjectId(searchTerm) });
+          } else if (searchTerm.length >= 8 && /^[0-9a-fA-F]+$/.test(searchTerm)) {
+            // Si es cadena hexadecimal pero no ObjectId completo, buscar por coincidencia parcial
+            // Convertir a string el _id para buscar
+            console.log('🔍 Adding partial ID search for:', searchTerm);
+            filter.$or.push({ 
+              $expr: { 
+                $regexMatch: { 
+                  input: { $toString: "$_id" }, 
+                  regex: searchTerm,
+                  options: "i"
+                } 
+              } 
+            });
+          }
+          
+          console.log('🔍 Search filter created:', JSON.stringify(filter.$or, null, 2));
+        } catch (regexError) {
+          console.error('❌ Error creating regex for search:', regexError);
+          // Si hay error en regex, solo buscar por ObjectId válidos
+          if (mongoose.Types.ObjectId.isValid(searchTerm) && searchTerm.length === 24) {
+            filter.$or = [{ _id: new mongoose.Types.ObjectId(searchTerm) }];
+          } else {
+            // Solo buscar en campos de texto
+            const searchRegex = new RegExp(searchTerm, 'i');
+            filter.$or = [
+              { 'items.name': { $regex: searchRegex } },
+              { 'cliente.nombre': { $regex: searchRegex } }
+            ];
+          }
+        }
+      }
+      
       if (status) {
-        const validStatuses = ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'cancelada'];
+        const validStatuses = ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'parcialmente_devuelta', 'cancelada'];
         if (validStatuses.includes(status)) {
           filter.status = status;
         }
+      } else {
+        // Si no se especifica status, por defecto mostrar 'en_preparacion' para pizzería
+        filter.status = 'en_preparacion';
       }
       
       if (startDate && endDate) {
@@ -188,13 +241,25 @@ class SalesController {
       if (method) {
         const validMethods = ['efectivo', 'transferencia', 'tarjeta'];
         if (validMethods.includes(method)) {
-          filter.$or = [
+          // Si ya hay $or (por búsqueda), usar $and para combinar
+          const methodFilter = [
             { method: method }, // Pagos únicos
             { 
               paymentType: 'mixed',
               'mixedPayments.method': method 
             } // Pagos mixtos que contengan este método
           ];
+          
+          if (filter.$or) {
+            // Combinar búsqueda con filtro de método
+            filter.$and = [
+              { $or: filter.$or }, // Condiciones de búsqueda
+              { $or: methodFilter } // Condiciones de método
+            ];
+            delete filter.$or;
+          } else {
+            filter.$or = methodFilter;
+          }
         }
       }
       
@@ -207,14 +272,25 @@ class SalesController {
       
       const skip = (parseInt(page) - 1) * parseInt(limit);
       
+      console.log('🔍 DEBUGGING - Final filter for paginated query:', JSON.stringify(filter, null, 2));
+      console.log('🔍 DEBUGGING - Query params: skip =', skip, ', limit =', parseInt(limit));
+      console.log('🔍 DEBUGGING - Has search term:', !!search);
+      console.log('🔍 DEBUGGING - Search term value:', search);
+      
       const sales = await Sale.find(filter)
         .populate('tienda', 'nombre')
         .populate('user', 'username')
         .populate('cliente', 'nombre')
         .populate('deliveryPerson', 'username')
-        .sort({ date: -1 })
+        .sort({ date: 1 }) // Más antiguos primero para pizzería
         .skip(skip)
         .limit(parseInt(limit));
+      
+      console.log('🔍 DEBUGGING - Found', sales.length, 'sales');
+      console.log('🔍 DEBUGGING - First 3 sale IDs:', sales.slice(0, 3).map(s => s._id.toString()));
+      console.log('🔍 DEBUGGING - Missing IDs check:');
+      console.log('   - 687952baad4ec3386aaeeb32 found:', sales.some(s => s._id.toString() === '687952baad4ec3386aaeeb32'));
+      console.log('   - 688b58891395bec936ed0e5d found:', sales.some(s => s._id.toString() === '688b58891395bec936ed0e5d'));
       
       // Agregar información de devoluciones para ventas canceladas con totalReturned > 0
       const Return = require('../../modules/devoluciones/model');
@@ -233,6 +309,41 @@ class SalesController {
       
       const total = await Sale.countDocuments(filter);
       
+      // Generar estadísticas por estado respetando filtros aplicados (tienda, búsqueda)
+      // Crear filtro base sin estado específico para contar todos los estados
+      const statsFilter = { ...filter };
+      delete statsFilter.status; // Remover filtro de estado para contar todos
+      
+      console.log('🔢 Calculating filtered stats with filter:', JSON.stringify(statsFilter, null, 2));
+      
+      const statusStats = await Sale.aggregate([
+        { $match: statsFilter },
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+      
+      // Convertir resultado de agregación a objeto
+      const globalStats = {};
+      const validStatuses = ['en_preparacion', 'listo_para_envio', 'enviado', 'entregado_y_cobrado', 'parcialmente_devuelta', 'cancelada'];
+      
+      // Inicializar todos los estados en 0
+      validStatuses.forEach(status => {
+        globalStats[status] = 0;
+      });
+      
+      // Llenar con datos reales
+      statusStats.forEach(stat => {
+        if (validStatuses.includes(stat._id)) {
+          globalStats[stat._id] = stat.count;
+        }
+      });
+      
+      console.log('🔢 Filtered stats calculated:', globalStats);
+      
       return successResponse(res, {
         sales,
         pagination: {
@@ -241,13 +352,16 @@ class SalesController {
           limit: parseInt(limit),
           pages: Math.ceil(total / parseInt(limit))
         },
+        globalStats, // Estadísticas filtradas por los criterios aplicados
         filter: filter,
         userRole: currentUser.role,
         userTienda: currentUser.tienda
       }, 'Ventas obtenidas exitosamente');
       
     } catch (err) {
-      console.error('Error fetching sales:', err);
+      console.error('❌ Error fetching sales:', err);
+      console.error('❌ Error stack:', err.stack);
+      console.error('❌ Filter that caused error:', JSON.stringify(filter, null, 2));
       return errorResponse(res, 'Error al obtener ventas', 500);
     }
   }

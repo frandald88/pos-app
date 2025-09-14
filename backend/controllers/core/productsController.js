@@ -2,6 +2,53 @@ const Product = require('../../core/products/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const mongoose = require('mongoose');
 
+const normalizeCategory = (category) => {
+  if (!category || typeof category !== 'string') return '';
+  
+  return category
+    .trim()                           // Eliminar espacios al inicio y final
+    .toLowerCase()                    // Convertir a minúsculas
+    .split(' ')                      // Dividir por espacios
+    .filter(word => word.length > 0) // Eliminar palabras vacías
+    .map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1) // Capitalizar primera letra
+    )
+    .join(' ');                      // Unir con espacios
+};
+
+const generateNextSKU = async () => {
+  try {
+    // Buscar todos los productos con SKU numérico
+    const products = await Product.find({
+      sku: { $regex: /^\d+$/ } // Solo SKUs que sean completamente numéricos
+    })
+    .select('sku')
+    .lean();
+
+    if (!products || products.length === 0) {
+      return "1"; // Si no hay productos, empezar desde 1
+    }
+
+    // Convertir todos los SKUs a números y encontrar el máximo
+    const numericSKUs = products.map(p => parseInt(p.sku)).filter(num => !isNaN(num));
+    
+    if (numericSKUs.length === 0) {
+      return "1"; // Si no hay SKUs numéricos válidos, empezar desde 1
+    }
+
+    const maxSKU = Math.max(...numericSKUs);
+    const nextSKU = maxSKU + 1;
+    
+    console.log(`SKUs encontrados: [${numericSKUs.join(', ')}], máximo: ${maxSKU}, siguiente: ${nextSKU}`);
+    
+    return nextSKU.toString();
+  } catch (error) {
+    console.error('Error generando SKU:', error);
+    // Fallback: usar timestamp como SKU único
+    return Date.now().toString();
+  }
+};
+
 class ProductsController {
 
   // Obtener todos los productos
@@ -14,7 +61,7 @@ class ProductsController {
         inStock, 
         limit = 50, 
         page = 1,
-        sortBy = 'name',
+        sortBy = 'createdAt',
         sortOrder = 'asc'
       } = req.query;
 
@@ -120,53 +167,67 @@ class ProductsController {
   async create(req, res) {
     try {
       const { name, sku, price, stock, category, tienda } = req.body;
-
-      // Validaciones básicas
-      if (!name || !sku || price === undefined || stock === undefined || !tienda) {
-        return errorResponse(res, 'Nombre, SKU, precio, stock y tienda son requeridos', 400);
+       
+      // Validar que la tienda venga en el payload
+      if (!tienda) {
+        return errorResponse(res, 'La tienda es requerida para crear el producto', 400);
       }
-
-      if (price < 0) {
-        return errorResponse(res, 'El precio no puede ser negativo', 400);
-      }
-
-      if (stock < 0) {
-        return errorResponse(res, 'El stock no puede ser negativo', 400);
-      }
-
+       
+      // Validar que el ID de tienda sea válido
       if (!mongoose.Types.ObjectId.isValid(tienda)) {
-        return errorResponse(res, 'ID de tienda inválido', 400);
+        return errorResponse(res, 'ID de tienda no válido', 400);
       }
 
-      // Verificar que el SKU no exista ya en la misma tienda
-      const existingProduct = await Product.findOne({ sku, tienda });
-      if (existingProduct) {
-        return errorResponse(res, 'Ya existe un producto con este SKU en la tienda', 400);
+      // Normalizar y validar categoría
+      const normalizedCategory = normalizeCategory(category);
+      if (!normalizedCategory) {
+        return errorResponse(res, 'La categoría es requerida', 400);
       }
 
-      // Crear producto
+      // Generar SKU automáticamente si no se proporciona o está vacío
+      let finalSKU = sku;
+      if (!sku || sku.trim() === '') {
+        finalSKU = await generateNextSKU();
+        console.log(`SKU autogenerado: ${finalSKU}`);
+      } else {
+        // Verificar que el SKU manual no esté duplicado
+        const existingProduct = await Product.findOne({ sku: sku.trim() });
+        if (existingProduct) {
+          const suggestedSKU = await generateNextSKU();
+          return errorResponse(res, `El SKU "${sku}" ya existe. SKU sugerido: ${suggestedSKU}`, 400, { suggestedSKU });
+        }
+        finalSKU = sku.trim();
+      }
+       
       const newProduct = new Product({
-        name: name.trim(),
-        sku: sku.trim().toUpperCase(),
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        category: category?.trim(),
-        tienda
+        name,
+        sku: finalSKU,
+        price,
+        stock,
+        category: normalizedCategory,
+        tienda,
       });
-
+       
       await newProduct.save();
-
-      // Obtener producto creado con tienda poblada
-      const createdProduct = await Product.findById(newProduct._id)
-        .populate('tienda', 'nombre');
-
-      return successResponse(res, createdProduct, 'Producto creado exitosamente', 201);
-
-    } catch (error) {
-      console.error('Error creando producto:', error);
-      if (error.code === 11000) {
-        return errorResponse(res, 'El SKU ya está en uso', 400);
+       
+      // Devolver el producto con la tienda ya poblada
+      const populatedProduct = await Product.findById(newProduct._id).populate('tienda', 'nombre');
+       
+      return successResponse(res, {
+        product: populatedProduct,
+        autoGeneratedSKU: !sku || sku.trim() === '',
+        originalCategory: category,
+        normalizedCategory: normalizedCategory
+      }, `Producto creado con SKU: ${finalSKU}${category !== normalizedCategory ? ` y categoría: "${normalizedCategory}"` : ''}`, 201);
+    } catch (err) {
+      console.error('Error en POST /products:', err);
+      
+      // Manejar error de SKU duplicado
+      if (err.code === 11000 && err.keyPattern?.sku) {
+        const suggestedSKU = await generateNextSKU();
+        return errorResponse(res, `SKU duplicado. SKU sugerido: ${suggestedSKU}`, 400, { suggestedSKU });
       }
+      
       return errorResponse(res, 'Error al crear producto', 500);
     }
   }
@@ -174,69 +235,49 @@ class ProductsController {
   // Actualizar producto
   async update(req, res) {
     try {
-      const { id } = req.params;
-      const { name, sku, price, stock, category, tienda } = req.body;
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return errorResponse(res, 'ID de producto inválido', 400);
-      }
-
-      const product = await Product.findById(id);
-      if (!product) {
-        return errorResponse(res, 'Producto no encontrado', 404);
-      }
-
-      // Validaciones
-      if (price !== undefined && price < 0) {
-        return errorResponse(res, 'El precio no puede ser negativo', 400);
-      }
-
-      if (stock !== undefined && stock < 0) {
-        return errorResponse(res, 'El stock no puede ser negativo', 400);
-      }
-
+      const { tienda, sku, category } = req.body;
+       
+      // Validar tienda si viene en el body
       if (tienda && !mongoose.Types.ObjectId.isValid(tienda)) {
-        return errorResponse(res, 'ID de tienda inválido', 400);
+        return errorResponse(res, 'ID de tienda no válido', 400);
       }
 
-      // Si se actualiza el SKU, verificar que no exista ya
-      if (sku && sku !== product.sku) {
+      // No permitir actualización de stock en PUT
+      const updateData = { ...req.body };
+      delete updateData.stock; // Eliminar stock del payload de actualización
+      
+      // Normalizar categoría si se proporciona
+      if (category) {
+        const normalizedCategory = normalizeCategory(category);
+        if (!normalizedCategory) {
+          return errorResponse(res, 'La categoría no puede estar vacía', 400);
+        }
+        updateData.category = normalizedCategory;
+      }
+
+      // Verificar SKU duplicado en actualización
+      if (sku && sku.trim() !== '') {
         const existingProduct = await Product.findOne({ 
-          sku: sku.trim().toUpperCase(), 
-          tienda: tienda || product.tienda,
-          _id: { $ne: id }
+          sku: sku.trim(), 
+          _id: { $ne: req.params.id } 
         });
+        
         if (existingProduct) {
-          return errorResponse(res, 'Ya existe un producto con este SKU en la tienda', 400);
+          const suggestedSKU = await generateNextSKU();
+          return errorResponse(res, `El SKU "${sku}" ya está en uso. SKU sugerido: ${suggestedSKU}`, 400, { suggestedSKU });
         }
       }
-
-      // Preparar datos de actualización
-      const updateData = {};
-      if (name) updateData.name = name.trim();
-      if (sku) updateData.sku = sku.trim().toUpperCase();
-      if (price !== undefined) updateData.price = parseFloat(price);
-      if (stock !== undefined) updateData.stock = parseInt(stock);
-      if (category !== undefined) updateData.category = category?.trim();
-      if (tienda) updateData.tienda = tienda;
-
-      // Actualizar producto
-      await Product.findByIdAndUpdate(id, updateData, { 
-        runValidators: true,
-        new: true
-      });
-
-      // Obtener producto actualizado
-      const updatedProduct = await Product.findById(id)
-        .populate('tienda', 'nombre');
-
-      return successResponse(res, updatedProduct, 'Producto actualizado exitosamente');
-
-    } catch (error) {
-      console.error('Error actualizando producto:', error);
-      if (error.code === 11000) {
-        return errorResponse(res, 'El SKU ya está en uso', 400);
-      }
+       
+      await Product.findByIdAndUpdate(req.params.id, updateData);
+       
+      const updatedProduct = await Product.findById(req.params.id).populate('tienda', 'nombre');
+      return successResponse(res, {
+        product: updatedProduct,
+        originalCategory: req.body.category,
+        normalizedCategory: updateData.category
+      }, 'Producto actualizado (stock se maneja con reabastecimiento)');
+    } catch (err) {
+      console.error('Error en PUT /products:', err);
       return errorResponse(res, 'Error al actualizar producto', 500);
     }
   }
@@ -265,57 +306,59 @@ class ProductsController {
     }
   }
 
-  // Actualizar stock de producto
-  async updateStock(req, res) {
+  // Reabastecer stock de producto existente
+  async restock(req, res) {
     try {
-      const { id } = req.params;
-      const { quantity, operation } = req.body; // operation: 'add', 'subtract', 'set'
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return errorResponse(res, 'ID de producto inválido', 400);
+      const { quantity, price } = req.body;
+      
+      if (!quantity || quantity <= 0) {
+        return errorResponse(res, 'La cantidad debe ser mayor a 0', 400);
       }
-
-      if (!quantity || !operation) {
-        return errorResponse(res, 'Cantidad y operación son requeridas', 400);
-      }
-
-      if (!['add', 'subtract', 'set'].includes(operation)) {
-        return errorResponse(res, 'Operación inválida. Use: add, subtract, set', 400);
-      }
-
-      const product = await Product.findById(id);
+      
+      const product = await Product.findById(req.params.id);
       if (!product) {
         return errorResponse(res, 'Producto no encontrado', 404);
       }
-
-      let newStock;
       
-      switch (operation) {
-        case 'add':
-          newStock = product.stock + parseInt(quantity);
-          break;
-        case 'subtract':
-          newStock = product.stock - parseInt(quantity);
-          break;
-        case 'set':
-          newStock = parseInt(quantity);
-          break;
+      // Actualizar stock
+      const oldStock = product.stock;
+      product.stock += parseInt(quantity);
+      
+      // Actualizar precio si se proporciona
+      if (price && price > 0) {
+        product.price = parseFloat(price);
       }
-
-      if (newStock < 0) {
-        return errorResponse(res, 'El stock no puede ser negativo', 400);
-      }
-
-      product.stock = newStock;
+      
       await product.save();
+      
+      // Devolver producto actualizado con tienda poblada
+      const updatedProduct = await Product.findById(product._id).populate('tienda', 'nombre');
+      
+      return successResponse(res, {
+        product: updatedProduct,
+        oldStock: oldStock,
+        newStock: updatedProduct.stock,
+        addedQuantity: quantity
+      }, `Stock actualizado de ${oldStock} a ${updatedProduct.stock} (+${quantity} unidades)`);
+    } catch (err) {
+      console.error('Error en POST /products/:id/restock:', err);
+      return errorResponse(res, 'Error al reabastecer producto', 500);
+    }
+  }
 
-      const updatedProduct = await Product.findById(id).populate('tienda', 'nombre');
-
-      return successResponse(res, updatedProduct, 'Stock actualizado exitosamente');
-
-    } catch (error) {
-      console.error('Error actualizando stock:', error);
-      return errorResponse(res, 'Error al actualizar stock', 500);
+  // Debug producto
+  async getDebug(req, res) {
+    try {
+      const product = await Product.findById(req.params.id).populate('tienda', 'nombre');
+      if (!product) {
+        return errorResponse(res, 'Producto no encontrado', 404);
+      }
+      return successResponse(res, {
+        product: product,
+        timestamp: new Date().toISOString()
+      }, 'Debug de producto obtenido exitosamente');
+    } catch (err) {
+      return errorResponse(res, 'Error al obtener producto', 500);
     }
   }
 
@@ -342,24 +385,125 @@ class ProductsController {
     }
   }
 
+  // Obtener categorías con conteo
+  async getCategoriesWithCount(req, res) {
+    try {
+      const { tiendaId } = req.query;
+      const matchFilter = { 
+        category: { $ne: null, $ne: '' } 
+      };
+      
+      // Filtrar por tienda si se proporciona
+      if (tiendaId) {
+        matchFilter.tienda = new mongoose.Types.ObjectId(tiendaId);
+      }
+      
+      // Agregación para contar productos por categoría
+      const categoriesWithCount = await Product.aggregate([
+        { $match: matchFilter },
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 },
+            totalStock: { $sum: '$stock' },
+            avgPrice: { $avg: '$price' }
+          }
+        },
+        { $sort: { count: -1 } }, // Ordenar por uso descendente
+        { $limit: 50 } // Límite de 50 categorías más usadas
+      ]);
+      
+      return successResponse(res, categoriesWithCount, 'Categorías con conteo obtenidas exitosamente');
+    } catch (err) {
+      console.error('Error al obtener categorías con conteo:', err);
+      // Fallback al endpoint original
+      try {
+        const categories = await Product.distinct('category', { 
+          category: { $ne: null, $ne: '' },
+          ...(req.query.tiendaId && { tienda: req.query.tiendaId })
+        });
+        return successResponse(res, categories.sort(), 'Categorías obtenidas exitosamente');
+      } catch (fallbackErr) {
+        return errorResponse(res, 'Error al obtener categorías', 500);
+      }
+    }
+  }
+
+  // Obtener siguiente SKU disponible
+  async getNextSKU(req, res) {
+    try {
+      const nextSKU = await generateNextSKU();
+      return successResponse(res, { nextSKU }, 'SKU generado exitosamente');
+    } catch (err) {
+      return errorResponse(res, 'Error al generar SKU', 500);
+    }
+  }
+
   // Obtener categorías únicas
   async getCategories(req, res) {
     try {
       const { tiendaId } = req.query;
+      const filter = { 
+        category: { $ne: null, $ne: '' } 
+      };
       
-      const filter = {};
-      if (tiendaId && mongoose.Types.ObjectId.isValid(tiendaId)) {
+      if (tiendaId) {
         filter.tienda = tiendaId;
       }
-
+      
       const categories = await Product.distinct('category', filter);
-      const validCategories = categories.filter(cat => cat && cat.trim() !== '');
-
-      return successResponse(res, validCategories.sort(), 'Categorías obtenidas exitosamente');
-
-    } catch (error) {
-      console.error('Error obteniendo categorías:', error);
+      
+      // Ordenar alfabéticamente y limitar a 30 para performance
+      const sortedCategories = categories
+        .filter(cat => cat && cat.trim() !== '') // Filtrar categorías vacías
+        .sort()
+        .slice(0, 30); // Límite para evitar problemas de performance
+      
+      return successResponse(res, sortedCategories, 'Categorías obtenidas exitosamente');
+    } catch (err) {
       return errorResponse(res, 'Error al obtener categorías', 500);
+    }
+  }
+
+  // Buscar categorías
+  async searchCategories(req, res) {
+    try {
+      const { q, tiendaId, limit = 8 } = req.query;
+      
+      if (!q || q.trim().length < 2) {
+        return successResponse(res, [], 'Búsqueda de categorías completada');
+      }
+      
+      const filter = {
+        category: { 
+          $regex: q.trim(), 
+          $options: 'i',
+          $ne: null, 
+          $ne: '' 
+        }
+      };
+      
+      if (tiendaId) {
+        filter.tienda = tiendaId;
+      }
+      
+      // Buscar categorías que coincidan y obtener su frecuencia de uso
+      const matchingCategories = await Product.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: parseInt(limit) }
+      ]);
+      
+      const categories = matchingCategories.map(item => item._id);
+      return successResponse(res, categories, 'Búsqueda de categorías completada exitosamente');
+    } catch (err) {
+      return errorResponse(res, 'Error al buscar categorías', 500);
     }
   }
 

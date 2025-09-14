@@ -88,12 +88,14 @@ export default function ReturnsPage() {
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((res) => {
-            setSale(res.data);
+            console.log('✅ Venta encontrada:', res.data);
+            const saleData = res.data.data || res.data; // Manejar diferentes formatos de respuesta
+            setSale(saleData);
 
         // ✅ CALCULAR PRECIOS CON DESCUENTO
-        const discountedItems = res.data.items.map((item) => {
-          const discountedPrice = res.data.discount > 0 
-            ? calculateDiscountedPrice(item, res.data.total + res.data.discount, res.data.discount)
+        const discountedItems = saleData.items.map((item) => {
+          const discountedPrice = saleData.discount > 0 
+            ? calculateDiscountedPrice(item, saleData.total + saleData.discount, saleData.discount)
             : item.price; 
 
           return {
@@ -111,7 +113,7 @@ export default function ReturnsPage() {
         setMsg("");
         setBuscando(false);
         // Calcular automáticamente el monto total de la venta como sugerencia
-        setRefundAmount(res.data.total);
+        setRefundAmount(saleData.total);
           })
           .catch(() => {
             setMsg("Venta no encontrada. Verifica el ID ❌");
@@ -341,7 +343,7 @@ export default function ReturnsPage() {
                   Total Original
                 </div>
                 <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                  ${existingReturns.sale.total.toFixed(2)}
+                  ${(existingReturns.sale?.total || 0).toFixed(2)}
                 </div>
               </div>
               
@@ -350,7 +352,7 @@ export default function ReturnsPage() {
                   Total Devuelto
                 </div>
                 <div className="text-lg font-bold text-red-600">
-                  ${existingReturns.totalReturned.toFixed(2)}
+                  ${(existingReturns.totalReturned || 0).toFixed(2)}
                 </div>
               </div>
             </div>
@@ -372,7 +374,7 @@ export default function ReturnsPage() {
                   
                   <div className="text-right">
                     <div className="text-2xl font-bold text-red-600">
-                      ${returnRecord.refundAmount.toFixed(2)}
+                      ${(returnRecord.refundAmount || 0).toFixed(2)}
                     </div>
                     <div className="text-sm" style={{ color: '#697487' }}>
                       Método: {returnRecord.refundMethod === 'efectivo' ? '💵 Efectivo' : 
@@ -443,10 +445,10 @@ export default function ReturnsPage() {
                             return (
                               <>
                                 <div className="font-bold" style={{ color: '#23334e' }}>
-                                  ${(precioConDescuento * item.quantity).toFixed(2)}
+                                  ${((precioConDescuento || 0) * (item.quantity || 0)).toFixed(2)}
                                 </div>
                                 <div className="text-sm" style={{ color: '#697487' }}>
-                                  ${precioConDescuento.toFixed(2)} c/u
+                                  ${(precioConDescuento || 0).toFixed(2)} c/u
                                 </div>
                               </>
                             );
@@ -574,7 +576,7 @@ export default function ReturnsPage() {
                     Total Original
                   </div>
                   <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                    ${sale.total.toFixed(2)}
+                    ${(sale?.total || 0).toFixed(2)}
                   </div>
                 </div>
                 
@@ -600,7 +602,7 @@ export default function ReturnsPage() {
                       <div key={index} className="flex justify-between text-sm">
                         <span>{payment.method === 'efectivo' ? '💵 Efectivo' : 
                               payment.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}:</span>
-                        <span className="font-medium">${payment.amount.toFixed(2)}</span>
+                        <span className="font-medium">${(payment.amount || 0).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -610,7 +612,7 @@ export default function ReturnsPage() {
                     <span className="font-medium" style={{ color: '#23334e' }}>
                       {sale.method === 'efectivo' ? '💵 Efectivo' : 
                       sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'} 
-                      - ${sale.total.toFixed(2)}
+                      - ${(sale?.total || 0).toFixed(2)}
                     </span>
                   </p>
                 )}
@@ -824,7 +826,7 @@ export default function ReturnsPage() {
                               />
                             )}
                             <div className="text-sm font-medium">
-                              Máximo: ${payment.maxAmount.toFixed(2)}
+                              Máximo: ${(payment.maxAmount || 0).toFixed(2)}
                             </div>
                           </div>
                         </div>

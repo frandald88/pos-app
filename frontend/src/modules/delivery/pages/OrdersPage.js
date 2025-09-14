@@ -1,258 +1,167 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import apiBaseUrl from "../../../config/api";
+import { useEffect } from "react";
+import { 
+  useDeliveryData, 
+  useDeliveryActions, 
+  useDeliveryForm, 
+  useDeliveryFilters 
+} from '../hooks';
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState([]);
-  const [msg, setMsg] = useState("");
-  const [cargando, setCargando] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState("todos");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [form, setForm] = useState({
-    proveedor: "",
-    producto: "",
-    cantidad: "",
-    unidad: "pza",
-    fechaEmision: "",
-    tienda: "",
-    assignedTo: "",
-  });
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [editStatus, setEditStatus] = useState("");
-  const [editFechaEntrega, setEditFechaEntrega] = useState("");
-  const [editNota, setEditNota] = useState("");
-  const [editAssignedTo, setEditAssignedTo] = useState("");
-  const [userRole, setUserRole] = useState("");
-  const [userTienda, setUserTienda] = useState(null);
-  const [userId, setUserId] = useState("");
-  const [tiendas, setTiendas] = useState([]);
-  const [users, setUsers] = useState([]);
+  // Hooks personalizados
+  const {
+    orders,
+    tiendas,
+    users,
+    userRole,
+    userTienda,
+    userId,
+    loading: dataLoading,
+    error,
+    loadOrders,
+    loadUsers,
+    setError
+  } = useDeliveryData();
 
-  const token = localStorage.getItem("token");
+  const {
+    msg,
+    loading: actionLoading,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    clearMessage,
+    validateOrderData,
+    formatOrderData
+  } = useDeliveryActions();
 
-  // Función para obtener información del usuario
-  const fetchUserInfo = () => {
-    axios
-      .get(`${apiBaseUrl}/api/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUserRole(res.data.role || "");
-        setUserTienda(res.data.tienda || null);
-        setUserId(res.data._id || "");
-        
-        // Si no es admin, establecer tienda automáticamente
-        if (res.data.role !== 'admin' && res.data.tienda) {
-          setForm(prevForm => ({
-            ...prevForm,
-            tienda: res.data.tienda._id
-          }));
-          // Cargar usuarios de su tienda
-          fetchUsers(res.data.tienda._id);
-        }
-      })
-      .catch((error) => {
-        console.error("Error obteniendo info del usuario:", error);
-      });
-  };
+  const {
+    form,
+    editingOrder,
+    editForm,
+    mostrarFormulario,
+    updateField,
+    resetForm,
+    updateEditField,
+    startEditing,
+    cancelEditing,
+    setMostrarFormulario,
+    getFormData,
+    getEditData,
+    setUserData
+  } = useDeliveryForm();
 
-  // Función para obtener tiendas (solo para admin)
-  const fetchTiendas = () => {
-    if (userRole !== 'admin') return;
-    
-    console.log('🔍 Cargando tiendas...');
-    axios
-      .get(`${apiBaseUrl}/api/orders/tiendas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        console.log('✅ Tiendas cargadas:', res.data);
-        setTiendas(res.data);
-      })
-      .catch((error) => {
-        console.error("❌ Error obteniendo tiendas:", error);
-        console.error("❌ Error response:", error.response?.data);
-      });
-  };
+  const {
+    filtroStatus,
+    searchTerm,
+    filteredOrders,
+    orderStats,
+    setFiltroStatus,
+    setSearchTerm
+  } = useDeliveryFilters(orders);
 
-  // Función para obtener usuarios (vendedores y repartidores)
-  const fetchUsers = (tiendaId = null) => {
-    console.log('🔍 Cargando usuarios para tienda:', tiendaId);
-    const params = new URLSearchParams();
-    if (tiendaId) {
-      params.append('tiendaId', tiendaId);
-    }
-    
-    const url = `${apiBaseUrl}/api/orders/users${params.toString() ? `?${params.toString()}` : ''}`;
-    
-    axios
-      .get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        console.log('✅ Usuarios cargados:', res.data);
-        setUsers(res.data);
-      })
-      .catch((error) => {
-        console.error("❌ Error obteniendo usuarios:", error);
-        setUsers([]);
-      });
-  };
+  // Estados derivados
+  const cargando = dataLoading || actionLoading;
 
-  const fetchOrders = () => {
-    setCargando(true);
-    axios
-      .get(`${apiBaseUrl}/api/orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        console.log('Backend response:', res.data);
-        
-        if (res.data && res.data.orders) {
-          setOrders(res.data.orders);
-        } else if (Array.isArray(res.data)) {
-          setOrders(res.data);
-        } else {
-          console.error('Unexpected response format:', res.data);
-          setOrders([]);
-          setMsg("Formato de respuesta inesperado ❌");
-        }
-        setCargando(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching orders:', error);
-        setOrders([]);
-        setMsg("Error al cargar órdenes ❌");
-        setCargando(false);
-      });
-  };
-
+  // Configurar datos del usuario al cargar
   useEffect(() => {
-    fetchOrders();
-    fetchUserInfo();
-  }, []);
-
-  // Efecto para cargar tiendas cuando se define el rol
-  useEffect(() => {
-    if (userRole === 'admin') {
-      fetchTiendas();
-      fetchUsers(); // Admin puede ver todos los usuarios inicialmente
+    if (userRole && userTienda) {
+      setUserData({ role: userRole, tienda: userTienda });
     }
-  }, [userRole]);
+  }, [userRole, userTienda, setUserData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    
-    // Si cambió la tienda, actualizar la lista de usuarios (solo para admin)
-    if (name === 'tienda' && userRole === 'admin') {
-      if (value) {
-        fetchUsers(value);
-      } else {
-        setUsers([]);
+  // Cargar órdenes cuando cambia el filtro
+  useEffect(() => {
+    if (!dataLoading) {
+      const filters = {};
+      if (filtroStatus !== 'todos') filters.status = filtroStatus;
+      loadOrders(filters);
+    }
+  }, [filtroStatus]);
+
+  // Recargar usuarios cuando cambia la tienda seleccionada
+  useEffect(() => {
+    if (form.tienda) {
+      loadUsers({ tiendaId: form.tienda });
+    }
+  }, [form.tienda, loadUsers]);
+
+  // Manejar envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    clearMessage();
+
+    const formData = getFormData();
+    const validation = validateOrderData(formData);
+
+    if (!validation.isValid) {
+      setError(validation.errors.join(', '));
+      return;
+    }
+
+    try {
+      const orderData = formatOrderData(formData, { tienda: userTienda });
+      await createOrder(orderData);
+      
+      resetForm();
+      setMostrarFormulario(false);
+      loadOrders();
+    } catch (error) {
+      // Error ya manejado por el hook
+    }
+  };
+
+  // Manejar actualización de orden
+  const handleUpdate = async (orderId) => {
+    clearMessage();
+
+    try {
+      const updateData = getEditData();
+      await updateOrder(orderId, updateData);
+      
+      cancelEditing();
+      loadOrders();
+    } catch (error) {
+      // Error ya manejado por el hook
+    }
+  };
+
+  // Manejar eliminación de orden
+  const handleDelete = async (orderId) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta orden?')) {
+      try {
+        await deleteOrder(orderId);
+        loadOrders();
+      } catch (error) {
+        // Error ya manejado por el hook
       }
     }
   };
 
-  const handleSave = () => {
-    if (!form.proveedor || !form.producto || !form.cantidad || !form.tienda) {
-      setMsg("Por favor completa todos los campos requeridos ❌");
-      return;
-    }
-
-    setCargando(true);
-    axios
-      .post(`${apiBaseUrl}/api/orders`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        console.log('Create response:', response.data);
-        setMsg("Orden creada exitosamente ✅");
-        clearForm();
-        setMostrarFormulario(false);
-        fetchOrders();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch((error) => {
-        console.error('Error creating order:', error);
-        setMsg("Error al crear orden ❌");
-        setCargando(false);
-      });
+  // Función para formatear fecha
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
-  const handleUpdate = () => {
-    setCargando(true);
-    axios
-      .put(`${apiBaseUrl}/api/orders/${editingOrder._id}`, {
-        status: editStatus,
-        fechaEntrega: editFechaEntrega,
-        nota: editNota,
-        assignedTo: editAssignedTo,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        console.log('Update response:', response.data);
-        setMsg("Orden actualizada exitosamente ✅");
-        setEditingOrder(null);
-        setEditStatus("");
-        setEditFechaEntrega("");
-        setEditNota("");
-        setEditAssignedTo("");
-        fetchOrders();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch((error) => {
-        console.error('Error updating order:', error);
-        setMsg("Error al actualizar orden ❌");
-        setCargando(false);
-      });
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm("¿Estás seguro de eliminar esta orden?")) {
-      setCargando(true);
-      axios
-        .delete(`${apiBaseUrl}/api/orders/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((response) => {
-          console.log('Delete response:', response.data);
-          setMsg("Orden eliminada exitosamente ✅");
-          fetchOrders();
-          setTimeout(() => setMsg(""), 3000);
-        })
-        .catch((error) => {
-          console.error('Error deleting order:', error);
-          setMsg("Error al eliminar orden ❌");
-          setCargando(false);
-        });
+  // Función para obtener color del status
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pendiente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'completada':
+        return 'bg-green-100 text-green-800';
+      case 'cancelada':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const statusOptions = [
-    { value: "pendiente", label: "Pendiente", icon: "⏳", color: "#f59e0b" },
-    { value: "completada", label: "Completada", icon: "✅", color: "#10b981" },
-    { value: "cancelada", label: "Cancelada", icon: "❌", color: "#ef4444" },
-  ];
-
-  const unidadOptions = [
-    { value: "pza", label: "Piezas", icon: "📦" },
-    { value: "kg", label: "Kilogramos", icon: "⚖️" },
-    { value: "lts", label: "Litros", icon: "🥤" },
-    { value: "mxn", label: "Pesos MXN", icon: "💰" },
-  ];
-
-  const getStatusConfig = (status) => {
-    return statusOptions.find(s => s.value === status) || { label: status, icon: "📋", color: "#6b7280" };
-  };
-
-  const getUnidadConfig = (unidad) => {
-    return unidadOptions.find(u => u.value === unidad) || { label: unidad, icon: "📋" };
-  };
-
-  // Función para verificar si el usuario puede actualizar una orden
+  // Función para verificar permisos de actualización
   const canUpdateOrder = (order) => {
     if (!userId || !userRole) return false;
     
@@ -261,51 +170,7 @@ export default function OrdersPage() {
            order.assignedTo?._id === userId;
   };
 
-  // Función para limpiar el formulario
-  const clearForm = () => {
-    setForm({ 
-      proveedor: "", 
-      producto: "", 
-      cantidad: "", 
-      unidad: "pza", 
-      fechaEmision: "", 
-      tienda: userRole !== 'admin' && userTienda ? userTienda._id : "", 
-      assignedTo: "" 
-    });
-  };
-
-  // Filtrar órdenes
-  const filteredOrders = orders.filter(order => {
-    const matchesStatus = filtroStatus === "todos" || order.status === filtroStatus;
-    const matchesSearch = searchTerm === "" || 
-      order.proveedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.producto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.nota && order.nota.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return matchesStatus && matchesSearch;
-  });
-
-  // Estadísticas
-  const getOrderStats = () => {
-    return {
-      total: orders.length,
-      pendiente: orders.filter(o => o.status === "pendiente").length,
-      completada: orders.filter(o => o.status === "completada").length,
-      cancelada: orders.filter(o => o.status === "cancelada").length,
-    };
-  };
-
-  const stats = getOrderStats();
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
+  // Render del componente
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
       <div className="max-w-7xl mx-auto p-6">
@@ -313,274 +178,73 @@ export default function OrdersPage() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 
-                className="text-3xl font-bold mb-2"
-                style={{ color: '#23334e' }}
-              >
-                Órdenes de Compra
+              <h1 className="text-3xl font-bold mb-2" style={{ color: '#23334e' }}>
+                Gestión de Órdenes
               </h1>
               <p style={{ color: '#697487' }} className="text-lg">
-                Gestiona las órdenes de compra a proveedores y controla el inventario
+                Administra las órdenes de compra y abastecimiento
               </p>
             </div>
             
-            <button
-              onClick={() => {
-                if (mostrarFormulario) {
-                  clearForm();
-                }
-                setMostrarFormulario(!mostrarFormulario);
-              }}
-              className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
-              style={{ backgroundColor: '#23334e' }}
-              disabled={cargando}
-            >
-              {mostrarFormulario ? "Cancelar" : "Nueva Orden"}
-            </button>
-          </div>
-        </div>
-
-        {/* Mensaje de estado */}
-        {msg && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
-              : 'bg-red-50 border-red-400 text-red-800'
-          }`}>
-            <p className="font-medium">{msg}</p>
-          </div>
-        )}
-
-        {/* Formulario para nueva orden */}
-        {mostrarFormulario && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border" style={{ borderColor: '#e5e7eb' }}>
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              Crear Nueva Orden de Compra
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Proveedor *
-                </label>
-                <input
-                  type="text"
-                  name="proveedor"
-                  value={form.proveedor}
-                  onChange={handleChange}
-                  placeholder="Nombre del proveedor"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Producto *
-                </label>
-                <input
-                  type="text"
-                  name="producto"
-                  value={form.producto}
-                  onChange={handleChange}
-                  placeholder="Descripción del producto"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Cantidad *
-                </label>
-                <input
-                  type="number"
-                  name="cantidad"
-                  value={form.cantidad}
-                  onChange={handleChange}
-                  placeholder="0"
-                  min="1"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Unidad
-                </label>
-                <select
-                  name="unidad"
-                  value={form.unidad}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                >
-                  {unidadOptions.map(unidad => (
-                    <option key={unidad.value} value={unidad.value}>
-                      {unidad.icon} {unidad.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Tienda *
-                </label>
-                {userRole === 'admin' ? (
-                  <select
-                    name="tienda"
-                    value={form.tienda}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                    required
-                  >
-                    <option value="">Selecciona una tienda</option>
-                    {tiendas.map(tienda => (
-                      <option key={tienda._id} value={tienda._id}>
-                        🏪 {tienda.nombre}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <div 
-                    className="w-full p-3 border rounded-lg bg-gray-100"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      color: '#46546b'
-                    }}
-                  >
-                    {userTienda ? `🏪 ${userTienda.nombre}` : 'Cargando tienda...'}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Fecha de Emisión
-                </label>
-                <input
-                  type="date"
-                  name="fechaEmision"
-                  value={form.fechaEmision}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Asignar a (Opcional)
-                </label>
-                <select
-                  name="assignedTo"
-                  value={form.assignedTo}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                >
-                  <option value="">Sin asignar</option>
-                  {users.map(user => (
-                    <option key={user._id} value={user._id}>
-                      {user.role === 'vendedor' ? '🛒' : '🚚'} {user.username} ({user.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={handleSave}
-                className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
-                style={{ backgroundColor: '#23334e' }}
-                disabled={cargando}
-              >
-                {cargando ? "Creando..." : "Crear Orden"}
-              </button>
-              <button
-                onClick={() => {
-                  clearForm();
-                  setMostrarFormulario(false);
-                }}
-                className="px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                style={{ 
-                  backgroundColor: '#8c95a4',
-                  color: 'white'
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Estadísticas y filtros */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             {/* Estadísticas */}
-            <div className="flex gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold" style={{ color: '#23334e' }}>
-                  {stats.total}
+            <div className="flex gap-4">
+              <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
+                <div className="text-xl">📦</div>
+                <div className="text-lg font-bold" style={{ color: '#23334e' }}>
+                  {orderStats.total}
                 </div>
-                <div className="text-sm" style={{ color: '#697487' }}>
-                  Total Órdenes
+                <div className="text-xs" style={{ color: '#697487' }}>
+                  Total
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {stats.pendiente}
+              <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
+                <div className="text-xl">⏳</div>
+                <div className="text-lg font-bold" style={{ color: '#f59e0b' }}>
+                  {orderStats.pendientes}
                 </div>
-                <div className="text-sm" style={{ color: '#697487' }}>
+                <div className="text-xs" style={{ color: '#697487' }}>
                   Pendientes
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {stats.completada}
+              <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
+                <div className="text-xl">✅</div>
+                <div className="text-lg font-bold" style={{ color: '#10b981' }}>
+                  {orderStats.completadas}
                 </div>
-                <div className="text-sm" style={{ color: '#697487' }}>
+                <div className="text-xs" style={{ color: '#697487' }}>
                   Completadas
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {stats.cancelada}
-                </div>
-                <div className="text-sm" style={{ color: '#697487' }}>
-                  Canceladas
-                </div>
-              </div>
             </div>
-            
+          </div>
+        </div>
+
+        {/* Mensajes */}
+        {(msg || error) && (
+          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
+            error ? 'bg-red-50 border-red-400 text-red-800' :
+            msg.includes('❌') ? 'bg-red-50 border-red-400 text-red-800' :
+            'bg-green-50 border-green-400 text-green-800'
+          }`}>
+            <p className="font-medium">{error || msg}</p>
+          </div>
+        )}
+
+        {/* Controles */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            {/* Botón nueva orden */}
+            <div>
+              <button
+                onClick={() => setMostrarFormulario(!mostrarFormulario)}
+                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 shadow-md hover:shadow-lg"
+                style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
+                disabled={cargando}
+              >
+                {mostrarFormulario ? '✖️ Cancelar' : '➕ Nueva Orden'}
+              </button>
+            </div>
+
             {/* Filtros */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div>
@@ -590,18 +254,17 @@ export default function OrdersPage() {
                 <select
                   value={filtroStatus}
                   onChange={(e) => setFiltroStatus(e.target.value)}
-                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                  className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
                   style={{ 
                     borderColor: '#e5e7eb',
                     focusRingColor: '#23334e'
                   }}
+                  disabled={cargando}
                 >
-                  <option value="todos">Todos los estados</option>
-                  {statusOptions.map(status => (
-                    <option key={status.value} value={status.value}>
-                      {status.icon} {status.label}
-                    </option>
-                  ))}
+                  <option value="todos">📋 Todas</option>
+                  <option value="pendiente">⏳ Pendientes</option>
+                  <option value="completada">✅ Completadas</option>
+                  <option value="cancelada">❌ Canceladas</option>
                 </select>
               </div>
               
@@ -614,7 +277,7 @@ export default function OrdersPage() {
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Buscar por proveedor, producto o nota..."
+                    placeholder="Buscar por proveedor, producto o ID..."
                     className="w-full p-3 pl-10 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
                     style={{ 
                       borderColor: '#e5e7eb',
@@ -632,288 +295,395 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Lista de órdenes */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {cargando ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#23334e' }}></div>
-              <p style={{ color: '#697487' }}>Cargando órdenes...</p>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-6xl mb-4">📋</div>
-              <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
-                No hay órdenes
-              </h3>
-              <p style={{ color: '#697487' }}>
-                {searchTerm || filtroStatus !== "todos"
-                  ? "No se encontraron resultados para los filtros aplicados"
-                  : "Comienza creando tu primera orden de compra"
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6 p-6">
-              {filteredOrders.map((order) => {
-                const statusConfig = getStatusConfig(order.status);
-                const unidadConfig = getUnidadConfig(order.unidad);
-                
-                return (
-                  <div 
-                    key={order._id} 
-                    className="border rounded-xl p-6 transition-all duration-200 hover:shadow-md"
-                    style={{ borderColor: '#e5e7eb' }}
+        {/* Formulario de nueva orden */}
+        {mostrarFormulario && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-xl font-bold mb-4" style={{ color: '#23334e' }}>
+              Nueva Orden de Compra
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Proveedor *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.proveedor}
+                    onChange={(e) => updateField('proveedor', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Producto *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.producto}
+                    onChange={(e) => updateField('producto', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Cantidad *
+                  </label>
+                  <input
+                    type="number"
+                    value={form.cantidad}
+                    onChange={(e) => updateField('cantidad', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                    min="1"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Unidad
+                  </label>
+                  <select
+                    value={form.unidad}
+                    onChange={(e) => updateField('unidad', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
                   >
-                    {/* Header de la orden */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold mb-1" style={{ color: '#23334e' }}>
-                          🏢 {order.proveedor}
+                    <option value="pza">Pieza</option>
+                    <option value="kg">Kilogramo</option>
+                    <option value="lt">Litro</option>
+                    <option value="caja">Caja</option>
+                    <option value="paquete">Paquete</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Fecha de Emisión *
+                  </label>
+                  <input
+                    type="date"
+                    value={form.fechaEmision}
+                    onChange={(e) => updateField('fechaEmision', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                    required
+                  />
+                </div>
+
+                {userRole === 'admin' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                      Tienda
+                    </label>
+                    <select
+                      value={form.tienda}
+                      onChange={(e) => updateField('tienda', e.target.value)}
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                      style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                    >
+                      <option value="">Seleccionar tienda</option>
+                      {tiendas.map((tienda) => (
+                        <option key={tienda._id} value={tienda._id}>
+                          {tienda.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                    Asignar a
+                  </label>
+                  <select
+                    value={form.assignedTo}
+                    onChange={(e) => updateField('assignedTo', e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                  >
+                    <option value="">Sin asignar</option>
+                    {users.map((user) => (
+                      <option key={user._id} value={user._id}>
+                        {user.username} ({user.role})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={cargando}
+                  className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200"
+                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                >
+                  {cargando ? 'Creando...' : '✅ Crear Orden'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                    setMostrarFormulario(false);
+                  }}
+                  className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
+                  style={{ backgroundColor: '#8c95a4', color: 'white' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Lista de órdenes */}
+        {cargando ? (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#23334e' }}></div>
+            <p style={{ color: '#697487' }}>Cargando órdenes...</p>
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="text-6xl mb-4">📦</div>
+            <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
+              No hay órdenes
+            </h3>
+            <p style={{ color: '#697487' }}>
+              {searchTerm 
+                ? `No se encontraron resultados para "${searchTerm}"`
+                : `No hay órdenes con el filtro seleccionado`
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {filteredOrders.map((order) => (
+              <div key={order._id} className="bg-white rounded-xl shadow-lg border transition-all duration-200 hover:shadow-xl">
+                {/* Header de la orden */}
+                <div className="p-6 border-b" style={{ borderColor: '#e5e7eb' }}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
+                          Orden #{order._id.slice(-8)}
                         </h3>
-                        <p className="text-lg" style={{ color: '#46546b' }}>
-                          📦 {order.producto}
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="px-4 py-2 text-sm rounded-full font-medium text-white"
-                          style={{ backgroundColor: statusConfig.color }}
-                        >
-                          {statusConfig.icon} {statusConfig.label}
+                        <span className={`px-3 py-1 text-sm rounded-full font-medium ${getStatusColor(order.status)}`}>
+                          {order.status === 'pendiente' ? '⏳ Pendiente' : 
+                           order.status === 'completada' ? '✅ Completada' : 
+                           order.status === 'cancelada' ? '❌ Cancelada' : order.status}
                         </span>
                       </div>
+                      <p className="text-sm" style={{ color: '#697487' }}>
+                        {formatDate(order.fechaEmision)}
+                      </p>
                     </div>
-
-                    {/* Detalles de la orden */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                          Cantidad
-                        </div>
-                        <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                          {unidadConfig.icon} {order.cantidad} {order.unidad}
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                          Fecha de Emisión
-                        </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          📅 {formatDate(order.fechaEmision)}
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                          Fecha de Entrega
-                        </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          🚚 {formatDate(order.fechaEntrega)}
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                          ID de Orden
-                        </div>
-                        <div className="font-mono text-sm" style={{ color: '#23334e' }}>
-                          #{order._id.slice(-8)}
-                        </div>
-                      </div>
-                      
-                      {order.tienda && (
-                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                            Tienda
-                          </div>
-                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                            🏪 {order.tienda.nombre}
-                          </div>
-                        </div>
-                      )}
-
-                      {order.createdBy && (
-                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                            Creado por
-                          </div>
-                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                            👤 {order.createdBy.username}
-                          </div>
-                        </div>
-                      )}
-
-                      {order.assignedTo && (
-                        <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                          <div className="text-sm font-medium" style={{ color: '#697487' }}>
-                            Asignado a
-                          </div>
-                          <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                            {order.assignedTo.role === 'vendedor' ? '🛒' : '🚚'} {order.assignedTo.username}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Nota si existe */}
-                    {order.nota && (
-                      <div className="mb-4 p-4 rounded-lg border-l-4 border-blue-400 bg-blue-50">
-                        <div className="text-sm font-medium text-blue-800 mb-1">
-                          💬 Nota
-                        </div>
-                        <div className="text-blue-700">
-                          {order.nota}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Acciones */}
-                    <div className="flex flex-wrap gap-3">
-                      {canUpdateOrder(order) ? (
+                    
+                    <div className="flex gap-2">
+                      {canUpdateOrder(order) && (
                         <button
-                          onClick={() => {
-                            setEditingOrder(order);
-                            setEditStatus(order.status);
-                            setEditFechaEntrega(order.fechaEntrega ? order.fechaEntrega.substring(0, 10) : "");
-                            setEditNota(order.nota || "");
-                            setEditAssignedTo(order.assignedTo?._id || "");
-                          }}
-                          className="px-6 py-2 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
-                          style={{ backgroundColor: '#46546b' }}
+                          onClick={() => startEditing(order)}
+                          className="px-4 py-2 rounded-lg font-medium text-white transition-all duration-200"
+                          style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
                         >
-                          ✏️ Actualizar
+                          ✏️ Editar
                         </button>
-                      ) : (
-                        <div className="px-6 py-2 rounded-lg font-medium text-gray-500 bg-gray-100 border border-gray-200">
-                          🔒 Sin permisos
-                        </div>
                       )}
-                      
-                      {(order.status === "completada" || order.status === "cancelada") && userRole === "admin" && (
+                      {userRole === 'admin' && (order.status === 'completada' || order.status === 'cancelada') && (
                         <button
                           onClick={() => handleDelete(order._id)}
-                          className="px-6 py-2 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
+                          className="px-4 py-2 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:bg-red-600"
                         >
                           🗑️ Eliminar
                         </button>
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Modal de edición */}
-        {editingOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-              <h3 className="text-xl font-bold mb-6" style={{ color: '#23334e' }}>
-                Actualizar Orden
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Estado
-                  </label>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                  >
-                    {statusOptions.map(status => (
-                      <option key={status.value} value={status.value}>
-                        {status.icon} {status.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Fecha de Entrega
-                  </label>
-                  <input
-                    type="date"
-                    value={editFechaEntrega}
-                    onChange={(e) => setEditFechaEntrega(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                  />
-                </div>
+                {/* Contenido de la orden */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                      <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                        Proveedor
+                      </div>
+                      <div className="font-bold" style={{ color: '#23334e' }}>
+                        🏢 {order.proveedor}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                      <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                        Producto
+                      </div>
+                      <div className="font-bold" style={{ color: '#23334e' }}>
+                        📦 {order.producto}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                      <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                        Cantidad
+                      </div>
+                      <div className="font-bold" style={{ color: '#23334e' }}>
+                        📊 {order.cantidad} {order.unidad}
+                      </div>
+                    </div>
+                    
+                    {order.tienda?.nombre && (
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                          Tienda
+                        </div>
+                        <div className="font-bold" style={{ color: '#23334e' }}>
+                          🏪 {order.tienda.nombre}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Asignar a
-                  </label>
-                  <select
-                    value={editAssignedTo}
-                    onChange={(e) => setEditAssignedTo(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                  >
-                    <option value="">Sin asignar</option>
-                    {users.map(user => (
-                      <option key={user._id} value={user._id}>
-                        {user.role === 'vendedor' ? '🛒' : '🚚'} {user.username} ({user.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {/* Información adicional */}
+                  {(order.assignedTo || order.fechaEntrega || order.nota) && (
+                    <div className="border-t pt-4" style={{ borderColor: '#e5e7eb' }}>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {order.assignedTo && (
+                          <div>
+                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
+                              Asignado a
+                            </div>
+                            <div className="font-medium" style={{ color: '#23334e' }}>
+                              👤 {order.assignedTo.username} ({order.assignedTo.role})
+                            </div>
+                          </div>
+                        )}
+                        
+                        {order.fechaEntrega && (
+                          <div>
+                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
+                              Fecha de Entrega
+                            </div>
+                            <div className="font-medium" style={{ color: '#23334e' }}>
+                              📅 {formatDate(order.fechaEntrega)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {order.nota && (
+                          <div>
+                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
+                              Nota
+                            </div>
+                            <div className="font-medium" style={{ color: '#23334e' }}>
+                              💬 {order.nota}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Nota
-                  </label>
-                  <textarea
-                    value={editNota}
-                    onChange={(e) => setEditNota(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors resize-none"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                    rows="3"
-                    placeholder="Ej. Se canceló por falta de stock"
-                  />
+                  {/* Formulario de edición */}
+                  {editingOrder && editingOrder._id === order._id && (
+                    <div className="border-t pt-6 mt-6" style={{ borderColor: '#e5e7eb' }}>
+                      <h4 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
+                        Editar Orden
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                            Estado
+                          </label>
+                          <select
+                            value={editForm.status}
+                            onChange={(e) => updateEditField('status', e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                          >
+                            <option value="">Sin cambios</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="completada">Completada</option>
+                            <option value="cancelada">Cancelada</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                            Fecha de Entrega
+                          </label>
+                          <input
+                            type="date"
+                            value={editForm.fechaEntrega}
+                            onChange={(e) => updateEditField('fechaEntrega', e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                            Asignar a
+                          </label>
+                          <select
+                            value={editForm.assignedTo}
+                            onChange={(e) => updateEditField('assignedTo', e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                          >
+                            <option value="">Sin asignar</option>
+                            {users.map((user) => (
+                              <option key={user._id} value={user._id}>
+                                {user.username} ({user.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
+                            Nota
+                          </label>
+                          <textarea
+                            value={editForm.nota}
+                            onChange={(e) => updateEditField('nota', e.target.value)}
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
+                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
+                            rows="3"
+                            placeholder="Agregar nota opcional..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={() => handleUpdate(order._id)}
+                          disabled={cargando}
+                          className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200"
+                          style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                        >
+                          {cargando ? 'Actualizando...' : '✅ Actualizar'}
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
+                          style={{ backgroundColor: '#8c95a4', color: 'white' }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={handleUpdate}
-                  className="flex-1 px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg"
-                  style={{ backgroundColor: '#23334e' }}
-                  disabled={cargando}
-                >
-                  {cargando ? "Guardando..." : "Guardar Cambios"}
-                </button>
-                <button
-                  onClick={() => setEditingOrder(null)}
-                  className="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                  style={{ 
-                    backgroundColor: '#8c95a4',
-                    color: 'white'
-                  }}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config();
 
-const Sale = require('../models/Sale');
+const Sale = require('../core/sales/model');
 
 async function updateMissingCreatedAt() {
   try {

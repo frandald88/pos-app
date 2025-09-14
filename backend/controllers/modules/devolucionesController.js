@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const Return = require('../models/Return');
-const Sale = require('../models/Sale');
-const Product = require('../models/Product');
+const Return = require('../../modules/devoluciones/model');
+const Sale = require('../../core/sales/model');
+const Product = require('../../core/products/model');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 // ✅ Crear devolución (mejorado)
