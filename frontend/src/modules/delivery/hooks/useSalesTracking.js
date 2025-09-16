@@ -35,9 +35,6 @@ export const useSalesTracking = () => {
       
       const url = `${apiBaseUrl}/api/sales${params.toString() ? `?${params.toString()}` : ''}`;
       
-      console.log('🔍 FRONTEND DEBUG - Making request to:', url);
-      console.log('🔍 FRONTEND DEBUG - Filters passed:', filters);
-      console.log('🔍 FRONTEND DEBUG - URL params:', params.toString());
       
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -54,7 +51,6 @@ export const useSalesTracking = () => {
         // Nuevas estadísticas globales
         if (response.data.data.globalStats) {
           setGlobalStats(response.data.data.globalStats);
-          console.log('📊 Global stats received:', response.data.data.globalStats);
         }
       } else if (response.data.sales) {
         allSalesData = response.data.sales;
@@ -64,7 +60,6 @@ export const useSalesTracking = () => {
         // Nuevas estadísticas globales
         if (response.data.globalStats) {
           setGlobalStats(response.data.globalStats);
-          console.log('📊 Global stats received:', response.data.globalStats);
         }
       } else if (Array.isArray(response.data)) {
         allSalesData = response.data;

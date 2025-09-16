@@ -31,12 +31,10 @@ export const useSalesFilters = (allSales = [], globalStats = {}) => {
   const statusStats = useMemo(() => {
     // Si tenemos estadísticas filtradas del backend, usarlas
     if (globalStats && Object.keys(globalStats).length > 0) {
-      console.log('📊 Using filtered stats from backend:', globalStats);
       return globalStats;
     }
     
     // Fallback: calcular localmente (solo debería ocurrir en caso de error)
-    console.log('📊 Fallback: calculating stats locally from', allSales.length, 'sales');
     const stats = {};
     statusOptions.forEach(status => {
       stats[status.value] = allSales.filter(sale => sale.status === status.value).length;

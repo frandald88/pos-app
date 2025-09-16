@@ -1,53 +1,198 @@
-import { useEffect } from "react";
-import { useCajaData, useCajaFilters, useCajaUtils } from '../hooks';
+import { useEffect, useState } from "react";
+import axios from "axios";
+import apiBaseUrl from "../../../config/api";
 
 export default function CajaPage() {
-  // Hooks personalizados
-  const {
-    resultados,
-    mixedPaymentStats,
-    tiendas,
-    loading,
-    mixedStatsLoading,
-    tiendasLoading,
-    error,
-    generarCorte,
-    fetchMixedPaymentStats,
-    limpiarResultados
-  } = useCajaData();
+  const token = localStorage.getItem("token");
 
-  const {
-    periodo,
-    fechaInicio,
-    fechaFin,
-    tiendaSeleccionada,
-    setPeriodo,
-    setFechaInicio,
-    setFechaFin,
-    setTiendaSeleccionada,
-    getPeriodoLabel
-  } = useCajaFilters();
+  const [periodo, setPeriodo] = useState("dia");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
+  const [resultados, setResultados] = useState(null);
+  const [msg, setMsg] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [tiendaSeleccionada, setTiendaSeleccionada] = useState(""); // Nueva state para tienda
+  const [tiendas, setTiendas] = useState([]); // Nueva state para lista de tiendas
+  const [cargandoTiendas, setCargandoTiendas] = useState(false);
+  const [mixedPaymentStats, setMixedPaymentStats] = useState(null);
+  const [cargandoMixedStats, setCargandoMixedStats] = useState(false);
 
-  const {
-    formatCurrency,
-    formatDateTime,
-    calcularPorcentajeMetodo,
-    getMetodoIcon,
-    getTiendaNombre,
-    getMetodoColor,
-    calcularTotalPorMetodo,
-    calcularPorcentajeParticipacion,
-    printReport,
-    exportPDF
-  } = useCajaUtils();
+  console.log("🔍 Fechas:", { fechaInicio, fechaFin });
 
-  const handleGenerarCorte = async () => {
-    const success = await generarCorte(fechaInicio, fechaFin, tiendaSeleccionada);
-    if (success) {
-      fetchMixedPaymentStats(fechaInicio, fechaFin, tiendaSeleccionada);
+  const generarRangoFechas = () => {
+  const ahora = new Date();
+  let inicio, fin;
+
+  if (periodo === "dia") {
+    inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0, 0);
+    fin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999);
+  } else if (periodo === "mes") {
+    inicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1, 0, 0, 0, 0);
+    fin = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (periodo === "año") {
+    inicio = new Date(ahora.getFullYear(), 0, 1, 0, 0, 0, 0);
+    fin = new Date(ahora.getFullYear(), 11, 31, 23, 59, 59, 999);
+  }
+
+  console.log("🔍 Fechas generadas:", {
+    inicio: inicio.toISOString(),
+    fin: fin.toISOString(),
+    periodo
+  });
+
+  setFechaInicio(inicio.toISOString().slice(0, 16));
+  setFechaFin(fin.toISOString().slice(0, 16));
+};
+
+useEffect(() => {
+  const cargarTiendas = async () => {
+    setCargandoTiendas(true);
+    try {
+      const response = await axios.get(`${apiBaseUrl}/api/tiendas`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTiendas(response.data);
+      console.log("✅ Tiendas cargadas:", response.data);
+    } catch (error) {
+      console.error("❌ Error al cargar tiendas:", error);
+      setMsg("Error al cargar tiendas ❌");
+      setTimeout(() => setMsg(""), 3000);
+    } finally {
+      setCargandoTiendas(false);
     }
   };
 
+  cargarTiendas();
+}, [token]);
+
+// ✅ NUEVO: Función para obtener estadísticas de pagos mixtos
+const fetchMixedPaymentStats = async () => {
+  if (!fechaInicio || !fechaFin) return;
+  
+  setCargandoMixedStats(true);
+  try {
+    const startDateObj = new Date(fechaInicio);
+    const endDateObj = new Date(fechaFin);
+
+    const params = {
+      startDate: startDateObj.toISOString().slice(0, 10),
+      endDate: endDateObj.toISOString().slice(0, 10),
+    };
+
+    if (tiendaSeleccionada) {
+      params.tiendaId = tiendaSeleccionada;
+    }
+
+    const response = await axios.get(`${apiBaseUrl}/api/sales/mixed-payment-stats`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    
+    setMixedPaymentStats(response.data);
+  } catch (error) {
+    console.error("❌ Error al obtener estadísticas de pagos mixtos:", error);
+  } finally {
+    setCargandoMixedStats(false);
+  }
+};
+
+useEffect(() => {
+  if (periodo !== "rango") generarRangoFechas();
+}, [periodo]);
+
+const handleGenerarCorte = () => {
+  if (!fechaInicio || !fechaFin) {
+    setMsg("Debes seleccionar fechas válidas ❌");
+    return;
+  }
+
+  // ✅ Enviar tanto fechas como horas al backend modificado
+  const startDateObj = new Date(fechaInicio);
+  const endDateObj = new Date(fechaFin);
+
+    const params = {
+      startDate: startDateObj.toISOString().slice(0, 10),
+      endDate: endDateObj.toISOString().slice(0, 10),
+      startTime: startDateObj.toTimeString().slice(0, 8),
+      endTime: endDateObj.toTimeString().slice(0, 8)
+    };
+
+    if (tiendaSeleccionada) {
+      params.tiendaId = tiendaSeleccionada;
+    }
+
+  console.log("🔍 Enviando al backend:", params);
+
+  setCargando(true);
+  axios
+    .get(`${apiBaseUrl}/api/caja/reporte`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    })
+    .then((res) => {
+      console.log("✅ Respuesta del servidor:", res.data);
+      setResultados(res.data);
+      fetchMixedPaymentStats();
+      setMsg("Corte generado exitosamente ✅");
+      setCargando(false);
+      setTimeout(() => setMsg(""), 3000);
+    })
+    .catch((error) => {
+      console.error('❌ Error al generar corte:', error.response?.data || error.message);
+      setMsg(`Error al generar corte: ${error.response?.data?.message || error.message} ❌`);
+      setCargando(false);
+    });
+};
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'MXN'
+    }).format(amount || 0);
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getPeriodoLabel = () => {
+    const labels = {
+      'dia': 'Hoy',
+      'mes': 'Este Mes',
+      'año': 'Este Año',
+      'rango': 'Rango Personalizado'
+    };
+    return labels[periodo] || periodo;
+  };
+
+  const calcularPorcentajeMetodo = (metodo, tipo) => {
+    if (!resultados || !resultados[tipo]?.total) return 0;
+    const totalMetodo = resultados[tipo]?.desglose?.[metodo]?.total || 0;
+    const totalGeneral = resultados[tipo]?.total || 0;
+    return ((totalMetodo / totalGeneral) * 100).toFixed(1);
+  };
+
+  const getMetodoIcon = (metodo) => {
+    const icons = {
+      'efectivo': '💵',
+      'transferencia': '🏦',
+      'tarjeta': '💳'
+    };
+    return icons[metodo] || '💰';
+  };
+
+  const getTiendaNombre = () => {
+  if (!tiendaSeleccionada) return "Todas las tiendas";
+  const tienda = tiendas.find(t => t._id === tiendaSeleccionada);
+  return tienda ? tienda.nombre : "Tienda no encontrada";
+};
 
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
@@ -81,13 +226,13 @@ export default function CajaPage() {
         </div>
 
         {/* Mensaje de estado */}
-        {error && (
+        {msg && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            error.includes('✅') 
+            msg.includes('✅') 
               ? 'bg-green-50 border-green-400 text-green-800' 
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
-            <p className="font-medium">{error}</p>
+            <p className="font-medium">{msg}</p>
           </div>
         )}
 
@@ -112,7 +257,7 @@ export default function CajaPage() {
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
-                    disabled={loading || tiendasLoading}
+                    disabled={cargando || cargandoTiendas}
                   >
                     <option value="">🏢 Todas las tiendas</option>
                     {tiendas.map((tienda) => (
@@ -121,7 +266,7 @@ export default function CajaPage() {
                       </option>
                     ))}
                   </select>
-                  {tiendasLoading && (
+                  {cargandoTiendas && (
                     <div className="text-xs mt-1" style={{ color: '#697487' }}>
                       Cargando tiendas...
                     </div>
@@ -141,7 +286,7 @@ export default function CajaPage() {
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
-                    disabled={loading}
+                    disabled={cargando}
                   >
                     <option value="dia">📅 Hoy</option>
                     <option value="mes">📊 Este mes</option>
@@ -150,6 +295,8 @@ export default function CajaPage() {
                   </select>
                 </div>
 
+            {periodo === "rango" && (
+              <>
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                     Fecha y Hora Inicio
@@ -163,8 +310,7 @@ export default function CajaPage() {
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
-                    disabled={loading || periodo !== "rango"}
-                    readOnly={periodo !== "rango"}
+                    disabled={cargando}
                   />
                 </div>
                 <div>
@@ -180,10 +326,11 @@ export default function CajaPage() {
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
-                    disabled={loading || periodo !== "rango"}
-                    readOnly={periodo !== "rango"}
+                    disabled={cargando}
                   />
                 </div>
+              </>
+            )}
           </div>
 
           <div className="mt-6">
@@ -191,9 +338,9 @@ export default function CajaPage() {
               onClick={handleGenerarCorte}
               className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
               style={{ backgroundColor: '#23334e' }}
-              disabled={loading}
+              disabled={cargando}
             >
-              {loading ? (
+              {cargando ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Generando Corte...
@@ -222,7 +369,7 @@ export default function CajaPage() {
                         Tienda
                       </div>
                       <div className="font-bold" style={{ color: '#23334e' }}>
-                        🏪 {getTiendaNombre(tiendaSeleccionada, tiendas)}
+                        🏪 {getTiendaNombre()}
                       </div>
                     </div>
                 <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
@@ -362,7 +509,7 @@ export default function CajaPage() {
                             {formatCurrency(resultados.ventas?.desglose?.[metodo]?.total)}
                           </div>
                           <div className="text-sm" style={{ color: '#697487' }}>
-                            {calcularPorcentajeMetodo(resultados, metodo, 'ventas')}% del total
+                            {calcularPorcentajeMetodo(metodo, 'ventas')}% del total
                           </div>
                         </div>
                       </div>
@@ -377,7 +524,7 @@ export default function CajaPage() {
                       <div className="mt-2 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-green-500 rounded-full h-2 transition-all duration-300"
-                          style={{ width: `${calcularPorcentajeMetodo(resultados, metodo, 'ventas')}%` }}
+                          style={{ width: `${calcularPorcentajeMetodo(metodo, 'ventas')}%` }}
                         ></div>
                       </div>
                     </div>
@@ -406,7 +553,7 @@ export default function CajaPage() {
                             {formatCurrency(resultados.gastos?.desglose?.[metodo]?.total)}
                           </div>
                           <div className="text-sm" style={{ color: '#697487' }}>
-                            {calcularPorcentajeMetodo(resultados, metodo, 'gastos')}% del total
+                            {calcularPorcentajeMetodo(metodo, 'gastos')}% del total
                           </div>
                         </div>
                       </div>
@@ -421,7 +568,7 @@ export default function CajaPage() {
                       <div className="mt-2 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-red-500 rounded-full h-2 transition-all duration-300"
-                          style={{ width: `${calcularPorcentajeMetodo(resultados, metodo, 'gastos')}%` }}
+                          style={{ width: `${calcularPorcentajeMetodo(metodo, 'gastos')}%` }}
                         ></div>
                       </div>
                     </div>
@@ -508,7 +655,7 @@ export default function CajaPage() {
                         📊 Combinaciones Más Populares
                       </h4>
                       
-                      {mixedStatsLoading ? (
+                      {cargandoMixedStats ? (
                         <div className="text-center py-4" style={{ color: '#8c95a4' }}>
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto mb-2"></div>
                           Cargando estadísticas...
@@ -595,7 +742,7 @@ export default function CajaPage() {
               
               <div className="flex flex-wrap gap-4">
                 <button
-                  onClick={() => printReport(resultados, tiendas)}
+                  onClick={() => window.print()}
                   className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
                   style={{ backgroundColor: '#46546b' }}
                 >
@@ -603,18 +750,26 @@ export default function CajaPage() {
                 </button>
                 
                 <button
-                  onClick={() => exportPDF(resultados, tiendas)}
+                  onClick={() => {
+                    const dataStr = JSON.stringify(resultados, null, 2);
+                    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `corte-caja-${new Date().toISOString().slice(0, 10)}.json`;
+                    link.click();
+                  }}
                   className="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
                   style={{ 
                     backgroundColor: '#8c95a4',
                     color: 'white'
                   }}
                 >
-                  📄 Exportar PDF
+                  💾 Exportar Datos
                 </button>
                 
                 <button
-                  onClick={limpiarResultados}
+                  onClick={() => setResultados(null)}
                   className="px-6 py-3 rounded-lg font-medium border transition-all duration-200 hover:shadow-md"
                   style={{ 
                     borderColor: '#e5e7eb',
@@ -629,7 +784,7 @@ export default function CajaPage() {
         )}
 
         {/* Indicador de carga global */}
-        {loading && (
+        {cargando && (
           <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 border-l-4" style={{ borderColor: '#23334e' }}>
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: '#23334e' }}></div>

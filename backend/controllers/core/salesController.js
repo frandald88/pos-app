@@ -272,10 +272,6 @@ class SalesController {
       
       const skip = (parseInt(page) - 1) * parseInt(limit);
       
-      console.log('🔍 DEBUGGING - Final filter for paginated query:', JSON.stringify(filter, null, 2));
-      console.log('🔍 DEBUGGING - Query params: skip =', skip, ', limit =', parseInt(limit));
-      console.log('🔍 DEBUGGING - Has search term:', !!search);
-      console.log('🔍 DEBUGGING - Search term value:', search);
       
       const sales = await Sale.find(filter)
         .populate('tienda', 'nombre')
@@ -286,11 +282,6 @@ class SalesController {
         .skip(skip)
         .limit(parseInt(limit));
       
-      console.log('🔍 DEBUGGING - Found', sales.length, 'sales');
-      console.log('🔍 DEBUGGING - First 3 sale IDs:', sales.slice(0, 3).map(s => s._id.toString()));
-      console.log('🔍 DEBUGGING - Missing IDs check:');
-      console.log('   - 687952baad4ec3386aaeeb32 found:', sales.some(s => s._id.toString() === '687952baad4ec3386aaeeb32'));
-      console.log('   - 688b58891395bec936ed0e5d found:', sales.some(s => s._id.toString() === '688b58891395bec936ed0e5d'));
       
       // Agregar información de devoluciones para ventas canceladas con totalReturned > 0
       const Return = require('../../modules/devoluciones/model');
@@ -309,12 +300,30 @@ class SalesController {
       
       const total = await Sale.countDocuments(filter);
       
-      // Generar estadísticas por estado respetando filtros aplicados (tienda, búsqueda)
-      // Crear filtro base sin estado específico para contar todos los estados
-      const statsFilter = { ...filter };
-      delete statsFilter.status; // Remover filtro de estado para contar todos
+      // Generar estadísticas por estado respetando filtros aplicados PERO solo tienda y fechas
+      // No incluir filtros de búsqueda, método o tipo para las estadísticas globales
+      const statsFilter = {};
       
-      console.log('🔢 Calculating filtered stats with filter:', JSON.stringify(statsFilter, null, 2));
+      // Conservar solo filtros de tienda y fechas para las estadísticas
+      // Aplicar el mismo filtro de tienda que se usó en la consulta principal
+      if (currentUser.role !== 'admin') {
+        // Usuarios no admin solo ven ventas de su tienda
+        if (currentUser.tienda) {
+          statsFilter.tienda = currentUser.tienda._id;
+        }
+      } else if (tiendaId) {
+        // Admin puede filtrar por tienda específica - convertir a ObjectId si es necesario
+        try {
+          statsFilter.tienda = new mongoose.Types.ObjectId(tiendaId);
+        } catch (e) {
+          // Si no es un ObjectId válido, usar como string
+          statsFilter.tienda = tiendaId;
+        }
+      }
+      
+      if (filter.date) {
+        statsFilter.date = filter.date;
+      }
       
       const statusStats = await Sale.aggregate([
         { $match: statsFilter },
@@ -342,7 +351,6 @@ class SalesController {
         }
       });
       
-      console.log('🔢 Filtered stats calculated:', globalStats);
       
       return successResponse(res, {
         sales,

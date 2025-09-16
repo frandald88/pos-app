@@ -27,13 +27,13 @@ router.delete('/no-store', verifyToken, requireAdmin, salesController.deleteNoSt
 // Actualizar estado de venta
 router.put('/:id/status', verifyToken, salesController.updateStatus);
 
-// Obtener venta por ID
-router.get('/:id', verifyToken, salesController.getById);
-
 // Obtener estadísticas de pagos mixtos
 router.get('/mixed-payment-stats', verifyToken, salesController.getMixedPaymentStats);
 
 // Obtener ventas por rango de fechas
 router.get('/date-range', verifyToken, salesController.getByDateRange);
+
+// Obtener venta por ID
+router.get('/:id', verifyToken, salesController.getById);
 
 module.exports = router;

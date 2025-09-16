@@ -11,12 +11,16 @@ app.use(express.json());
 
 // Database connection usando la URI correcta del .env
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/pos-app';
-console.log('🔍 Connecting to MongoDB Atlas...');
-console.log('🔍 URI found:', mongoUri ? 'yes' : 'no');
+
+if (process.env.NODE_ENV !== 'production') {
+  console.log('🔍 Connecting to MongoDB Atlas...');
+}
 
 mongoose.connect(mongoUri)
 .then(() => {
-  console.log('✅ Connected to MongoDB Atlas successfully');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('✅ Connected to MongoDB Atlas successfully');
+  }
 })
 .catch((error) => {
   console.error('❌ MongoDB connection error:', error.message);
@@ -35,76 +39,64 @@ let clientesRoutes, devolucionesRoutes, deliveryRoutes, reportesRoutes, attendan
 try {
   clientesRoutes = require('./modules/clientes/routes');
 } catch (e) {
-  console.log('⚠️ Clientes module not found');
+  // Module not found - silent in production
 }
 
 try {
   devolucionesRoutes = require('./modules/devoluciones/routes');
 } catch (e) {
-  console.log('⚠️ Devoluciones module not found');
+  // Module not found - silent in production
 }
 
-// ✅ AGREGAR: Cargar rutas de delivery
 try {
   deliveryRoutes = require('./modules/delivery/routes');
-  console.log('✅ Delivery module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Delivery module not found:', e.message);
+  // Module not available - silent in production
 }
 
-// ✅ NUEVO: Cargar rutas de reportes
 try {
   reportesRoutes = require('./modules/reportes/routes');
-  console.log('✅ Reportes module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Reportes module not found:', e.message);
+  // Module not available - silent in production
 }
 
 try {
   attendanceRoutes = require('./modules/asistencia/routes');
-  console.log('✅ Asistencia module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Asistencia module not found:', e.message);
+  // Module not available - silent in production
 }
 
 try {
   expensesRoutes = require('./modules/gastos/routes');
-  console.log('✅ Gastos module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Gastos module not found:', e.message);
+  // Module not available - silent in production
 }
 
 try {
   empleadosRoutes = require('./modules/empleados/routes');
-  console.log('✅ Empleados module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Empleados module not found:', e.message);
+  // Module not available - silent in production
 }
 
 try {
   cajaRoutes = require('./modules/caja/routes');
-  console.log('✅ Caja module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Caja module not found:', e.message);
+  // Module not available - silent in production
 }
 
 try {
   vacacionesRoutes = require('./modules/vacaciones/routes');
-  console.log('✅ Vacaciones module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Vacaciones module not found:', e.message);
+  // Module not available - silent in production
 }
 
-// ✅ NUEVO: Cargar rutas de horarios
 try {
   schedulesRoutes = require('./modules/schedules/routes');
-  console.log('✅ Schedules module loaded successfully');
 } catch (e) {
-  console.log('⚠️ Schedules module not found:', e.message);
+  // Module not available - silent in production
 }
 
 // Configure routes
-console.log('🔍 Configuring routes...');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/products', productsRoutes);
@@ -112,52 +104,15 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/tiendas', tiendasRoutes);
 
 if (clientesRoutes) app.use('/api/clientes', clientesRoutes);
-
-if (devolucionesRoutes) {
-  app.use('/api/returns', devolucionesRoutes);
-  console.log('✅ Returns routes configured at /api/returns');
-}
-
-if (deliveryRoutes) {
-  app.use('/api/orders', deliveryRoutes);
-  console.log('✅ Delivery/Orders routes configured at /api/orders');
-}
-
-if (reportesRoutes) {
-  app.use('/api/report', reportesRoutes);
-  console.log('✅ Reports routes configured at /api/report');
-}
-
-if (attendanceRoutes) {
-  app.use('/api/attendance', attendanceRoutes);
-  console.log('✅ Attendance routes configured at /api/attendance');
-}
-
-if (expensesRoutes) {
-  app.use('/api/expenses', expensesRoutes);
-  console.log('✅ Expenses routes configured at /api/expenses');
-}
-
-if (empleadosRoutes) {
-  app.use('/api/employees', empleadosRoutes);
-  console.log('✅ Employees routes configured at /api/employees');
-}
-
-if (cajaRoutes) {
-  app.use('/api/caja', cajaRoutes);
-  console.log('✅ Caja routes configured at /api/caja');
-}
-
-if (vacacionesRoutes) {
-  app.use('/api/vacations', vacacionesRoutes);
-  console.log('✅ Vacaciones routes configured at /api/vacations');
-}
-
-// ✅ NUEVO: Configurar rutas de horarios
-if (schedulesRoutes) {
-  app.use('/api/schedules', schedulesRoutes);
-  console.log('✅ Schedules routes configured at /api/schedules');
-}
+if (devolucionesRoutes) app.use('/api/returns', devolucionesRoutes);
+if (deliveryRoutes) app.use('/api/orders', deliveryRoutes);
+if (reportesRoutes) app.use('/api/report', reportesRoutes);
+if (attendanceRoutes) app.use('/api/attendance', attendanceRoutes);
+if (expensesRoutes) app.use('/api/expenses', expensesRoutes);
+if (empleadosRoutes) app.use('/api/employees', empleadosRoutes);
+if (cajaRoutes) app.use('/api/caja', cajaRoutes);
+if (vacacionesRoutes) app.use('/api/vacations', vacacionesRoutes);
+if (schedulesRoutes) app.use('/api/schedules', schedulesRoutes);
 
 // Health check
 app.get('/', (req, res) => {
@@ -242,80 +197,9 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔍 JWT Secret: ${process.env.JWT_SECRET ? 'configured' : 'using fallback'}`);
-  console.log(`🔍 MongoDB URI: ${process.env.MONGO_URI ? 'configured' : 'not found'}`);
+  console.log(`🚀 POS System running on port ${PORT}`);
   
-  console.log('\n📋 Available routes:');
-  console.log('   POST /api/auth/login');
-  console.log('   GET  /api/users');
-  console.log('   GET  /api/products');
-  console.log('   GET  /api/sales');
-  console.log('   GET  /api/tiendas');
-  if (clientesRoutes) console.log('   GET  /api/clientes');
-  if (devolucionesRoutes) {
-    console.log('   GET  /api/devoluciones');
-    console.log('   POST /api/devoluciones');
-    console.log('   GET  /api/returns');
-    console.log('   POST /api/returns');
-  }
-  if (deliveryRoutes) {
-    console.log('   GET  /api/orders');
-    console.log('   POST /api/orders');
-    console.log('   PUT  /api/orders/:id');
-    console.log('   DELETE /api/orders/:id');
-  }
-  if (reportesRoutes) {
-    console.log('   GET  /api/report/ventas');
-    console.log('   GET  /api/report/productos/top');
-    console.log('   GET  /api/report/usuarios/performance');
-  }
-  if (attendanceRoutes) {
-    console.log('   POST /api/attendance/checkin');
-    console.log('   POST /api/attendance/checkout');
-    console.log('   POST /api/attendance/absence');
-    console.log('   GET  /api/attendance/report');
-    console.log('   GET  /api/attendance/today');
-    console.log('   GET  /api/attendance/mine');
-    console.log('   GET  /api/attendance/schedule-check'); // ✅ NUEVO
-  }
-  if (expensesRoutes) {
-    console.log('   GET  /api/expenses');
-    console.log('   POST /api/expenses');
-    console.log('   GET  /api/expenses/report');
-    console.log('   PUT  /api/expenses/:id');
-    console.log('   DELETE /api/expenses/:id');
-  }
-  if (empleadosRoutes) {
-    console.log('   GET  /api/employees/history');
-    console.log('   POST /api/employees/history');
-    console.log('   PUT  /api/employees/history/:id');
-    console.log('   DELETE /api/employees/history/:id');
-    console.log('   GET  /api/employees/history/ranking/faltas');
-    console.log('   GET  /api/employees/activos');
-  }
-  if (cajaRoutes) {
-    console.log('   GET  /api/caja/reporte');
-    console.log('   POST /api/caja/corte');
-    console.log('   GET  /api/caja/historiales');
-  }
-  if (vacacionesRoutes) {
-    console.log('   GET  /api/vacations/all');
-    console.log('   GET  /api/vacations/mine');
-    console.log('   POST /api/vacations');
-    console.log('   PUT  /api/vacations/:id/status');
-    console.log('   GET  /api/vacations/days/:userId');
-  }
-  // ✅ NUEVO: Mostrar rutas de horarios
-  if (schedulesRoutes) {
-    console.log('   GET  /api/schedules');
-    console.log('   POST /api/schedules');
-    console.log('   GET  /api/schedules/employee/:employeeId');
-    console.log('   GET  /api/schedules/mine');
-    console.log('   PUT  /api/schedules/:id');
-    console.log('   DELETE /api/schedules/:id');
-    console.log('   POST /api/schedules/default/:employeeId');
-    console.log('   GET  /api/schedules/workday-check/:employeeId');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🔧 Health check: http://localhost:${PORT}/api/health`);
   }
 });

@@ -1,44 +1,105 @@
 const Sale = require('../../core/sales/model');
-const Expense = require('../../../modules/gastos/model');
+const Expense = require('../../modules/gastos/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 
 class CajaController {
-  // Reporte de corte de caja
+  // Reporte de corte de caja con soporte para horas específicas y pagos mixtos
   async getReport(req, res) {
     try {
-      const { startDate, endDate, tiendaId, incluirDevoluciones = 'true' } = req.query;
+      const { startDate, endDate, startTime = '00:00:00', endTime = '23:59:59', tiendaId, incluirDevoluciones = 'true' } = req.query;
+      const mongoose = require('mongoose');
+
+      console.log('🔍 BACKEND - Parámetros recibidos:', { startDate, endDate, startTime, endTime, tiendaId });
 
       if (!startDate || !endDate) {
+        console.log('❌ BACKEND - Faltan parámetros de fecha');
         return errorResponse(res, 'Debes proporcionar startDate y endDate en formato YYYY-MM-DD', 400);
       }
 
-      const inicio = new Date(`${startDate}T00:00:00.000Z`);
-      const fin = new Date(`${endDate}T23:59:59.999Z`);
+      // Construir fechas con las horas proporcionadas
+      const inicio = new Date(`${startDate}T${startTime}.000Z`);
+      const fin = new Date(`${endDate}T${endTime}.999Z`);
+
+      console.log('🔍 BACKEND - Fechas construidas:', {
+        inicio: inicio.toISOString(),
+        fin: fin.toISOString()
+      });
 
       if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
-        return errorResponse(res, 'Formato de fecha inválido. Use YYYY-MM-DD', 400);
+        console.log('❌ BACKEND - Fechas inválidas');
+        return errorResponse(res, 'Formato de fecha inválido. Use YYYY-MM-DD para fechas y HH:MM:SS para horas', 400);
       }
 
       if (inicio > fin) {
         return errorResponse(res, 'La fecha de inicio debe ser anterior a la fecha de fin', 400);
       }
 
-      const filtroVentas = { createdAt: { $gte: inicio, $lte: fin } };
+      // Filtros base
+      const filtroVentas = { 
+        createdAt: { $gte: inicio, $lte: fin },
+        status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta'] }
+      };
       const filtroGastos = { createdAt: { $gte: inicio, $lte: fin }, status: 'aprobado' };
 
       if (tiendaId) {
-        filtroVentas.tienda = tiendaId;
-        filtroGastos.tienda = tiendaId;
+        const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
+        filtroVentas.tienda = tiendaObjectId;
+        filtroGastos.tienda = tiendaObjectId;
       }
 
-      // Total ventas por método de pago
+      console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
+      console.log('🔍 Buscando ventas desde:', inicio.toISOString(), 'hasta:', fin.toISOString());
+      console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta']);
+
+      // Ventas con soporte para pagos mixtos y devoluciones
       const ventasPorMetodo = await Sale.aggregate([
         { $match: filtroVentas },
         {
+          $facet: {
+            ventasUnicas: [
+              { $match: { $or: [{ paymentType: "single" }, { paymentType: { $exists: false } }] } },
+              {
+                $group: {
+                  _id: "$method",
+                  total: { $sum: { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] } },
+                  cantidad: { $sum: 1 }
+                }
+              }
+            ],
+            ventasMixtas: [
+              { $match: { paymentType: "mixed" } },
+              { $unwind: "$mixedPayments" },
+              {
+                $addFields: {
+                  adjustmentFactor: {
+                    $divide: [
+                      { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] },
+                      "$total"
+                    ]
+                  }
+                }
+              },
+              {
+                $group: {
+                  _id: "$mixedPayments.method",
+                  total: { $sum: { $multiply: ["$mixedPayments.amount", "$adjustmentFactor"] } },
+                  cantidad: { $sum: 1 }
+                }
+              }
+            ]
+          }
+        },
+        {
+          $project: {
+            combinedResults: { $concatArrays: ["$ventasUnicas", "$ventasMixtas"] }
+          }
+        },
+        { $unwind: "$combinedResults" },
+        {
           $group: {
-            _id: "$method",
-            total: { $sum: "$total" },
-            cantidad: { $sum: 1 }
+            _id: "$combinedResults._id",
+            total: { $sum: "$combinedResults.total" },
+            cantidad: { $sum: "$combinedResults.cantidad" }
           }
         }
       ]);
@@ -60,7 +121,9 @@ class CajaController {
         }
       });
 
-      // Total gastos por método de pago
+      console.log('🔍 TOTAL VENTAS CALCULADO:', totalVentas);
+
+      // Gastos por método de pago
       const gastosPorMetodo = await Expense.aggregate([
         { $match: filtroGastos },
         {
@@ -89,22 +152,53 @@ class CajaController {
         }
       });
 
-      // Devoluciones (si el módulo está activo)
-      let totalDevoluciones = 0;
+      console.log('🔍 TOTAL GASTOS CALCULADO:', totalGastos);
+
+      // Estadísticas de pagos mixtos
+      const mixedPaymentStats = await Sale.aggregate([
+        { 
+          $match: { 
+            ...filtroVentas, 
+            paymentType: "mixed" 
+          } 
+        },
+        {
+          $group: {
+            _id: null,
+            totalVentasMixtas: { $sum: 1 },
+            montoTotalMixto: { $sum: "$total" },
+            promedioMetodosPorVenta: { $avg: { $size: "$mixedPayments" } }
+          }
+        }
+      ]);
+
+      const estadisticasMixtas = mixedPaymentStats[0] || {
+        totalVentasMixtas: 0,
+        montoTotalMixto: 0,
+        promedioMetodosPorVenta: 0
+      };
+
+      // Devoluciones (solo para información)
       let detallesDevoluciones = { total: 0, cantidad: 0 };
 
       if (incluirDevoluciones === 'true') {
         try {
-          const Return = require('../../../modules/devoluciones/model');
+          const Return = require('../../modules/devoluciones/model');
+          
+          const filtroDevolucion = { date: { $gte: inicio, $lte: fin } };
+          if (tiendaId) {
+            const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
+            filtroDevolucion.tienda = tiendaObjectId;
+          }
+          
           const devoluciones = await Return.aggregate([
-            { $match: { date: { $gte: inicio, $lte: fin } } },
+            { $match: filtroDevolucion },
             { $group: { _id: null, total: { $sum: "$refundAmount" }, cantidad: { $sum: 1 } } }
           ]);
           
           if (devoluciones[0]) {
-            totalDevoluciones = devoluciones[0].total;
             detallesDevoluciones = {
-              total: Number(totalDevoluciones.toFixed(2)),
+              total: Number(devoluciones[0].total.toFixed(2)),
               cantidad: devoluciones[0].cantidad
             };
           }
@@ -119,19 +213,19 @@ class CajaController {
         tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total).toFixed(2))
       };
 
-      const corteFinal = Number((totalVentas - totalGastos - totalDevoluciones).toFixed(2));
+      const corteFinal = Number((totalVentas - totalGastos).toFixed(2));
 
       const resumenGeneral = {
         totalTransacciones: desglosVentas.efectivo.cantidad + desglosVentas.transferencia.cantidad + desglosVentas.tarjeta.cantidad,
-        promedioVenta: totalVentas > 0 ? Number((totalVentas / (desglosVentas.efectivo.cantidad + desglosVentas.transferencia.cantidad + desglosVentas.tarjeta.cantidad)).toFixed(2)) : 0,
+        promedioVenta: totalVentas > 0 ? Number((totalVentas / Math.max(1, desglosVentas.efectivo.cantidad + desglosVentas.transferencia.cantidad + desglosVentas.tarjeta.cantidad)).toFixed(2)) : 0,
         totalGastosAprobados: desglosGastos.efectivo.cantidad + desglosGastos.transferencia.cantidad + desglosGastos.tarjeta.cantidad,
         promedioGasto: totalGastos > 0 ? Number((totalGastos / Math.max(1, desglosGastos.efectivo.cantidad + desglosGastos.transferencia.cantidad + desglosGastos.tarjeta.cantidad)).toFixed(2)) : 0
       };
 
       return successResponse(res, {
         periodo: {
-          inicio: startDate,
-          fin: endDate,
+          inicio: inicio.toISOString(),
+          fin: fin.toISOString(),
           tiendaId: tiendaId || 'todas'
         },
         ventas: {
@@ -148,7 +242,13 @@ class CajaController {
           final: corteFinal,
           sinDevoluciones: Number((totalVentas - totalGastos).toFixed(2))
         },
-        resumen: resumenGeneral
+        resumen: resumenGeneral,
+        pagosMixtos: {
+          totalVentas: estadisticasMixtas.totalVentasMixtas,
+          montoTotal: Number(estadisticasMixtas.montoTotalMixto.toFixed(2)),
+          promedioMetodos: Number(estadisticasMixtas.promedioMetodosPorVenta.toFixed(2)),
+          porcentajeDelTotal: totalVentas > 0 ? Number(((estadisticasMixtas.montoTotalMixto / totalVentas) * 100).toFixed(2)) : 0
+        }
       }, 'Reporte de caja generado exitosamente');
 
     } catch (err) {
