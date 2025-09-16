@@ -76,6 +76,13 @@ router.post('/', verifyToken, upload.single('evidencia'), async (req, res) => {
       }
     }
     
+    // Crear fecha local (zona horaria de México)
+    const localDate = new Date();
+    // Ajustar a zona horaria de México (UTC-6)
+    const mexicoOffset = -6 * 60; // -6 horas en minutos
+    const utcTime = localDate.getTime() + (localDate.getTimezoneOffset() * 60000);
+    const mexicoTime = new Date(utcTime + (mexicoOffset * 60000));
+    
     const expenseData = {
       concepto: concepto.trim(),
       proveedor: proveedor.trim(),
@@ -84,6 +91,7 @@ router.post('/', verifyToken, upload.single('evidencia'), async (req, res) => {
       tienda,
       createdBy: req.userId,
       status: 'pendiente',
+      createdAt: mexicoTime,
     };
 
     if (req.file) {
@@ -123,15 +131,23 @@ router.get('/report', verifyToken, requireAdmin, async (req, res) => {
     const { startDate, endDate, proveedor, metodoPago, tiendaId, status, limit = 100 } = req.query;
     const filter = {};
 
-    // Filtros de fecha
+    // Filtros de fecha ajustados a zona horaria de México
+    const mexicoOffset = -6 * 60; // -6 horas en minutos
+    const adjustToMexicoTime = (date) => {
+      const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+      return new Date(utcTime + (mexicoOffset * 60000));
+    };
+
     if (startDate && endDate) {
-      const start = new Date(startDate + 'T00:00:00.000Z');
-      const end = new Date(endDate + 'T23:59:59.999Z');
+      const start = adjustToMexicoTime(new Date(startDate + 'T00:00:00'));
+      const end = adjustToMexicoTime(new Date(endDate + 'T23:59:59'));
       filter.createdAt = { $gte: start, $lte: end };
     } else if (startDate) {
-      filter.createdAt = { $gte: new Date(startDate + 'T00:00:00.000Z') };
+      const start = adjustToMexicoTime(new Date(startDate + 'T00:00:00'));
+      filter.createdAt = { $gte: start };
     } else if (endDate) {
-      filter.createdAt = { $lte: new Date(endDate + 'T23:59:59.999Z') };
+      const end = adjustToMexicoTime(new Date(endDate + 'T23:59:59'));
+      filter.createdAt = { $lte: end };
     }
 
     // Otros filtros

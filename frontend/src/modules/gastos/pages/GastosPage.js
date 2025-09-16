@@ -1,477 +1,152 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import apiBaseUrl from "../../../config/api";
+import { useGastosData } from '../hooks/useGastosData';
+import { useGastosFilters } from '../hooks/useGastosFilters';
+import { useGastosUtils } from '../hooks/useGastosUtils';
+import { useGastosForm } from '../hooks/useGastosForm';
 
 export default function ExpensesPage() {
-  const token = localStorage.getItem("token");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userLoaded, setUserLoaded] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  // Hooks para manejo de datos
+  const {
+    loading,
+    msg,
+    editingMsg,
+    currentUser,
+    userLoaded,
+    reportData,
+    availableStores,
+    defaultStore,
+    canSelectMultipleStores,
+    proveedores,
+    loadExpenses,
+    createExpense,
+    updateExpenseStatus,
+    deleteExpense,
+    searchProviders,
+    viewEvidence
+  } = useGastosData();
 
-  const [concepto, setConcepto] = useState("");
-  const [proveedor, setProveedor] = useState("");
-  const [monto, setMonto] = useState(""); // ✅ CAMBIADO: string vacío en lugar de número
-  const [metodoPago, setMetodoPago] = useState("efectivo");
-  const [evidencia, setEvidencia] = useState(null);
-  const [tiendas, setTiendas] = useState([]);
-  const [tiendaSeleccionada, setTiendaSeleccionada] = useState("");
-  const [filtroProveedor, setFiltroProveedor] = useState("");
-  const [filtroTienda, setFiltroTienda] = useState("");
-  const [filtroMetodoPago, setFiltroMetodoPago] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
-  const [filtroInicio, setFiltroInicio] = useState("");
-  const [filtroFin, setFiltroFin] = useState("");
-  const [reportData, setReportData] = useState([]);
-  const [editingGastoId, setEditingGastoId] = useState(null);
-  const [newStatus, setNewStatus] = useState("");
-  const [adminNote, setAdminNote] = useState("");
-  const [availableStores, setAvailableStores] = useState([]);
-  const [defaultStore, setDefaultStore] = useState(null);
-  const [canSelectMultipleStores, setCanSelectMultipleStores] = useState(true);
-  const [editingMsg, setEditingMsg] = useState("");
-  // ✅ NUEVOS ESTADOS para sistema de proveedores
-  const [proveedores, setProveedores] = useState([]);
-  const [proveedoresEncontrados, setProveedoresEncontrados] = useState([]);
-  const [busquedaProveedor, setBusquedaProveedor] = useState("");
-  const [usarProveedorManual, setUsarProveedorManual] = useState(false);
+  // Hooks para manejo de filtros
+  const {
+    filtroProveedor,
+    filtroTienda,
+    filtroMetodoPago,
+    filtroEstado,
+    filtroInicio,
+    filtroFin,
+    setFiltroProveedor,
+    setFiltroTienda,
+    setFiltroMetodoPago,
+    setFiltroEstado,
+    setFiltroInicio,
+    setFiltroFin,
+    getFilters
+  } = useGastosFilters();
 
-  useEffect(() => {
-    setLoading(true);
-    axios
-      .get(`${apiBaseUrl}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        setCurrentUser(res.data);
-        console.log('Current user loaded:', res.data);
-      })
-      .catch((error) => {
-        console.error('Error loading user:', error);
-        setMsg("Error al cargar usuario ❌");
-      })
-      .finally(() => {
-        setUserLoaded(true);
-        setLoading(false);
-      });
+  // Hooks para utilidades
+  const {
+    formatCurrency,
+    formatDate,
+    getStatusConfig,
+    getPaymentMethodIcon,
+    getExpenseStats,
+    validateExpenseForm
+  } = useGastosUtils();
 
-    // Cargar tiendas y proveedores
-    // ✅ CORREGIDO: Cargar tiendas disponibles según rol y proveedores
-      Promise.all([
-        axios.get(`${apiBaseUrl}/api/expenses/available-stores`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${apiBaseUrl}/api/expenses/providers`, { headers: { Authorization: `Bearer ${token}` } })
-      ])
-      .then(([storesRes, proveedoresRes]) => {
-        // ✅ AGREGAR VALIDACIONES para prevenir errores
-        const storesData = storesRes.data || {};
-        const { stores = [], userRole = 'vendedor', defaultStore: userDefaultStore = null } = storesData;
-        
-        setAvailableStores(stores);
-        setTiendas(stores); // Mantener compatibilidad
-        setProveedores(proveedoresRes.data || []);
-        setCanSelectMultipleStores(userRole === 'admin');
-        setDefaultStore(userDefaultStore);
-        
-        // ✅ NUEVO: Si no es admin, preseleccionar su tienda
-        if (userRole !== 'admin' && userDefaultStore) {
-          setTiendaSeleccionada(userDefaultStore);
-        }
-        
-        console.log('Available stores loaded:', stores);
-        console.log('User role:', userRole);
-        console.log('Default store:', userDefaultStore);
-        console.log('Can select multiple stores:', userRole === 'admin');
-        console.log('Proveedores loaded:', proveedoresRes.data);
-      })
-      .catch((error) => {
-        console.error('Error loading data:', error);
-        setMsg("Error al cargar datos iniciales ❌");
-        // ✅ ASEGURAR que los arrays estén inicializados aunque falle
-        setAvailableStores([]);
-        setTiendas([]);
-        setProveedores([]);
-        setCanSelectMultipleStores(false);
-      });
-  }, [token]);
+  // Hooks para manejo de formularios
+  const {
+    mostrarFormulario,
+    concepto,
+    proveedor,
+    monto,
+    metodoPago,
+    evidencia,
+    tiendaSeleccionada,
+    usarProveedorManual,
+    busquedaProveedor,
+    proveedoresEncontrados,
+    editingGastoId,
+    newStatus,
+    adminNote,
+    setMostrarFormulario,
+    setConcepto,
+    setProveedor,
+    setMonto,
+    setMetodoPago,
+    setEvidencia,
+    setTiendaSeleccionada,
+    setUsarProveedorManual,
+    setBusquedaProveedor,
+    setProveedoresEncontrados,
+    setEditingGastoId,
+    setNewStatus,
+    setAdminNote,
+    getFormData,
+    clearForm,
+    handleCancelar,
+    clearEditingForm,
+    selectProvider
+  } = useGastosForm(defaultStore, canSelectMultipleStores);
 
-  useEffect(() => {
-    if (userLoaded && currentUser?.role === "admin") {
-      loadExpenses();
-    }
-  }, [userLoaded, currentUser]);
-
-  // ✅ NUEVA FUNCIÓN para buscar proveedores
-  const buscarProveedores = (termino) => {
+  // Buscar proveedores
+  const buscarProveedores = async (termino) => {
     if (termino.length < 2) {
       setProveedoresEncontrados([]);
       return;
     }
     
-    axios
-      .get(`${apiBaseUrl}/api/expenses/providers/search`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { q: termino }
-      })
-      .then((res) => setProveedoresEncontrados(res.data))
-      .catch(() => console.error("Error al buscar proveedores"));
+    try {
+      const proveedoresRes = await searchProviders(termino);
+      setProveedoresEncontrados(proveedoresRes);
+    } catch (error) {
+      console.error("Error al buscar proveedores:", error);
+    }
   };
 
-  // ✅ NUEVA FUNCIÓN para actualizar lista de proveedores
-  const fetchProveedores = () => {
-    axios
-      .get(`${apiBaseUrl}/api/expenses/providers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setProveedores(res.data))
-      .catch(() => console.error("Error al cargar proveedores"));
-  };
+  // Manejar guardado de gasto
+  const handleGuardarGasto = async () => {
+    const validation = validateExpenseForm(getFormData());
+    if (!validation.isValid) {
+      return;
+    }
 
-  const loadExpenses = () => {
-    setLoading(true);
-    setMsg("");
-    
-    console.log('Loading expenses with filters:', {
-      proveedor: filtroProveedor,
-      metodoPago: filtroMetodoPago,
-      tiendaId: filtroTienda,
-      status: filtroEstado,
-      startDate: filtroInicio,
-      endDate: filtroFin,
-    });
-
-    axios
-      .get(`${apiBaseUrl}/api/expenses/report`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: {
-          proveedor: filtroProveedor || undefined,
-          metodoPago: filtroMetodoPago || undefined,
-          tiendaId: filtroTienda || undefined,
-          status: filtroEstado || undefined,
-          startDate: filtroInicio || undefined,
-          endDate: filtroFin || undefined,
-        },
-      })
-      .then((res) => {
-        console.log('Expenses response:', res.data);
-        
-        if (res.data) {
-          if (Array.isArray(res.data)) {
-            setReportData(res.data);
-            setMsg(`Reporte cargado exitosamente ✅ - ${res.data.length} gastos encontrados`);
-          } else if (res.data.expenses && Array.isArray(res.data.expenses)) {
-            setReportData(res.data.expenses);
-            setMsg(`Reporte cargado exitosamente ✅ - ${res.data.expenses.length} gastos encontrados`);
-          } else if (res.data.data && Array.isArray(res.data.data)) {
-            setReportData(res.data.data);
-            setMsg(`Reporte cargado exitosamente ✅ - ${res.data.data.length} gastos encontrados`);
-          } else {
-            console.error('Unexpected response structure:', res.data);
-            setReportData([]);
-            setMsg("Estructura de respuesta inesperada");
-          }
-        } else {
-          setReportData([]);
-          setMsg("No se encontraron gastos");
-        }
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch((error) => {
-        console.error('Error loading expenses:', error);
-        setReportData([]);
-        setMsg("Error al cargar reporte ❌");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
- const handleGuardarGasto = () => {
-  if (!concepto || !proveedor || !monto || !metodoPago || !tiendaSeleccionada) {
-    setMsg("Por favor completa todos los campos incluyendo tienda ❌");
-    return;
-  }
-
-  setLoading(true);
-  const formData = new FormData();
-  formData.append("concepto", concepto);
-  formData.append("proveedor", proveedor);
-  formData.append("monto", monto === "" ? 0 : parseFloat(monto));
-  formData.append("metodoPago", metodoPago);
-  formData.append("tienda", tiendaSeleccionada);
-  if (evidencia) formData.append("evidencia", evidencia);
-
-  axios
-    .post(`${apiBaseUrl}/api/expenses`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    })
-    .then((response) => {
-      console.log('Expense saved:', response.data);
-      setMsg("Gasto guardado exitosamente ✅");
-      setConcepto("");
-      setProveedor("");
-      setMonto("");
-      setMetodoPago("efectivo");
-      setEvidencia(null);
-      
-      // ✅ MODIFICADO: Solo limpiar tienda si es admin
-      if (canSelectMultipleStores) {
-        setTiendaSeleccionada("");
-      }
-      
+    try {
+      await createExpense(getFormData());
+      clearForm();
       setMostrarFormulario(false);
-      setUsarProveedorManual(false);
-      setBusquedaProveedor("");
-      setProveedoresEncontrados([]);
-      
-      const fileInput = document.querySelector('input[type="file"]');
-      if (fileInput) fileInput.value = '';
-      
-      // Actualizar lista de proveedores y reporte
-      fetchProveedores();
-      if (currentUser?.role === "admin") loadExpenses();
-      setTimeout(() => setMsg(""), 3000);
-    })
-    .catch((error) => {
-      console.error('Error saving expense:', error);
-      // ✅ MODIFICADO: Mostrar mensaje de error más específico
-      if (error.response?.data?.message) {
-        setMsg(`Error: ${error.response.data.message} ❌`);
-      } else {
-        setMsg("Error al guardar gasto ❌");
-      }
-    })
-    .finally(() => {
-      setLoading(false);
-    });
-};
-  const saveStatus = (gastoId) => {
-  if (!newStatus) {
-    setEditingMsg("Selecciona un estado válido ❌"); // Usar mensaje local
-    setTimeout(() => setEditingMsg(""), 3000);
-    return;
-  }
+    } catch (error) {
+      // Error manejado en el hook
+    }
+  };
 
-  setLoading(true);
-  setEditingMsg(""); // Limpiar mensaje anterior
-  
-  axios
-    .patch(
-      `${apiBaseUrl}/api/expenses/status/${gastoId}`,
-      { status: newStatus, nota: adminNote },
-      { headers: { Authorization: `Bearer ${token}` } }
-    )
-    .then((response) => {
-      console.log('Status updated:', response.data);
-      setEditingMsg("Estado actualizado exitosamente ✅");
-      setEditingGastoId(null);
-      setNewStatus("");
-      setAdminNote("");
-      loadExpenses();
-      setTimeout(() => setEditingMsg(""), 3000);
-    })
-    .catch((error) => {
-      console.error('Error updating status:', error);
-      setEditingMsg("Error al actualizar estado ❌");
-      setTimeout(() => setEditingMsg(""), 3000);
-    })
-    .finally(() => {
-      setLoading(false);
-    });
-};
+  // Guardar estado del gasto
+  const saveStatus = async (gastoId) => {
+    if (!newStatus) {
+      return;
+    }
 
-  const handleDelete = (gastoId) => {
+    try {
+      await updateExpenseStatus(gastoId, newStatus, adminNote);
+      clearEditingForm();
+    } catch (error) {
+      // Error manejado en el hook
+    }
+  };
+
+  // Manejar eliminación
+  const handleDelete = async (gastoId) => {
     if (!window.confirm("¿Estás seguro de eliminar este gasto?")) {
       return;
     }
 
-    setLoading(true);
-    axios
-      .delete(`${apiBaseUrl}/api/expenses/${gastoId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((response) => {
-        console.log('Expense deleted:', response.data);
-        setMsg("Gasto eliminado exitosamente ✅");
-        loadExpenses();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch((error) => {
-        console.error('Error deleting expense:', error);
-        setMsg("Error al eliminar gasto ❌");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  const viewEvidencia = async (filename) => {
     try {
-      setLoading(true);
-      setMsg("Cargando evidencia...");
-      
-      const response = await axios.get(
-        `${apiBaseUrl}/api/expenses/evidencia/${filename}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
-        }
-      );
-      
-      const getContentType = (filename) => {
-        const extension = filename.toLowerCase().split('.').pop();
-        const mimeTypes = {
-          'png': 'image/png',
-          'jpg': 'image/jpeg',
-          'jpeg': 'image/jpeg',
-          'gif': 'image/gif',
-          'pdf': 'application/pdf',
-          'doc': 'application/msword',
-          'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'xls': 'application/vnd.ms-excel',
-          'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'txt': 'text/plain'
-        };
-        return mimeTypes[extension] || 'application/octet-stream';
-      };
-
-      const contentType = getContentType(filename);
-      const blob = new Blob([response.data], { type: contentType });
-      const url = window.URL.createObjectURL(blob);
-      
-      if (contentType.startsWith('image/')) {
-        const newWindow = window.open();
-        newWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>${filename}</title>
-            <style>
-              body { 
-                margin: 0; 
-                padding: 20px; 
-                background: #f0f0f0; 
-                display: flex; 
-                justify-content: center; 
-                align-items: center; 
-                min-height: 100vh; 
-              }
-              img { 
-                max-width: 100%; 
-                max-height: 100vh; 
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
-                background: white; 
-                border-radius: 8px;
-              }
-            </style>
-          </head>
-          <body>
-            <img src="${url}" alt="${filename}" />
-          </body>
-          </html>
-        `);
-      } else if (contentType === 'application/pdf') {
-        window.open(url, '_blank');
-      } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setMsg("Archivo descargado ✅");
-      }
-      
-      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-      
-      if (contentType.startsWith('image/') || contentType === 'application/pdf') {
-        setMsg("Evidencia abierta exitosamente ✅");
-      }
+      await deleteExpense(gastoId);
     } catch (error) {
-      console.error('Error viewing evidencia:', error);
-      if (error.response?.status === 401) {
-        setMsg("Error de autenticación ❌");
-      } else if (error.response?.status === 404) {
-        setMsg("Archivo no encontrado ❌");
-      } else {
-        setMsg("Error al cargar evidencia ❌");
-      }
-    } finally {
-      setLoading(false);
+      // Error manejado en el hook
     }
   };
 
-const handleCancelar = () => {
-  setConcepto("");
-  setProveedor("");
-  setMonto("");
-  setMetodoPago("efectivo");
-  setEvidencia(null);
-  
-  // ✅ MODIFICADO: Solo limpiar tienda si es admin
-  if (canSelectMultipleStores) {
-    setTiendaSeleccionada("");
-  }
-  
-  setMostrarFormulario(false);
-  setUsarProveedorManual(false);
-  setBusquedaProveedor("");
-  setProveedoresEncontrados([]);
-  const fileInput = document.querySelector('input[type="file"]');
-  if (fileInput) fileInput.value = '';
-};
-
+  // Datos seguros y estadísticas
   const safeReportData = Array.isArray(reportData) ? reportData : [];
-
-  const getExpenseStats = () => {
-    return {
-      total: safeReportData.length,
-      pendientes: safeReportData.filter(g => g.status === 'pendiente').length,
-      aprobados: safeReportData.filter(g => g.status === 'aprobado').length,
-      denegados: safeReportData.filter(g => g.status === 'denegado').length,
-      montoTotal: safeReportData.reduce((sum, g) => sum + parseFloat(g.monto || 0), 0),
-      montoAprobado: safeReportData
-        .filter(g => g.status === 'aprobado')
-        .reduce((sum, g) => sum + parseFloat(g.monto || 0), 0)
-    };
-  };
-
-  const stats = getExpenseStats();
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
- const getStatusConfig = (status) => {
-    const configs = {
-      'pendiente': { color: '#f59e0b', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800', icon: '⏳' },
-      'aprobado': { color: '#10b981', bgColor: 'bg-green-100', textColor: 'text-green-800', icon: '✅' },
-      'denegado': { color: '#ef4444', bgColor: 'bg-red-100', textColor: 'text-red-800', icon: '❌' },
-      'en revision': { color: '#8b5cf6', bgColor: 'bg-purple-100', textColor: 'text-purple-800', icon: '🔍' }
-    };
-    return configs[status] || { color: '#6b7280', bgColor: 'bg-gray-100', textColor: 'text-gray-800', icon: '📋' };
-  };
-
-  const getPaymentMethodIcon = (method) => {
-    const icons = {
-      'efectivo': '💵',
-      'transferencia': '🏦',
-      'tarjeta': '💳'
-    };
-    return icons[method] || '💰';
-  };
+  const stats = getExpenseStats(safeReportData);
 
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
@@ -619,7 +294,7 @@ const handleCancelar = () => {
                 />
               </div>
 
-              {/* ✅ NUEVO: Campo de proveedor con dropdown */}
+              {/* Campo de proveedor con dropdown */}
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                   Proveedor *
@@ -688,12 +363,7 @@ const handleCancelar = () => {
                         {proveedoresEncontrados.map((prov, index) => (
                           <div
                             key={index}
-                            onClick={() => {
-                              setProveedor(prov);
-                              setBusquedaProveedor(prov);
-                              setProveedoresEncontrados([]);
-                              setUsarProveedorManual(false);
-                            }}
+                            onClick={() => selectProvider(prov)}
                             className="p-3 hover:bg-blue-50 cursor-pointer transition-colors border-b last:border-b-0"
                           >
                             <div className="font-medium text-gray-800">🏢 {prov}</div>
@@ -976,7 +646,7 @@ const handleCancelar = () => {
               </div>
 
               <button
-                onClick={loadExpenses}
+                onClick={() => loadExpenses(getFilters())}
                 className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                 style={{ backgroundColor: '#23334e' }}
                 disabled={loading}
@@ -1098,7 +768,7 @@ const handleCancelar = () => {
                             {gasto.evidencia && (
                               <div className="mb-4">
                                 <button
-                                  onClick={() => viewEvidencia(gasto.evidencia)}
+                                  onClick={() => viewEvidence(gasto.evidencia)}
                                   className="px-4 py-2 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
                                   style={{ backgroundColor: '#46546b' }}
                                   disabled={loading}
@@ -1113,7 +783,7 @@ const handleCancelar = () => {
                           <div className="lg:w-80">
                             {editingGastoId === gasto._id ? (
                               <div className="space-y-4 p-4 rounded-lg border" style={{ borderColor: '#e5e7eb', backgroundColor: '#f9fafb' }}>
-                                {/* ✅ NUEVO: Mensaje local del formulario de edición */}
+                                {/* Mensaje local del formulario de edición */}
                                   {editingMsg && (
                                     <div className={`p-3 rounded-lg border-l-4 ${
                                       editingMsg.includes('✅') 
@@ -1171,11 +841,7 @@ const handleCancelar = () => {
                                     {loading ? "Guardando..." : "Guardar"}
                                   </button>
                                   <button
-                                    onClick={() => {
-                                      setEditingGastoId(null);
-                                      setNewStatus("");
-                                      setAdminNote("");
-                                    }}
+                                    onClick={clearEditingForm}
                                     className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
                                     style={{ 
                                       backgroundColor: '#8c95a4',

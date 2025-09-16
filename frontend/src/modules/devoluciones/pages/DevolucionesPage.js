@@ -1,308 +1,97 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import apiBaseUrl from "../../../config/api";
+import { useEffect } from "react";
+import { useDevolucionesData } from '../hooks/useDevolucionesData';
+import { useDevolucionesUtils } from '../hooks/useDevolucionesUtils';
+import { useDevolucionesForm } from '../hooks/useDevolucionesForm';
 
 export default function ReturnsPage() {
-  const [saleId, setSaleId] = useState("");
-  const [sale, setSale] = useState(null);
-  const [returnedItems, setReturnedItems] = useState([]);
-  const [refundAmount, setRefundAmount] = useState(0);
-  const [msg, setMsg] = useState("");
-  const [processingMsg, setProcessingMsg] = useState(""); // Mensaje local del procesamiento
-  const [cargando, setCargando] = useState(false);
-  const [buscando, setBuscando] = useState(false);
-  const [existingReturns, setExistingReturns] = useState(null); // Para devoluciones existentes
-  const token = localStorage.getItem("token");
-  const [refundMethod, setRefundMethod] = useState("efectivo");
-  const [mixedRefunds, setMixedRefunds] = useState([]); // Para pagos mixtos
-  const [refundBreakdown, setRefundBreakdown] = useState({}); // Desglose de devolución
+  // Hooks para manejo de datos
+  const {
+    loading,
+    buscando,
+    msg,
+    processingMsg,
+    sale,
+    existingReturns,
+    returnedItems,
+    availableStores,
+    currentUser,
+    fetchSale,
+    submitReturn,
+    updateItemQuantity,
+    clearData,
+    setMsg,
+    setProcessingMsg,
+    setExistingReturns
+  } = useDevolucionesData();
 
-  // Función para limpiar ceros a la izquierda (excepto decimales válidos)
-  const cleanLeadingZeros = (value) => {
-    // Si está vacío o es solo un punto, devolver como está
-    if (!value || value === '.' || value === '0.') return value;
-    
-    // Convertir a string y eliminar espacios
-    const str = value.toString().trim();
-    
-    // Si es solo "0", mantenerlo
-    if (str === '0') return '0';
-    
-    // Si empieza con "0." (decimal válido), mantenerlo
-    if (str.startsWith('0.')) return str;
-    
-    // Eliminar ceros a la izquierda de números enteros
-    const cleaned = str.replace(/^0+/, '');
-    
-    // Si queda vacío después de eliminar ceros, devolver "0"
-    return cleaned === '' ? '0' : cleaned;
-  };
+  // Hooks para utilidades
+  const {
+    formatCurrency,
+    formatDate,
+    cleanLeadingZeros,
+    handleNumberInput,
+    calcularTotalDevolucion,
+    getPaymentMethodIcon,
+    validateReturnData
+  } = useDevolucionesUtils();
 
-  // Función para manejar input en tiempo real y prevenir ceros a la izquierda
-  const handleNumberInput = (e, callback) => {
-    const value = e.target.value;
-    const cleaned = cleanLeadingZeros(value);
-    
-    // Si el valor cambió, actualizar el input inmediatamente
-    if (cleaned !== value) {
-      e.target.value = cleaned;
-    }
-    
-    // Ejecutar el callback con el valor limpio
-    callback(cleaned);
-  };
+  // Hooks para manejo de formularios
+  const {
+    saleId,
+    refundAmount,
+    refundMethod,
+    mixedRefunds,
+    setSaleId,
+    setRefundAmount,
+    setRefundMethod,
+    setMixedRefunds,
+    clearForm,
+    setupRefundMethod,
+    handleMixedPaymentChange,
+    getFormData,
+    validateForm
+  } = useDevolucionesForm();
 
-  const calculateDiscountedPrice = (item, originalTotal, originalDiscount) => {
-    const itemSubtotal = item.price * item.quantity;
-    const discountPercentage = originalDiscount / originalTotal;
-    const itemDiscount = itemSubtotal * discountPercentage;
-    return (item.price - (itemDiscount / item.quantity));
-  };
-
-  const fetchSale = () => {
-    if (!saleId.trim()) {
-      setMsg("Se requiere ingresar el ID de la venta para procesar la devolución ❌");
-      return;
-    }
-
-    setBuscando(true);
-    setExistingReturns(null);
-    setSale(null);
-    setReturnedItems([]);
-    setMsg("");
-    
-    // Primero verificar si ya existen devoluciones para esta venta
-    axios
-      .get(`${apiBaseUrl}/api/returns/by-sale/${saleId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        // Si existen devoluciones, mostrar el reporte
-        setExistingReturns(res.data);
-        setBuscando(false);
-      })
-      .catch(() => {
-        // Si no existen devoluciones, continuar con el flujo normal
-        axios
-          .get(`${apiBaseUrl}/api/sales/${saleId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((res) => {
-            console.log('✅ Venta encontrada:', res.data);
-            const saleData = res.data.data || res.data; // Manejar diferentes formatos de respuesta
-            setSale(saleData);
-
-        // ✅ CALCULAR PRECIOS CON DESCUENTO
-        const discountedItems = saleData.items.map((item) => {
-          const discountedPrice = saleData.discount > 0 
-            ? calculateDiscountedPrice(item, saleData.total + saleData.discount, saleData.discount)
-            : item.price; 
-
-          return {
-            productId: item.productId,
-            name: item.name,
-            quantity: 0,
-            maxQuantity: item.quantity,
-            unitPrice: item.price, // Precio original
-            discountedPrice: discountedPrice, // ✅ NUEVO: Precio con descuento
-            reason: "",
-          };
-        }); 
-        
-        setReturnedItems(discountedItems);
-        setMsg("");
-        setBuscando(false);
-        // Calcular automáticamente el monto total de la venta como sugerencia
-        setRefundAmount(saleData.total);
-          })
-          .catch(() => {
-            setMsg("Venta no encontrada. Verifica el ID ❌");
-            setBuscando(false);
-          });
-      });
-  };
-
-  const handleSubmit = () => {
-    // Limpiar mensajes previos
-    setProcessingMsg("");
-    
-    const itemsToReturn = returnedItems
-      .filter((item) => item.quantity > 0)
-      .map(({ productId, name, quantity, unitPrice, discountedPrice, reason }) => ({
-        productId,
-        name,
-        quantity,
-        originalPrice: unitPrice, // Precio original sin descuento
-        refundPrice: discountedPrice || unitPrice, // ✅ USAR: Precio con descuento aplicado
-        reason: reason?.trim() || "No especificado",
-        condition: "Nuevo"
-      }));
-
-    if (itemsToReturn.length === 0) {
-      setProcessingMsg("Debes seleccionar al menos un producto y cantidad a devolver ❌");
-      return;
-    }
-
-    if (refundAmount <= 0) {
-      setProcessingMsg("El monto debe ser mayor a 0 ❌");
-      return;
-    }
-
-    // ✅ DEBUG ESPECÍFICO
-    console.log('🔍 DEBUGGING VENTA MIXTA:');
-    console.log('Sale paymentType:', sale.paymentType);
-    console.log('Sale mixedPayments:', sale.mixedPayments);
-    console.log('Estado mixedRefunds:', mixedRefunds);
-
-    const submitData = {
-      saleId,
-      returnedItems: itemsToReturn,
-      refundAmount,
-      refundMethod: sale.paymentType === 'mixed' ? 'mixto' : refundMethod,
-    };
-
-    // ✅ NUEVO: Agregar datos de pagos mixtos si aplica
-    if (sale.paymentType === 'mixed') {
-      const selectedRefunds = mixedRefunds.filter(r => r.selected && r.selectedAmount > 0);
-      console.log('Selected refunds filtrados:', selectedRefunds);
-      
-      if (selectedRefunds.length === 0) {
-        console.log('❌ ERROR: No hay refunds seleccionados');
-        setProcessingMsg("Debes seleccionar al menos un método de pago para la devolución ❌");
-        return;
-      }
-      
-      const totalSelectedAmount = selectedRefunds.reduce((sum, r) => sum + r.selectedAmount, 0);
-      console.log('Total amount seleccionado:', totalSelectedAmount);
-      console.log('Refund amount del input:', refundAmount);
-
-      const difference = Math.abs(totalSelectedAmount - refundAmount);
-      if (difference > 0.01) {
-        setProcessingMsg(`❌ Error: Los métodos seleccionados suman $${totalSelectedAmount.toFixed(2)} pero el monto a reembolsar es $${refundAmount.toFixed(2)}. Deben coincidir exactamente.`);
-        return;
-      }
-
-      for (const refund of selectedRefunds) {
-        const maxForMethod = mixedRefunds.find(m => m.method === refund.method)?.maxAmount || 0;
-        if (refund.selectedAmount > maxForMethod) {
-          setProcessingMsg(`❌ Error: Para ${refund.method} seleccionaste $${refund.selectedAmount} pero el máximo disponible es $${maxForMethod.toFixed(2)}`);
-          return;
-        }
-      }
-      
-      submitData.mixedRefunds = selectedRefunds.map(r => ({
-        method: r.method,
-        amount: r.selectedAmount
-      }));
-    }
-
-    console.log('🔍 submitData que se enviará:', submitData);
-
-    setCargando(true);
-    axios
-      .post(`${apiBaseUrl}/api/returns`, submitData, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      })
-      .then((res) => {
-        // ✅ NUEVO: Determinar tipo de devolución y mostrar mensaje específico
-        const saleUpdated = res.data.saleUpdated;
-        const isPartialReturn = saleUpdated && saleUpdated.remaining > 0;
-        
-        const message = isPartialReturn 
-          ? `✅ Devolución parcial registrada exitosamente. Restante: $${saleUpdated.remaining.toFixed(2)}`
-          : "✅ Devolución total registrada exitosamente";
-        
-        setMsg(message);
-        setProcessingMsg(""); // Limpiar mensaje de procesamiento
-        setSale(null);
-        setSaleId("");
-        setRefundAmount(0);
-        setReturnedItems([]);
-        setMixedRefunds([]); // ✅ Limpiar también mixedRefunds
-        setCargando(false);
-        setTimeout(() => setMsg(""), 5000); // Mostrar por más tiempo
-      })
-      .catch((error) => {
-        setCargando(false);
-        console.log('❌ Error completo:', error.response?.data);
-        if (error.response && error.response.data.message) {
-          setProcessingMsg(error.response.data.message + " ❌");
-        } else {
-          setProcessingMsg("Error inesperado al crear devolución ❌");
-        }
-      });
-  };
-
-  const updateItemQuantity = (index, field, value) => {
-    setReturnedItems((prev) => {
-      const updated = [...prev];
-      if (field === "quantity") {
-        updated[index][field] = value === '' ? 0 : Number(value);
-      } else {
-        updated[index][field] = value;
-      }
-      return updated;
-    });
-  };
-
-  // Calcular totales automáticamente
-  const calcularTotalDevolucion = () => {
-    return returnedItems.reduce((total, item) => {
-      const priceToUse = item.discountedPrice || item.unitPrice;
-      return total + (item.quantity * priceToUse);
-    }, 0);
-  };
-
-  const totalSugerido = calcularTotalDevolucion();
-
+  // Configurar método de reembolso cuando se carga una venta
   useEffect(() => {
-    if (sale && sale.paymentType === 'mixed') {
-      console.log('🔍 VENTA MIXTA DETECTADA:', sale.mixedPayments);
-      const initialMixedRefunds = sale.mixedPayments.map(payment => ({
-        method: payment.method,
-        maxAmount: payment.amount,
-        selectedAmount: 0,
-        selected: false
-      }));
-      console.log('🔍 mixedRefunds inicializado:', initialMixedRefunds);
-      setMixedRefunds(initialMixedRefunds);
-    } else if (sale && sale.method) {
-      setRefundMethod(sale.method);
+    if (sale) {
+      setupRefundMethod(sale);
+      // Calcular automáticamente el monto total de la venta como sugerencia
+      setRefundAmount(sale.total);
     }
   }, [sale]);
 
-  // ✅ AGREGAR: Función para manejar checkboxes de pagos mixtos
-  const handleMixedPaymentChange = (index, field, value) => {
-    console.log(`🔍 Cambiando ${field} del índice ${index} a:`, value);
-    setMixedRefunds(prev => {
-      const updated = [...prev];
-      
-      if (field === 'selectedAmount') {
-        updated[index] = { ...updated[index], [field]: value === '' ? 0 : Number(value) };
-      } else {
-        updated[index] = { ...updated[index], [field]: value };
-      }
-      
-      if (field === 'selected' && !value) {
-        updated[index].selectedAmount = 0;
-      }
-      
-      console.log('🔍 mixedRefunds actualizado:', updated);
-      return updated;
-    });
+  // Manejar búsqueda de venta
+  const handleFetchSale = () => {
+    fetchSale(saleId);
   };
 
-  // Función para formatear fechas
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('es-MX', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // Manejar envío de devolución
+  const handleSubmit = async () => {
+    // Limpiar mensajes previos
+    setProcessingMsg("");
+    
+    // Validar formulario
+    const validation = validateForm(returnedItems, sale);
+    if (!validation.isValid) {
+      setProcessingMsg(validation.errors[0] + " ❌");
+      return;
+    }
+
+    try {
+      const returnData = getFormData(returnedItems, sale);
+      await submitReturn(returnData);
+      
+      // Limpiar formulario después del éxito
+      clearForm();
+      clearData();
+    } catch (error) {
+      // Error manejado en el hook
+    }
   };
+
+  // Calcular totales automáticamente
+  const totalSugerido = calcularTotalDevolucion(returnedItems);
 
   // Si existen devoluciones, mostrar el reporte
   if (existingReturns) {
@@ -343,7 +132,7 @@ export default function ReturnsPage() {
                   Total Original
                 </div>
                 <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                  ${(existingReturns.sale?.total || 0).toFixed(2)}
+                  {formatCurrency(existingReturns.sale?.total || 0)}
                 </div>
               </div>
               
@@ -352,7 +141,7 @@ export default function ReturnsPage() {
                   Total Devuelto
                 </div>
                 <div className="text-lg font-bold text-red-600">
-                  ${(existingReturns.totalReturned || 0).toFixed(2)}
+                  {formatCurrency(existingReturns.totalReturned || 0)}
                 </div>
               </div>
             </div>
@@ -374,11 +163,10 @@ export default function ReturnsPage() {
                   
                   <div className="text-right">
                     <div className="text-2xl font-bold text-red-600">
-                      ${(returnRecord.refundAmount || 0).toFixed(2)}
+                      {formatCurrency(returnRecord.refundAmount || 0)}
                     </div>
                     <div className="text-sm" style={{ color: '#697487' }}>
-                      Método: {returnRecord.refundMethod === 'efectivo' ? '💵 Efectivo' : 
-                               returnRecord.refundMethod === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
+                      Método: {getPaymentMethodIcon(returnRecord.refundMethod)} {returnRecord.refundMethod}
                     </div>
                   </div>
                 </div>
@@ -420,39 +208,12 @@ export default function ReturnsPage() {
                           )}
                         </div>
                         <div className="text-right">
-                          {(() => {
-                            // ✅ CORRECCIÓN: Para transacciones existentes, calcular precio con descuento
-                            const venta = existingReturns.sale;
-                            let precioConDescuento = item.refundPrice;
-                            
-                            if (venta && venta.discount > 0) {
-                              // Buscar el item original en la venta
-                              const itemOriginal = venta.items?.find(saleItem => 
-                                saleItem.name === item.name || 
-                                (item.productId && saleItem.productId && saleItem.productId.toString() === item.productId.toString())
-                              );
-                              
-                              if (itemOriginal) {
-                                // Calcular precio con descuento usando la misma lógica
-                                const totalSinDescuento = venta.items.reduce((sum, saleItem) => sum + (saleItem.price * saleItem.quantity), 0);
-                                const itemSubtotal = itemOriginal.price * itemOriginal.quantity;
-                                const discountPercentage = venta.discount / totalSinDescuento;
-                                const itemDiscount = itemSubtotal * discountPercentage;
-                                precioConDescuento = itemOriginal.price - (itemDiscount / itemOriginal.quantity);
-                              }
-                            }
-                            
-                            return (
-                              <>
-                                <div className="font-bold" style={{ color: '#23334e' }}>
-                                  ${((precioConDescuento || 0) * (item.quantity || 0)).toFixed(2)}
-                                </div>
-                                <div className="text-sm" style={{ color: '#697487' }}>
-                                  ${(precioConDescuento || 0).toFixed(2)} c/u
-                                </div>
-                              </>
-                            );
-                          })()}
+                          <div className="font-bold" style={{ color: '#23334e' }}>
+                            {formatCurrency((item.refundPrice || 0) * (item.quantity || 0))}
+                          </div>
+                          <div className="text-sm" style={{ color: '#697487' }}>
+                            {formatCurrency(item.refundPrice || 0)} c/u
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -529,12 +290,12 @@ export default function ReturnsPage() {
                   borderColor: '#e5e7eb',
                   focusRingColor: '#23334e'
                 }}
-                onKeyPress={(e) => e.key === 'Enter' && fetchSale()}
+                onKeyPress={(e) => e.key === 'Enter' && handleFetchSale()}
               />
             </div>
             <div className="flex items-end">
               <button
-                onClick={fetchSale}
+                onClick={handleFetchSale}
                 className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                 style={{ backgroundColor: '#23334e' }}
                 disabled={buscando}
@@ -576,7 +337,7 @@ export default function ReturnsPage() {
                     Total Original
                   </div>
                   <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                    ${(sale?.total || 0).toFixed(2)}
+                    {formatCurrency(sale?.total || 0)}
                   </div>
                 </div>
                 
@@ -590,7 +351,7 @@ export default function ReturnsPage() {
                 </div>
               </div>
 
-              {/* NUEVO: Información de pago original */}
+              {/* Información de pago original */}
               <div className="mt-6 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: '#46546b', backgroundColor: '#f9fafb' }}>
                 <h4 className="font-semibold mb-3" style={{ color: '#23334e' }}>
                   💳 Método de Pago Original
@@ -600,9 +361,8 @@ export default function ReturnsPage() {
                     <p className="text-sm font-medium" style={{ color: '#697487' }}>Pago Mixto:</p>
                     {sale.mixedPayments.map((payment, index) => (
                       <div key={index} className="flex justify-between text-sm">
-                        <span>{payment.method === 'efectivo' ? '💵 Efectivo' : 
-                              payment.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}:</span>
-                        <span className="font-medium">${(payment.amount || 0).toFixed(2)}</span>
+                        <span>{getPaymentMethodIcon(payment.method)} {payment.method}:</span>
+                        <span className="font-medium">{formatCurrency(payment.amount || 0)}</span>
                       </div>
                     ))}
                   </div>
@@ -610,9 +370,7 @@ export default function ReturnsPage() {
                   <p className="text-sm">
                     <span style={{ color: '#697487' }}>Método: </span>
                     <span className="font-medium" style={{ color: '#23334e' }}>
-                      {sale.method === 'efectivo' ? '💵 Efectivo' : 
-                      sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'} 
-                      - ${(sale?.total || 0).toFixed(2)}
+                      {getPaymentMethodIcon(sale.method)} {sale.method} - {formatCurrency(sale?.total || 0)}
                     </span>
                   </p>
                 )}
@@ -648,7 +406,7 @@ export default function ReturnsPage() {
                           <div>
                             <span style={{ color: '#697487' }}>Precio pagado: </span>
                             <span className="font-medium" style={{ color: '#23334e' }}>
-                              ${(item.discountedPrice || item.unitPrice).toFixed(2)}
+                              {formatCurrency(item.discountedPrice || item.unitPrice)}
                               {item.discountedPrice && (
                                 <span className="text-xs ml-1" style={{ color: '#ef4444' }}>
                                   (con descuento)
@@ -659,7 +417,7 @@ export default function ReturnsPage() {
                           <div>
                             <span style={{ color: '#697487' }}>Total pagado: </span>
                             <span className="font-medium" style={{ color: '#23334e' }}>
-                              ${(item.maxQuantity * (item.discountedPrice || item.unitPrice)).toFixed(2)}
+                              {formatCurrency(item.maxQuantity * (item.discountedPrice || item.unitPrice))}
                             </span>
                           </div>
                         </div>
@@ -715,16 +473,16 @@ export default function ReturnsPage() {
                               Subtotal a reembolsar:
                             </div>
                             <div className="text-lg font-bold" style={{ color: '#23334e' }}>
-                              ${(item.quantity * (item.discountedPrice || item.unitPrice)).toFixed(2)}
+                              {formatCurrency(item.quantity * (item.discountedPrice || item.unitPrice))}
                             </div>
                             <div className="text-xs" style={{ color: '#697487' }}>
                               {item.discountedPrice ? (
                                 <span>
-                                  ${(item.discountedPrice).toFixed(2)} c/u 
+                                  {formatCurrency(item.discountedPrice)} c/u 
                                   <span style={{ color: '#ef4444' }}> (precio con descuento aplicado)</span>
                                 </span>
                               ) : (
-                                <span>${item.unitPrice.toFixed(2)} c/u</span>
+                                <span>{formatCurrency(item.unitPrice)} c/u</span>
                               )}
                             </div>
                           </div>
@@ -772,7 +530,7 @@ export default function ReturnsPage() {
                         className="absolute right-2 top-2 px-3 py-1 text-xs font-medium text-white rounded transition-colors"
                         style={{ backgroundColor: '#46546b' }}
                       >
-                        Usar calculado: ${totalSugerido.toFixed(2)}
+                        Usar calculado: {formatCurrency(totalSugerido)}
                       </button>
                     )}
                   </div>
@@ -782,7 +540,7 @@ export default function ReturnsPage() {
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                     Método de reembolso
                   </label>
-                  {/* NUEVO: Selector inteligente de método de devolución */}
+                  {/* Selector inteligente de método de devolución */}
                   {sale.paymentType === 'mixed' ? (
                     <div className="space-y-3">
                       <p className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -803,8 +561,7 @@ export default function ReturnsPage() {
                               onChange={(e) => handleMixedPaymentChange(index, 'selected', e.target.checked)}
                             />
                             <label htmlFor={`payment-${index}`} className="text-sm">
-                              {payment.method === 'efectivo' ? '💵 Efectivo' : 
-                              payment.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
+                              {getPaymentMethodIcon(payment.method)} {payment.method}
                             </label>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -826,7 +583,7 @@ export default function ReturnsPage() {
                               />
                             )}
                             <div className="text-sm font-medium">
-                              Máximo: ${(payment.maxAmount || 0).toFixed(2)}
+                              Máximo: {formatCurrency(payment.maxAmount || 0)}
                             </div>
                           </div>
                         </div>
@@ -839,8 +596,7 @@ export default function ReturnsPage() {
                           Método original de pago:
                         </p>
                         <p className="font-medium" style={{ color: '#23334e' }}>
-                          {sale.method === 'efectivo' ? '💵 Efectivo' : 
-                          sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
+                          {getPaymentMethodIcon(sale.method)} {sale.method}
                         </p>
                       </div>
 
@@ -885,7 +641,7 @@ export default function ReturnsPage() {
                                   style={{ accentColor: '#23334e' }}
                                 />
                                 <label htmlFor={`refund-${sale.method}`} className="text-sm font-medium">
-                                  {sale.method === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'} (método original)
+                                  {getPaymentMethodIcon(sale.method)} {sale.method} (método original)
                                 </label>
                               </div>
                             </div>
@@ -924,13 +680,13 @@ export default function ReturnsPage() {
                     <div>
                       <span style={{ color: '#697487' }}>Total calculado automáticamente: </span>
                       <span className="font-bold" style={{ color: '#23334e' }}>
-                        ${totalSugerido.toFixed(2)}
+                        {formatCurrency(totalSugerido)}
                       </span>
                     </div>
                     <div>
                       <span style={{ color: '#697487' }}>Monto manual: </span>
                       <span className="font-bold" style={{ color: '#23334e' }}>
-                        ${refundAmount.toFixed(2)}
+                        {formatCurrency(refundAmount)}
                       </span>
                     </div>
                   </div>
@@ -950,9 +706,9 @@ export default function ReturnsPage() {
                   onClick={handleSubmit}
                   className="px-8 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                   style={{ backgroundColor: '#23334e' }}
-                  disabled={cargando || returnedItems.filter(item => item.quantity > 0).length === 0}
+                  disabled={loading || returnedItems.filter(item => item.quantity > 0).length === 0}
                 >
-                  {cargando ? (
+                  {loading ? (
                     <div className="flex items-center gap-2">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                       Procesando Devolución...

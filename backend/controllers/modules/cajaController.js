@@ -16,30 +16,41 @@ class CajaController {
         return errorResponse(res, 'Debes proporcionar startDate y endDate en formato YYYY-MM-DD', 400);
       }
 
-      // Construir fechas con las horas proporcionadas
-      const inicio = new Date(`${startDate}T${startTime}.000Z`);
-      const fin = new Date(`${endDate}T${endTime}.999Z`);
+      // Construir fechas en zona horaria local (México UTC-6)
+      // Crear fechas locales sin forzar UTC
+      const inicio = new Date(`${startDate}T${startTime}`);
+      const fin = new Date(`${endDate}T${endTime}`);
+      
+      // Ajustar a zona horaria de México si es necesario
+      const mexicoOffset = -6 * 60; // -6 horas en minutos
+      const adjustToMexicoTime = (date) => {
+        const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+        return new Date(utcTime + (mexicoOffset * 60000));
+      };
+      
+      const inicioMexico = adjustToMexicoTime(inicio);
+      const finMexico = adjustToMexicoTime(fin);
 
       console.log('🔍 BACKEND - Fechas construidas:', {
-        inicio: inicio.toISOString(),
-        fin: fin.toISOString()
+        inicioMexico: inicioMexico.toISOString(),
+        finMexico: finMexico.toISOString()
       });
 
-      if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+      if (isNaN(inicioMexico.getTime()) || isNaN(finMexico.getTime())) {
         console.log('❌ BACKEND - Fechas inválidas');
         return errorResponse(res, 'Formato de fecha inválido. Use YYYY-MM-DD para fechas y HH:MM:SS para horas', 400);
       }
 
-      if (inicio > fin) {
+      if (inicioMexico > finMexico) {
         return errorResponse(res, 'La fecha de inicio debe ser anterior a la fecha de fin', 400);
       }
 
-      // Filtros base
+      // Filtros base usando fechas de México
       const filtroVentas = { 
-        createdAt: { $gte: inicio, $lte: fin },
+        createdAt: { $gte: inicioMexico, $lte: finMexico },
         status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta'] }
       };
-      const filtroGastos = { createdAt: { $gte: inicio, $lte: fin }, status: 'aprobado' };
+      const filtroGastos = { createdAt: { $gte: inicioMexico, $lte: finMexico }, status: 'aprobado' };
 
       if (tiendaId) {
         const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
@@ -48,7 +59,7 @@ class CajaController {
       }
 
       console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
-      console.log('🔍 Buscando ventas desde:', inicio.toISOString(), 'hasta:', fin.toISOString());
+      console.log('🔍 Buscando ventas desde:', inicioMexico.toISOString(), 'hasta:', finMexico.toISOString());
       console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta']);
 
       // Ventas con soporte para pagos mixtos y devoluciones
@@ -185,7 +196,7 @@ class CajaController {
         try {
           const Return = require('../../modules/devoluciones/model');
           
-          const filtroDevolucion = { date: { $gte: inicio, $lte: fin } };
+          const filtroDevolucion = { date: { $gte: inicioMexico, $lte: finMexico } };
           if (tiendaId) {
             const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
             filtroDevolucion.tienda = tiendaObjectId;
@@ -224,8 +235,8 @@ class CajaController {
 
       return successResponse(res, {
         periodo: {
-          inicio: inicio.toISOString(),
-          fin: fin.toISOString(),
+          inicio: inicioMexico.toISOString(),
+          fin: finMexico.toISOString(),
           tiendaId: tiendaId || 'todas'
         },
         ventas: {
@@ -262,10 +273,21 @@ class CajaController {
     try {
       const { fecha = new Date().toISOString().split('T')[0], tiendaId } = req.query;
       
-      const inicio = new Date(`${fecha}T00:00:00.000Z`);
-      const fin = new Date(`${fecha}T23:59:59.999Z`);
+      // Crear fechas en zona horaria local (México)
+      const inicio = new Date(`${fecha}T00:00:00`);
+      const fin = new Date(`${fecha}T23:59:59`);
+      
+      // Ajustar a zona horaria de México
+      const mexicoOffset = -6 * 60; // -6 horas en minutos
+      const adjustToMexicoTime = (date) => {
+        const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+        return new Date(utcTime + (mexicoOffset * 60000));
+      };
+      
+      const inicioMexico = adjustToMexicoTime(inicio);
+      const finMexico = adjustToMexicoTime(fin);
 
-      const filtroBase = { createdAt: { $gte: inicio, $lte: fin } };
+      const filtroBase = { createdAt: { $gte: inicioMexico, $lte: finMexico } };
       if (tiendaId) filtroBase.tienda = tiendaId;
 
       const ventas = await Sale.find(filtroBase)
@@ -325,8 +347,15 @@ class CajaController {
   async getStatus(req, res) {
     try {
       const { tiendaId } = req.query;
-      const hoy = new Date();
-      const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+      
+      // Obtener fecha actual en zona horaria de México
+      const mexicoOffset = -6 * 60; // -6 horas en minutos
+      const now = new Date();
+      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const mexicoTime = new Date(utcTime + (mexicoOffset * 60000));
+      
+      // Crear inicio y fin del día en zona horaria de México
+      const inicioHoy = new Date(mexicoTime.getFullYear(), mexicoTime.getMonth(), mexicoTime.getDate());
       const finHoy = new Date(inicioHoy);
       finHoy.setDate(finHoy.getDate() + 1);
 
