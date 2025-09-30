@@ -1,189 +1,113 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import apiBaseUrl from "../../../config/api";
+import { useState } from "react";
+import { useClientesData } from "../hooks/useClientesData";
+import { useClientesForm } from "../hooks/useClientesForm";
+import { useClientesFilters } from "../hooks/useClientesFilters";
+import { useClientesUtils } from "../hooks/useClientesUtils";
+import ClienteModal from "../components/ClienteModal";
 
 export default function ClientesPage() {
-  const token = localStorage.getItem("token");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [clientes, setClientes] = useState([]);
-  const [nuevoCliente, setNuevoCliente] = useState({
-    nombre: "",
-    direccion: "",
-    telefono: "",
-    email: "",
-  });
-  const [msg, setMsg] = useState("");
-  const [clienteFiltro, setClienteFiltro] = useState("");
-  const [editandoId, setEditandoId] = useState(null);
-  const [editCliente, setEditCliente] = useState({
-    nombre: "",
-    direccion: "",
-    telefono: "",
-    email: "",
-  });
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [cargando, setCargando] = useState(false);
+  const [modalError, setModalError] = useState("");
 
-  const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};  
-  const fetchClientes = () => {
-    setCargando(true);
-    axios
-      .get(`${apiBaseUrl}/api/clientes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setClientes(res.data.data.clientes);
-        setCargando(false);
-      })
-      .catch(() => {
-        setMsg("Error al cargar clientes ❌");
-        setCargando(false);
-      });
-  };
+  // Hooks
+  const {
+    clientes,
+    currentUser,
+    cargando,
+    msg,
+    createCliente,
+    updateCliente,
+    deleteCliente,
+    setMsg
+  } = useClientesData();
 
+  const {
+    nuevoCliente,
+    editandoId,
+    editCliente,
+    mostrarFormulario,
+    handleChange,
+    handleEditChange,
+    getNewClienteData,
+    getEditClienteData,
+    clearNewClienteForm,
+    startEdit,
+    cancelEdit,
+    toggleForm,
+    setMostrarFormulario
+  } = useClientesForm();
 
-  const handleEditChange = (e, field) => {
-  const { value } = e.target;
-  
-  if (field === 'telefono') {
-    const telefonoLimpio = value.replace(/\D/g, '').slice(0, 10);
-    setEditCliente({ ...editCliente, [field]: telefonoLimpio });
-  } else {
-    setEditCliente({ ...editCliente, [field]: value });
-  }
-};
-  useEffect(() => {
-    fetchClientes();
+  const {
+    clienteFiltro,
+    setClienteFiltro,
+    filterClientes
+  } = useClientesFilters();
 
-    // Obtener el usuario actual
-    axios
-      .get(`${apiBaseUrl}/api/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setCurrentUser(res.data))
-      .catch(() => setMsg("Error al cargar el usuario actual ❌"));
-  }, [token]);
+  const { isValidEmail } = useClientesUtils();
 
-const handleChange = (e) => {
-  const { name, value } = e.target;
-  
-  // Validar teléfono: solo números y máximo 10 dígitos
-  if (name === 'telefono') {
-    const telefonoLimpio = value.replace(/\D/g, '').slice(0, 10);
-    setNuevoCliente({
-      ...nuevoCliente,
-      [name]: telefonoLimpio,
-    });
-  } else {
-    setNuevoCliente({
-      ...nuevoCliente,
-      [name]: value,
-    });
-  }
-};
+  // Handler para el submit del formulario (crear o editar)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setModalError("");
 
-const handleGuardarCliente = () => {
-  if (!nuevoCliente.nombre || !nuevoCliente.telefono) {
-    setMsg("Por favor completa los campos requeridos ❌");
-    return;
-  }
+    const clienteData = editandoId ? editCliente : nuevoCliente;
 
-  // Validar email si se proporciona
-  if (nuevoCliente.email && !isValidEmail(nuevoCliente.email)) {
-    setMsg("Por favor ingresa un email válido ❌");
-    return;
-  }
+    if (!clienteData.nombre || !clienteData.telefono) {
+      setModalError("Por favor completa los campos requeridos ❌");
+      return;
+    }
 
-    setCargando(true);
-    axios
-      .post(`${apiBaseUrl}/api/clientes`, nuevoCliente, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        setMsg("Cliente guardado exitosamente ✅");
-        setNuevoCliente({
-          nombre: "",
-          direccion: "",
-          telefono: "",
-          email: "",
-        });
+    if (clienteData.email && !isValidEmail(clienteData.email)) {
+      setModalError("Por favor ingresa un email válido ❌");
+      return;
+    }
+
+    try {
+      if (editandoId) {
+        await updateCliente(editandoId, getEditClienteData());
+        cancelEdit();
         setMostrarFormulario(false);
-        fetchClientes();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch(() => {
-        setMsg("Error al guardar cliente ❌");
-        setCargando(false);
-      });
-  };
-
-  const handleEliminar = (id) => {
-    if (window.confirm("¿Estás seguro de eliminar este cliente?")) {
-      setCargando(true);
-      axios
-        .delete(`${apiBaseUrl}/api/clientes/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then(() => {
-          setMsg("Cliente eliminado exitosamente ✅");
-          fetchClientes();
-          setTimeout(() => setMsg(""), 3000);
-        })
-        .catch(() => {
-          setMsg("Error al eliminar cliente ❌");
-          setCargando(false);
-        });
+      } else {
+        await createCliente(getNewClienteData());
+        clearNewClienteForm();
+        setMostrarFormulario(false);
+      }
+      setModalError("");
+    } catch (error) {
+      setModalError("Error al guardar cliente ❌");
     }
   };
 
-  const handleEditar = (cliente) => {
-    setEditandoId(cliente._id);
-    setEditCliente({
-      nombre: cliente.nombre,
-      direccion: cliente.direccion,
-      telefono: cliente.telefono,
-      email: cliente.email,
-    });
+  // Manejar eliminación
+  const handleEliminar = async (id) => {
+    if (window.confirm("¿Estás seguro de eliminar este cliente?")) {
+      try {
+        await deleteCliente(id);
+      } catch (error) {
+        // Error ya manejado en el hook
+      }
+    }
   };
 
-const handleGuardarEdicion = () => {
-  if (!editCliente.nombre || !editCliente.telefono) {
-    setMsg("Por favor completa los campos requeridos ❌");
-    return;
-  }
-
-  // Validar email si se proporciona
-  if (editCliente.email && !isValidEmail(editCliente.email)) {
-    setMsg("Por favor ingresa un email válido ❌");
-    return;
-  }
-
-    setCargando(true);
-    axios
-      .put(`${apiBaseUrl}/api/clientes/${editandoId}`, editCliente, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        setMsg("Cliente actualizado exitosamente ✅");
-        setEditandoId(null);
-        fetchClientes();
-        setTimeout(() => setMsg(""), 3000);
-      })
-      .catch(() => {
-        setMsg("Error al actualizar cliente ❌");
-        setCargando(false);
-      });
+  // Handler para abrir modal de edición
+  const handleEditarCliente = (cliente) => {
+    startEdit(cliente);
+    setMostrarFormulario(true);
+    setModalError("");
   };
 
-  const clientesFiltrados = clientes.filter(
-    (c) =>
-      c.nombre.toLowerCase().includes(clienteFiltro.toLowerCase()) ||
-      c.telefono.includes(clienteFiltro) ||
-      c.email.toLowerCase().includes(clienteFiltro.toLowerCase())
-  );
+  // Handler para cerrar modal
+  const handleCerrarModal = () => {
+    if (editandoId) {
+      cancelEdit();
+    } else {
+      clearNewClienteForm();
+    }
+    setMostrarFormulario(false);
+    setModalError("");
+  };
+
+  // Filtrar clientes
+  const clientesFiltrados = filterClientes(clientes);
 
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
@@ -205,7 +129,7 @@ const handleGuardarEdicion = () => {
             
             {currentUser?.role === "admin" && (
               <button
-                onClick={() => setMostrarFormulario(!mostrarFormulario)}
+                onClick={toggleForm}
                 className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                 style={{ backgroundColor: '#23334e' }}
                 disabled={cargando}
@@ -227,112 +151,6 @@ const handleGuardarEdicion = () => {
           </div>
         )}
 
-        {/* Formulario para nuevo cliente */}
-        {mostrarFormulario && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8 border" style={{ borderColor: '#e5e7eb' }}>
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              Agregar Nuevo Cliente
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Nombre *
-                </label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={nuevoCliente.nombre}
-                  onChange={handleChange}
-                  placeholder="Nombre completo del cliente"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Teléfono *
-                </label>
-                <input
-                  type="text"
-                  name="telefono"
-                  value={nuevoCliente.telefono}
-                  onChange={handleChange}
-                  placeholder="Número de teléfono (10 dígitos)"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  maxLength="10"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={nuevoCliente.email}
-                  onChange={handleChange}
-                  placeholder="correo@ejemplo.com"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Dirección
-                </label>
-                <input
-                  type="text"
-                  name="direccion"
-                  value={nuevoCliente.direccion}
-                  onChange={handleChange}
-                  placeholder="Dirección completa"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{ 
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-6">
-              <button
-                onClick={handleGuardarCliente}
-                className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
-                style={{ backgroundColor: '#23334e' }}
-                disabled={cargando}
-              >
-                {cargando ? "Guardando..." : "Guardar Cliente"}
-              </button>
-              <button
-                onClick={() => setMostrarFormulario(false)}
-                className="px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                style={{ 
-                  backgroundColor: '#8c95a4',
-                  color: 'white'
-                }}
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Estadísticas y buscador */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
@@ -426,134 +244,60 @@ const handleGuardarEdicion = () => {
                       style={{ borderColor: '#e5e7eb' }}
                     >
                       <td className="px-6 py-4">
-                        {editandoId === cliente._id ? (
-                          <input
-                            type="text"
-                            value={editCliente.nombre}
-                            onChange={(e) => handleEditChange(e, 'nombre')}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ 
-                              borderColor: '#e5e7eb',
-                              focusRingColor: '#23334e'
-                            }}
-                          />
-                        ) : (
-                          <div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              {cliente.nombre}
-                            </div>
+                        <div>
+                          <div className="font-medium" style={{ color: '#23334e' }}>
+                            {cliente.nombre}
                           </div>
-                        )}
+                        </div>
                       </td>
-                      
+
                       <td className="px-6 py-4">
-                        {editandoId === cliente._id ? (
-                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={editCliente.telefono}
-                              onChange={(e) => handleEditChange(e, 'telefono')}
-                              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2"
-                              style={{ 
-                                borderColor: '#e5e7eb',
-                                focusRingColor: '#23334e'
-                              }}
-                              maxLength="10"
-                            />
-                            <input
-                              type="email"
-                              value={editCliente.email}
-                              onChange={(e) => handleEditChange(e, 'email')} 
-                              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2"
-                              style={{ 
-                                borderColor: '#e5e7eb',
-                                focusRingColor: '#23334e'
-                              }}
-                            />
+                        <div>
+                          <div className="font-medium" style={{ color: '#23334e' }}>
+                            {cliente.telefono}
                           </div>
-                        ) : (
-                          <div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              {cliente.telefono}
+                          {cliente.email && (
+                            <div className="text-sm" style={{ color: '#697487' }}>
+                              {cliente.email}
                             </div>
-                            {cliente.email && (
-                              <div className="text-sm" style={{ color: '#697487' }}>
-                                {cliente.email}
-                              </div>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
-                      
+
                       <td className="px-6 py-4">
-                        {editandoId === cliente._id ? (
-                          <input
-                            type="text"
-                            value={editCliente.direccion}
-                            onChange={(e) => handleEditChange(e, 'direccion')}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ 
-                              borderColor: '#e5e7eb',
-                              focusRingColor: '#23334e'
-                            }}
-                          />
-                        ) : (
-                          <div style={{ color: '#697487' }}>
-                            {cliente.direccion || "No especificada"}
-                          </div>
-                        )}
+                        <div style={{ color: '#697487' }}>
+                          {cliente.direccion || "No especificada"}
+                        </div>
                       </td>
-                      
+
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
-                          {editandoId === cliente._id ? (
+                          <button
+                            onClick={() => {
+                              localStorage.setItem("clienteSeleccionado", cliente._id);
+                              window.location.href = "/admin/ventas";
+                            }}
+                            className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
+                            style={{ backgroundColor: '#23334e' }}
+                          >
+                            Vender
+                          </button>
+
+                          {currentUser?.role === "admin" && (
                             <>
                               <button
-                                onClick={handleGuardarEdicion}
+                                onClick={() => handleEditarCliente(cliente)}
                                 className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                                style={{ backgroundColor: '#23334e' }}
-                                disabled={cargando}
+                                style={{ backgroundColor: '#46546b' }}
                               >
-                                Guardar
+                                Editar
                               </button>
                               <button
-                                onClick={() => setEditandoId(null)}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                                style={{ backgroundColor: '#8c95a4' }}
+                                onClick={() => handleEliminar(cliente._id)}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
                               >
-                                Cancelar
+                                Eliminar
                               </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => {
-                                  localStorage.setItem("clienteSeleccionado", cliente._id);
-                                  window.location.href = "/admin/ventas";
-                                }}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                                style={{ backgroundColor: '#23334e' }}
-                              >
-                                Vender
-                              </button>
-                              
-                              {currentUser?.role === "admin" && (
-                                <>
-                                  <button
-                                    onClick={() => handleEditar(cliente)}
-                                    className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                                    style={{ backgroundColor: '#46546b' }}
-                                  >
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => handleEliminar(cliente._id)}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
-                                  >
-                                    Eliminar
-                                  </button>
-                                </>
-                              )}
                             </>
                           )}
                         </div>
@@ -565,6 +309,19 @@ const handleGuardarEdicion = () => {
             </div>
           )}
         </div>
+
+        {/* Modal para crear/editar cliente */}
+        <ClienteModal
+          isOpen={mostrarFormulario}
+          onClose={handleCerrarModal}
+          onSubmit={handleSubmit}
+          cliente={editandoId ? editCliente : nuevoCliente}
+          onChange={editandoId ? handleEditChange : handleChange}
+          isEditing={!!editandoId}
+          cargando={cargando}
+          modalError={modalError}
+          setModalError={setModalError}
+        />
       </div>
     </div>
   );
