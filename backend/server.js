@@ -9,6 +9,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Middleware de logging para todas las peticiones
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.path}`);
+  if (req.method === 'DELETE') {
+    console.log('🗑️🗑️🗑️ DELETE REQUEST DETECTADA');
+    console.log('Path:', req.path);
+    console.log('Params:', req.params);
+    console.log('Query:', req.query);
+    console.log('Headers:', req.headers.authorization ? 'Token presente' : 'No token');
+  }
+  next();
+});
+
 // Database connection usando la URI correcta del .env
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/pos-app';
 
