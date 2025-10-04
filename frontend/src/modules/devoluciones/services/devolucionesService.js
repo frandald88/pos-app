@@ -92,7 +92,8 @@ class DevolucionesService {
     const response = await axios.get(`${apiBaseUrl}/api/tiendas`, {
       headers: this.getHeaders(),
     });
-    return response.data;
+    // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
+    return response.data.data.tiendas;
   }
 
   // Obtener información del usuario actual

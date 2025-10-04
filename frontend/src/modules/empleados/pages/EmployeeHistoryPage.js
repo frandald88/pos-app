@@ -21,11 +21,12 @@ export default function EmployeeHistoryPage() {
     }
 
     // Solo cargar tiendas
-    axios.get(`${apiBaseUrl}/api/tiendas`, { 
-      headers: { Authorization: `Bearer ${token}` } 
+    axios.get(`${apiBaseUrl}/api/tiendas`, {
+      headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => {
-      setTiendas(res.data);
+      // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
+      setTiendas(res.data.data.tiendas);
     })
     .catch(err => {
       setMsg(`Error cargando tiendas: ${err.response?.data?.message || err.message}`);

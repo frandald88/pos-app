@@ -163,6 +163,23 @@ export default function SalesPage() {
   // Manejar cambio en tienda
   const handleTiendaChange = (e) => {
     const newTienda = e.target.value;
+
+    // Si hay productos en el carrito y se está cambiando de tienda, mostrar confirmación
+    if (selected.length > 0 && newTienda !== tiendaSeleccionada) {
+      const confirmar = window.confirm(
+        'Al cambiar de tienda se eliminarán todos los productos del carrito. ¿Deseas continuar?'
+      );
+
+      if (!confirmar) {
+        return; // Cancelar el cambio de tienda
+      }
+
+      // Limpiar carrito y pagos
+      clearCart();
+      clearPayments();
+      clearClienteSelection();
+    }
+
     setTiendaSeleccionada(newTienda);
     setDeliveryPerson(''); // Limpiar repartidor seleccionado
   };

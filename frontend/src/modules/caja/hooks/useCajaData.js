@@ -21,7 +21,8 @@ export const useCajaData = () => {
         const response = await axios.get(`${apiBaseUrl}/api/tiendas`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setTiendas(response.data);
+        // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
+        setTiendas(response.data.data.tiendas);
       } catch (error) {
         console.error("❌ Error al cargar tiendas:", error);
         setError("Error al cargar tiendas ❌");

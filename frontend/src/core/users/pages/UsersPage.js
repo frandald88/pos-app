@@ -155,7 +155,10 @@ const handleNewUser = () => {
       .get(`${apiBaseUrl}/api/tiendas`, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setTiendas(res.data))
+      .then((res) => {
+        // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
+        setTiendas(res.data.data.tiendas);
+      })
       .catch(() => console.error("Error al cargar tiendas"));
   };
 

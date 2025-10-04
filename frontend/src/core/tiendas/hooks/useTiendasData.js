@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import tiendasService from '../services/tiendasService';
 
 export const useTiendasData = () => {
@@ -7,29 +7,27 @@ export const useTiendasData = () => {
   const [msg, setMsg] = useState('');
   const [relacionesData, setRelacionesData] = useState(null);
   const [cargandoRelaciones, setCargandoRelaciones] = useState(false);
+  const lastFiltersRef = useRef({});
 
   // Cargar tiendas
   const fetchTiendas = useCallback(async (filters = {}) => {
     try {
       setCargando(true);
-      
-      // Por defecto, no incluir archivadas
+
+      // Guardar los filtros para usarlos en futuras recargas
+      lastFiltersRef.current = filters;
+
+      // Usar los filtros tal cual vienen, sin forzar includeArchived
       const apiFilters = {
-        includeArchived: false,
         ...filters
       };
-      
+
       const response = await tiendasService.getTiendas(apiFilters);
-      
-      // Si viene con estructura de respuesta con paginación
-      if (response.tiendas) {
-        setTiendas(response.tiendas);
-      } else {
-        // Si viene directamente como array
-        const tiendasArray = Array.isArray(response) ? response : [];
-        setTiendas(tiendasArray);
-      }
-      
+
+      // El servicio ahora devuelve directamente el array de tiendas
+      const tiendasArray = Array.isArray(response) ? response : [];
+      setTiendas(tiendasArray);
+
       setCargando(false);
     } catch (error) {
       console.error('Error fetching tiendas:', error);
@@ -44,13 +42,13 @@ export const useTiendasData = () => {
       setCargando(true);
       const response = await tiendasService.createTienda(tiendaData);
       setMsg('Tienda guardada exitosamente ✅');
-      
-      // Recargar tiendas
-      await fetchTiendas();
-      
+
+      // Recargar tiendas con los últimos filtros
+      await fetchTiendas(lastFiltersRef.current);
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setMsg(''), 3000);
-      
+
       return response;
     } catch (error) {
       console.error('Error creating tienda:', error);
@@ -66,13 +64,13 @@ export const useTiendasData = () => {
       setCargando(true);
       const response = await tiendasService.updateTienda(id, tiendaData);
       setMsg('Tienda actualizada exitosamente ✅');
-      
-      // Recargar tiendas
-      await fetchTiendas();
-      
+
+      // Recargar tiendas con los últimos filtros
+      await fetchTiendas(lastFiltersRef.current);
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setMsg(''), 3000);
-      
+
       return response;
     } catch (error) {
       console.error('Error updating tienda:', error);
@@ -85,13 +83,16 @@ export const useTiendasData = () => {
   // Verificar relaciones de una tienda
   const checkTiendaRelationships = async (id) => {
     try {
+      console.log('🔍 Verificando relaciones para tienda:', id);
       setCargandoRelaciones(true);
       const response = await tiendasService.getTiendaRelationships(id);
+      console.log('✅ Respuesta de relaciones:', response);
       setRelacionesData(response);
+      console.log('📦 relacionesData actualizado');
       setCargandoRelaciones(false);
       return response;
     } catch (error) {
-      console.error('Error checking tienda relationships:', error);
+      console.error('❌ Error checking tienda relationships:', error);
       setMsg('Error al verificar relaciones ❌');
       setCargandoRelaciones(false);
       throw error;
@@ -104,13 +105,13 @@ export const useTiendasData = () => {
       setCargando(true);
       const response = await tiendasService.archiveTienda(id);
       setMsg('Tienda archivada exitosamente ✅');
-      
-      // Recargar tiendas
-      await fetchTiendas();
-      
+
+      // Recargar tiendas con los últimos filtros
+      await fetchTiendas(lastFiltersRef.current);
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setMsg(''), 3000);
-      
+
       return response;
     } catch (error) {
       console.error('Error archiving tienda:', error);
@@ -126,13 +127,13 @@ export const useTiendasData = () => {
       setCargando(true);
       const response = await tiendasService.restoreTienda(id);
       setMsg('Tienda restaurada exitosamente ✅');
-      
-      // Recargar tiendas
-      await fetchTiendas();
-      
+
+      // Recargar tiendas con los últimos filtros
+      await fetchTiendas(lastFiltersRef.current);
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setMsg(''), 3000);
-      
+
       return response;
     } catch (error) {
       console.error('Error restoring tienda:', error);
@@ -147,19 +148,19 @@ export const useTiendasData = () => {
     try {
       setCargando(true);
       const response = await tiendasService.deleteTienda(id, forceDelete);
-      
+
       if (forceDelete) {
         setMsg('Tienda eliminada permanentemente ✅');
       } else {
         setMsg('Tienda eliminada exitosamente ✅');
       }
-      
-      // Recargar tiendas
-      await fetchTiendas();
-      
+
+      // Recargar tiendas con los últimos filtros
+      await fetchTiendas(lastFiltersRef.current);
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => setMsg(''), 3000);
-      
+
       return response;
     } catch (error) {
       console.error('Error deleting tienda:', error);

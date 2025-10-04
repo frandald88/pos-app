@@ -173,7 +173,7 @@ export default function ReturnsPage() {
 
                 <div className="mb-4">
                   <div className="text-sm" style={{ color: '#697487' }}>
-                    Procesado por: <span className="font-medium">{returnRecord.processedBy.username}</span>
+                    Procesado por: <span className="font-medium">{returnRecord.processedBy?.username || 'Usuario desconocido'}</span>
                   </div>
                 </div>
 
