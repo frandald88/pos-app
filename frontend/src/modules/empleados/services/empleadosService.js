@@ -151,6 +151,26 @@ class EmpleadosService {
       throw error;
     }
   }
+
+  // ========== HISTORIAL DE EMPLEADOS ==========
+
+  // Obtener ranking de empleados por faltas
+  async getRankingFaltas(params) {
+    try {
+      this.updateToken();
+      const response = await axios.get(
+        `${this.baseURL}/api/employees/history/ranking/faltas`,
+        {
+          headers: this.getHeaders(),
+          params
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error obteniendo ranking de faltas:', error);
+      throw error;
+    }
+  }
 }
 
 export default new EmpleadosService();
