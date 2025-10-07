@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 
 export const useReportesCalculations = (ventas, tipoReporte) => {
   const safeArray = (arr) => Array.isArray(arr) ? arr : [];
@@ -91,7 +91,7 @@ export const useReportesCalculations = (ventas, tipoReporte) => {
   }, [totalGeneral, totalRegistros]);
 
   // Generar datos para gráfica
-  const generarDatosGrafica = (periodo) => {
+  const generarDatosGrafica = useCallback((periodo) => {
     const agrupados = {};
 
     safeArray(ventas).forEach((venta) => {
@@ -104,17 +104,40 @@ export const useReportesCalculations = (ventas, tipoReporte) => {
         key = fecha.getDate().toString();
       } else if (periodo === 'año') {
         key = (fecha.getMonth() + 1) + '/' + fecha.getDate();
+      } else if (periodo === 'rango') {
+        // Para rangos personalizados, agrupar por día
+        key = fecha.getDate() + '/' + (fecha.getMonth() + 1);
       }
 
-      if (!agrupados[key]) agrupados[key] = 0;
-      agrupados[key] += tipoReporte === 'ventas' ? venta.totalProducto : venta.refundAmount;
+      // Solo agregar si la key no está vacía
+      if (key && key.trim() !== '') {
+        if (!agrupados[key]) agrupados[key] = 0;
+        agrupados[key] += tipoReporte === 'ventas' ? venta.totalProducto : venta.refundAmount;
+      }
     });
 
-    return Object.keys(agrupados).map((key) => ({
+    // Ordenar las claves según el tipo de período
+    const sortedKeys = Object.keys(agrupados).sort((a, b) => {
+      if (periodo === 'dia') {
+        // Ordenar por hora (0:00, 1:00, ..., 23:00)
+        return parseInt(a) - parseInt(b);
+      } else if (periodo === 'mes') {
+        // Ordenar por día del mes (1, 2, 3, ..., 31)
+        return parseInt(a) - parseInt(b);
+      } else {
+        // Para año y rango, ordenar por fecha
+        const [dayA, monthA] = a.split('/').map(Number);
+        const [dayB, monthB] = b.split('/').map(Number);
+        if (monthA !== monthB) return monthA - monthB;
+        return dayA - dayB;
+      }
+    });
+
+    return sortedKeys.map((key) => ({
       label: key,
       total: agrupados[key],
     }));
-  };
+  }, [ventas, tipoReporte]);
 
   return {
     totalGeneral,
