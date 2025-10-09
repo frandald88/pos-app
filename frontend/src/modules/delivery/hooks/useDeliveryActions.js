@@ -102,6 +102,10 @@ export const useDeliveryActions = () => {
       errors.push('La fecha de emisión es requerida');
     }
 
+    if (!orderData.assignedTo) {
+      errors.push('Debes asignar la orden a un usuario');
+    }
+
     // Validar fecha de emisión
     const emisionDate = new Date(orderData.fechaEmision);
     if (isNaN(emisionDate.getTime())) {
@@ -123,7 +127,7 @@ export const useDeliveryActions = () => {
       unidad: formData.unidad || 'pza',
       fechaEmision: formData.fechaEmision,
       tienda: formData.tienda || userInfo.tienda?._id || null,
-      assignedTo: formData.assignedTo || null
+      assignedTo: formData.assignedTo
     };
   };
 

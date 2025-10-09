@@ -1,15 +1,20 @@
-import { useEffect } from "react";
-import { 
-  useDeliveryData, 
-  useDeliveryActions, 
-  useDeliveryForm, 
-  useDeliveryFilters 
+import { useEffect, useState, useCallback } from "react";
+import {
+  useDeliveryData,
+  useDeliveryActions,
+  useDeliveryForm,
+  useDeliveryFilters
 } from '../hooks';
+import { OrderModal } from '../components';
 
 export default function OrdersPage() {
+  // Estado local para modal
+  const [modalError, setModalError] = useState("");
+
   // Hooks personalizados
   const {
     orders,
+    allOrders,
     tiendas,
     users,
     userRole,
@@ -52,11 +57,20 @@ export default function OrdersPage() {
   const {
     filtroStatus,
     searchTerm,
+    filtroTienda,
     filteredOrders,
-    orderStats,
     setFiltroStatus,
-    setSearchTerm
+    setSearchTerm,
+    setFiltroTienda
   } = useDeliveryFilters(orders);
+
+  // Calcular estadísticas desde allOrders (sin filtrar) para que no cambien al filtrar
+  const orderStats = {
+    total: allOrders.length,
+    pendientes: allOrders.filter(o => o.status === 'pendiente').length,
+    completadas: allOrders.filter(o => o.status === 'completada').length,
+    canceladas: allOrders.filter(o => o.status === 'cancelada').length
+  };
 
   // Estados derivados
   const cargando = dataLoading || actionLoading;
@@ -68,14 +82,30 @@ export default function OrdersPage() {
     }
   }, [userRole, userTienda, setUserData]);
 
-  // Cargar órdenes cuando cambia el filtro
-  useEffect(() => {
-    if (!dataLoading) {
-      const filters = {};
-      if (filtroStatus !== 'todos') filters.status = filtroStatus;
-      loadOrders(filters);
+  // Función helper para construir filtros de órdenes
+  const buildOrderFilters = useCallback(() => {
+    const filters = {};
+    if (filtroStatus !== 'todos') filters.status = filtroStatus;
+
+    // Si el usuario NO es admin, solo mostrar órdenes de su tienda
+    if (userRole !== 'admin' && userTienda) {
+      const tiendaId = typeof userTienda === 'object' ? userTienda._id : userTienda;
+      filters.tiendaId = tiendaId;
+    } else if (userRole === 'admin' && filtroTienda) {
+      // Si es admin y ha seleccionado una tienda en el filtro
+      filters.tiendaId = filtroTienda;
     }
-  }, [filtroStatus]);
+
+    return filters;
+  }, [filtroStatus, userRole, userTienda, filtroTienda]);
+
+  // Cargar órdenes inicialmente y cuando cambia el filtro
+  useEffect(() => {
+    // GUARD: No cargar órdenes hasta que la información del usuario esté disponible
+    if (!userRole) return;
+
+    loadOrders(buildOrderFilters());
+  }, [loadOrders, userRole, buildOrderFilters]);
 
   // Recargar usuarios cuando cambia la tienda seleccionada
   useEffect(() => {
@@ -84,43 +114,79 @@ export default function OrdersPage() {
     }
   }, [form.tienda, loadUsers]);
 
-  // Manejar envío del formulario
+  // Manejar envío del formulario (crear o editar)
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setModalError("");
     clearMessage();
 
-    const formData = getFormData();
-    const validation = validateOrderData(formData);
+    if (editingOrder) {
+      // Actualizar orden existente
+      try {
+        const updateData = getEditData();
 
-    if (!validation.isValid) {
-      setError(validation.errors.join(', '));
-      return;
-    }
+        if (!updateData.status) {
+          setModalError("El estado es requerido ❌");
+          return;
+        }
 
-    try {
-      const orderData = formatOrderData(formData, { tienda: userTienda });
-      await createOrder(orderData);
-      
-      resetForm();
-      setMostrarFormulario(false);
-      loadOrders();
-    } catch (error) {
-      // Error ya manejado por el hook
+        await updateOrder(editingOrder._id, updateData);
+        cancelEditing();
+        setMostrarFormulario(false);
+        setModalError("");
+        loadOrders(buildOrderFilters());
+      } catch (error) {
+        setModalError("Error al actualizar orden ❌");
+      }
+    } else {
+      // Crear nueva orden
+      const formData = getFormData();
+      const validation = validateOrderData(formData);
+
+      if (!validation.isValid) {
+        setModalError(validation.errors.join(', ') + ' ❌');
+        return;
+      }
+
+      try {
+        const orderData = formatOrderData(formData, { tienda: userTienda });
+        await createOrder(orderData);
+
+        resetForm();
+        setMostrarFormulario(false);
+        setModalError("");
+        loadOrders(buildOrderFilters());
+      } catch (error) {
+        setModalError("Error al crear orden ❌");
+      }
     }
   };
 
-  // Manejar actualización de orden
-  const handleUpdate = async (orderId) => {
-    clearMessage();
+  // Handler para abrir modal de edición
+  const handleEditOrder = (order) => {
+    startEditing(order);
+    setMostrarFormulario(true);
+    setModalError("");
+  };
 
-    try {
-      const updateData = getEditData();
-      await updateOrder(orderId, updateData);
-      
+  // Handler para cerrar modal
+  const handleCloseModal = () => {
+    if (editingOrder) {
       cancelEditing();
-      loadOrders();
-    } catch (error) {
-      // Error ya manejado por el hook
+    } else {
+      resetForm();
+    }
+    setMostrarFormulario(false);
+    setModalError("");
+  };
+
+  // Handler para cambios en el formulario del modal
+  const handleModalChange = (e) => {
+    const { name, value } = e.target;
+    if (editingOrder) {
+      updateEditField(name, value);
+    } else {
+      updateField(name, value);
     }
   };
 
@@ -129,7 +195,7 @@ export default function OrdersPage() {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta orden?')) {
       try {
         await deleteOrder(orderId);
-        loadOrders();
+        loadOrders(buildOrderFilters());
       } catch (error) {
         // Error ya manejado por el hook
       }
@@ -139,12 +205,21 @@ export default function OrdersPage() {
   // Función para formatear fecha
   const formatDate = (dateString) => {
     if (!dateString) return "-";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+
+    // Extraer solo la parte de la fecha para evitar problemas de zona horaria
+    let dateOnly = dateString;
+    if (typeof dateString === 'string' && dateString.includes('T')) {
+      dateOnly = dateString.split('T')[0];
+    }
+
+    // Separar año, mes, día (formato YYYY-MM-DD)
+    const [year, month, day] = dateOnly.split('-');
+
+    // Crear array de meses
+    const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const monthName = meses[parseInt(month) - 1];
+
+    return `${day} ${monthName} ${year}`;
   };
 
   // Función para obtener color del status
@@ -215,6 +290,15 @@ export default function OrdersPage() {
                   Completadas
                 </div>
               </div>
+              <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
+                <div className="text-xl">❌</div>
+                <div className="text-lg font-bold" style={{ color: '#ef4444' }}>
+                  {orderStats.canceladas}
+                </div>
+                <div className="text-xs" style={{ color: '#697487' }}>
+                  Canceladas
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -255,7 +339,7 @@ export default function OrdersPage() {
                   value={filtroStatus}
                   onChange={(e) => setFiltroStatus(e.target.value)}
                   className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
-                  style={{ 
+                  style={{
                     borderColor: '#e5e7eb',
                     focusRingColor: '#23334e'
                   }}
@@ -267,7 +351,32 @@ export default function OrdersPage() {
                   <option value="cancelada">❌ Canceladas</option>
                 </select>
               </div>
-              
+
+              {userRole === 'admin' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Filtrar por tienda
+                  </label>
+                  <select
+                    value={filtroTienda}
+                    onChange={(e) => setFiltroTienda(e.target.value)}
+                    className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
+                    style={{
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                    disabled={cargando}
+                  >
+                    <option value="">🏪 Todas las tiendas</option>
+                    {tiendas.map((tienda) => (
+                      <option key={tienda._id} value={tienda._id}>
+                        {tienda.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="flex-1 max-w-md">
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                   Buscar órdenes
@@ -294,156 +403,6 @@ export default function OrdersPage() {
             </div>
           </div>
         </div>
-
-        {/* Formulario de nueva orden */}
-        {mostrarFormulario && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-bold mb-4" style={{ color: '#23334e' }}>
-              Nueva Orden de Compra
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Proveedor *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.proveedor}
-                    onChange={(e) => updateField('proveedor', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Producto *
-                  </label>
-                  <input
-                    type="text"
-                    value={form.producto}
-                    onChange={(e) => updateField('producto', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Cantidad *
-                  </label>
-                  <input
-                    type="number"
-                    value={form.cantidad}
-                    onChange={(e) => updateField('cantidad', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                    min="1"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Unidad
-                  </label>
-                  <select
-                    value={form.unidad}
-                    onChange={(e) => updateField('unidad', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                  >
-                    <option value="pza">Pieza</option>
-                    <option value="kg">Kilogramo</option>
-                    <option value="lt">Litro</option>
-                    <option value="caja">Caja</option>
-                    <option value="paquete">Paquete</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Fecha de Emisión *
-                  </label>
-                  <input
-                    type="date"
-                    value={form.fechaEmision}
-                    onChange={(e) => updateField('fechaEmision', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                    required
-                  />
-                </div>
-
-                {userRole === 'admin' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                      Tienda
-                    </label>
-                    <select
-                      value={form.tienda}
-                      onChange={(e) => updateField('tienda', e.target.value)}
-                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                      style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                    >
-                      <option value="">Seleccionar tienda</option>
-                      {tiendas.map((tienda) => (
-                        <option key={tienda._id} value={tienda._id}>
-                          {tienda.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                    Asignar a
-                  </label>
-                  <select
-                    value={form.assignedTo}
-                    onChange={(e) => updateField('assignedTo', e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                  >
-                    <option value="">Sin asignar</option>
-                    {users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.username} ({user.role})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={cargando}
-                  className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200"
-                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                >
-                  {cargando ? 'Creando...' : '✅ Crear Orden'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetForm();
-                    setMostrarFormulario(false);
-                  }}
-                  className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
-                  style={{ backgroundColor: '#8c95a4', color: 'white' }}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         {/* Lista de órdenes */}
         {cargando ? (
@@ -477,20 +436,22 @@ export default function OrdersPage() {
                           Orden #{order._id.slice(-8)}
                         </h3>
                         <span className={`px-3 py-1 text-sm rounded-full font-medium ${getStatusColor(order.status)}`}>
-                          {order.status === 'pendiente' ? '⏳ Pendiente' : 
-                           order.status === 'completada' ? '✅ Completada' : 
+                          {order.status === 'pendiente' ? '⏳ Pendiente' :
+                           order.status === 'completada' ? '✅ Completada' :
                            order.status === 'cancelada' ? '❌ Cancelada' : order.status}
                         </span>
                       </div>
-                      <p className="text-sm" style={{ color: '#697487' }}>
-                        {formatDate(order.fechaEmision)}
-                      </p>
+                      {order.createdBy && (
+                        <p className="text-sm" style={{ color: '#697487' }}>
+                          ✍️ Creado por: <span className="font-medium">{order.createdBy.username}</span>
+                        </p>
+                      )}
                     </div>
                     
                     <div className="flex gap-2">
                       {canUpdateOrder(order) && (
                         <button
-                          onClick={() => startEditing(order)}
+                          onClick={() => handleEditOrder(order)}
                           className="px-4 py-2 rounded-lg font-medium text-white transition-all duration-200"
                           style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
                         >
@@ -511,7 +472,7 @@ export default function OrdersPage() {
 
                 {/* Contenido de la orden */}
                 <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Proveedor
@@ -520,7 +481,7 @@ export default function OrdersPage() {
                         🏢 {order.proveedor}
                       </div>
                     </div>
-                    
+
                     <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Producto
@@ -529,7 +490,7 @@ export default function OrdersPage() {
                         📦 {order.producto}
                       </div>
                     </div>
-                    
+
                     <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Cantidad
@@ -538,7 +499,16 @@ export default function OrdersPage() {
                         📊 {order.cantidad} {order.unidad}
                       </div>
                     </div>
-                    
+
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                      <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                        Fecha de Emisión
+                      </div>
+                      <div className="font-bold" style={{ color: '#23334e' }}>
+                        📅 {formatDate(order.fechaEmision)}
+                      </div>
+                    </div>
+
                     {order.tienda?.nombre && (
                       <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                         <div className="text-sm font-medium" style={{ color: '#697487' }}>
@@ -549,143 +519,62 @@ export default function OrdersPage() {
                         </div>
                       </div>
                     )}
+
+                    {order.assignedTo && (
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                          Asignado a
+                        </div>
+                        <div className="font-bold" style={{ color: '#23334e' }}>
+                          👤 {order.assignedTo.username} ({order.assignedTo.role})
+                        </div>
+                      </div>
+                    )}
+
+                    {order.fechaEntrega && (
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                          Fecha de Entrega
+                        </div>
+                        <div className="font-bold" style={{ color: '#23334e' }}>
+                          📅 {formatDate(order.fechaEntrega)}
+                        </div>
+                      </div>
+                    )}
+
+                    {order.nota && (
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                        <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                          Nota
+                        </div>
+                        <div className="font-bold" style={{ color: '#23334e' }}>
+                          💬 {order.nota}
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* Información adicional */}
-                  {(order.assignedTo || order.fechaEntrega || order.nota) && (
-                    <div className="border-t pt-4" style={{ borderColor: '#e5e7eb' }}>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {order.assignedTo && (
-                          <div>
-                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
-                              Asignado a
-                            </div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              👤 {order.assignedTo.username} ({order.assignedTo.role})
-                            </div>
-                          </div>
-                        )}
-                        
-                        {order.fechaEntrega && (
-                          <div>
-                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
-                              Fecha de Entrega
-                            </div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              📅 {formatDate(order.fechaEntrega)}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {order.nota && (
-                          <div>
-                            <div className="text-sm font-medium mb-1" style={{ color: '#697487' }}>
-                              Nota
-                            </div>
-                            <div className="font-medium" style={{ color: '#23334e' }}>
-                              💬 {order.nota}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Formulario de edición */}
-                  {editingOrder && editingOrder._id === order._id && (
-                    <div className="border-t pt-6 mt-6" style={{ borderColor: '#e5e7eb' }}>
-                      <h4 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
-                        Editar Orden
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                            Estado
-                          </label>
-                          <select
-                            value={editForm.status}
-                            onChange={(e) => updateEditField('status', e.target.value)}
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                          >
-                            <option value="">Sin cambios</option>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="completada">Completada</option>
-                            <option value="cancelada">Cancelada</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                            Fecha de Entrega
-                          </label>
-                          <input
-                            type="date"
-                            value={editForm.fechaEntrega}
-                            onChange={(e) => updateEditField('fechaEntrega', e.target.value)}
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                            Asignar a
-                          </label>
-                          <select
-                            value={editForm.assignedTo}
-                            onChange={(e) => updateEditField('assignedTo', e.target.value)}
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                          >
-                            <option value="">Sin asignar</option>
-                            {users.map((user) => (
-                              <option key={user._id} value={user._id}>
-                                {user.username} ({user.role})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium mb-1" style={{ color: '#46546b' }}>
-                            Nota
-                          </label>
-                          <textarea
-                            value={editForm.nota}
-                            onChange={(e) => updateEditField('nota', e.target.value)}
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2"
-                            style={{ borderColor: '#e5e7eb', focusRingColor: '#23334e' }}
-                            rows="3"
-                            placeholder="Agregar nota opcional..."
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 mt-4">
-                        <button
-                          onClick={() => handleUpdate(order._id)}
-                          disabled={cargando}
-                          className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200"
-                          style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                        >
-                          {cargando ? 'Actualizando...' : '✅ Actualizar'}
-                        </button>
-                        <button
-                          onClick={cancelEditing}
-                          className="px-6 py-3 rounded-lg font-medium transition-all duration-200"
-                          style={{ backgroundColor: '#8c95a4', color: 'white' }}
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Modal para crear/editar orden */}
+        <OrderModal
+          isOpen={mostrarFormulario}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          orderData={editingOrder ? editForm : form}
+          onChange={handleModalChange}
+          isEditing={!!editingOrder}
+          cargando={actionLoading || dataLoading}
+          modalError={modalError}
+          setModalError={setModalError}
+          tiendas={tiendas}
+          users={users}
+          userRole={userRole}
+          userTienda={userTienda}
+        />
       </div>
     </div>
   );

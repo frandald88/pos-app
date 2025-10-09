@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import apiBaseUrl from "../../../config/api";
 import { useProductState } from '../hooks/useProductState';
 import { useProductActions } from '../hooks/useProductActions';
 import { productService } from '../services/productService';
@@ -60,7 +58,6 @@ export default function ProductsPage() {
     filtrarCategorias,
     handleReabastecimiento,
     limpiarFormularioCompleto,
-    verificarCambioStock,
     fetchProducts,
     fetchCategorias,
     buscarProductos
@@ -70,10 +67,10 @@ export default function ProductsPage() {
     const handleClickOutside = () => {
       setCategoriasFiltradas([]);
     };
-    
+
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  }, [setCategoriasFiltradas]);
 
   useEffect(() => {
     if (!mostrarFormulario) {
@@ -248,41 +245,6 @@ const handleSubmit = (e) => {
     if (stock <= 10) return { color: '#f59e0b', label: 'Bajo stock', icon: '⚠️' };
     return { color: '#10b981', label: 'En stock', icon: '✅' };
   };
-
-const scrollToElement = (elementId, offset = 100) => {
-  // Eliminar logs de debugging en producción
-  setTimeout(() => {
-    const element = document.getElementById(elementId);
-    
-    if (element) {
-      // Scroll suave y confiable
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-        inline: 'nearest'
-      });
-      
-      // Ajustar offset
-      setTimeout(() => {
-        const currentScroll = window.pageYOffset;
-        window.scrollTo({
-          top: currentScroll - offset,
-          behavior: 'smooth'
-        });
-      }, 100);
-      
-      // Highlight visual elegante
-      element.style.transition = 'all 0.3s ease';
-      element.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.4)';
-      element.style.transform = 'scale(1.01)';
-      
-      setTimeout(() => {
-        element.style.boxShadow = '';
-        element.style.transform = '';
-      }, 2000);
-    }
-  }, 200);
-};
 
   return (
     <div style={{ backgroundColor: '#f4f6fa', minHeight: '100vh' }}>
@@ -476,18 +438,12 @@ const scrollToElement = (elementId, offset = 100) => {
 
         {/* Modal de reabastecimiento */}
         {mostrarReabastecimiento && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4"
             style={{ zIndex: 60 }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                handleCancelarReabastecimiento();
-              }
-            }}
           >
-            <div 
+            <div
               className="bg-white rounded-lg sm:rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-4 rounded-t-lg sm:rounded-t-xl">
                 <div className="flex items-center justify-between">
@@ -652,17 +608,11 @@ const scrollToElement = (elementId, offset = 100) => {
 
         {/* Modal para editar producto */}
         {mostrarFormulario && editingId && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                handleCancelar();
-              }
-            }}
           >
-            <div 
+            <div
               className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
                 <div className="flex items-center justify-between">
@@ -1103,17 +1053,11 @@ const scrollToElement = (elementId, offset = 100) => {
 
         {/* Modal para nuevo producto */}
         {mostrarFormulario && !editingId && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                handleCancelar();
-              }
-            }}
           >
-            <div 
+            <div
               className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
                 <div className="flex items-center justify-between">

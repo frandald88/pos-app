@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export const useDeliveryForm = (initialValues = {}) => {
   const [form, setForm] = useState({
@@ -16,8 +16,7 @@ export const useDeliveryForm = (initialValues = {}) => {
   const [editForm, setEditForm] = useState({
     status: '',
     fechaEntrega: '',
-    nota: '',
-    assignedTo: ''
+    nota: ''
   });
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -62,11 +61,23 @@ export const useDeliveryForm = (initialValues = {}) => {
   // Iniciar edición de una orden
   const startEditing = (order) => {
     setEditingOrder(order);
+
+    // Formatear fecha de entrega sin conversión de zona horaria
+    let fechaEntrega = '';
+    if (order.fechaEntrega) {
+      const dateString = order.fechaEntrega;
+      // Si es una fecha ISO, extraer solo la parte de la fecha (YYYY-MM-DD)
+      if (typeof dateString === 'string' && dateString.includes('T')) {
+        fechaEntrega = dateString.split('T')[0];
+      } else {
+        fechaEntrega = dateString;
+      }
+    }
+
     setEditForm({
       status: order.status || '',
-      fechaEntrega: order.fechaEntrega ? new Date(order.fechaEntrega).toISOString().split('T')[0] : '',
-      nota: order.nota || '',
-      assignedTo: order.assignedTo?._id || ''
+      fechaEntrega,
+      nota: order.nota || ''
     });
   };
 
@@ -76,8 +87,7 @@ export const useDeliveryForm = (initialValues = {}) => {
     setEditForm({
       status: '',
       fechaEntrega: '',
-      nota: '',
-      assignedTo: ''
+      nota: ''
     });
   };
 
@@ -92,24 +102,23 @@ export const useDeliveryForm = (initialValues = {}) => {
   // Preparar datos de edición para envío
   const getEditData = () => {
     const editData = {};
-    
+
     if (editForm.status) editData.status = editForm.status;
     if (editForm.fechaEntrega) editData.fechaEntrega = editForm.fechaEntrega;
     if (editForm.nota !== undefined) editData.nota = editForm.nota;
-    if (editForm.assignedTo !== undefined) editData.assignedTo = editForm.assignedTo || null;
-    
+
     return editData;
   };
 
   // Configurar formulario con datos del usuario
-  const setUserData = (userInfo) => {
+  const setUserData = useCallback((userInfo) => {
     if (userInfo.role !== 'admin' && userInfo.tienda) {
       setForm(prev => ({
         ...prev,
         tienda: userInfo.tienda._id
       }));
     }
-  };
+  }, []);
 
   return {
     // Form state

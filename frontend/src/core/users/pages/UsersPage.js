@@ -6,7 +6,6 @@ import apiBaseUrl from "../../../config/api";
 import { useUserState } from "../hooks/useUserState";
 import { useScheduleData } from "../hooks/useScheduleData";
 import { usePhoneFormatter } from "../hooks/usePhoneFormatter";
-import userService from "../services/userService";
 
 function UsersPage() {
   // ✅ Estados usando hooks personalizados
@@ -34,7 +33,6 @@ function UsersPage() {
   // ✅ Datos de horarios usando hook personalizado
   const {
     dayNames,
-    defaultSchedule,
     loadingSchedules, setLoadingSchedules,
     scheduleData, setScheduleData,
     scheduleFormType, setScheduleFormType,
@@ -52,40 +50,40 @@ function UsersPage() {
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     setToken(storedToken);
-    
+
     // Escuchar cambios en localStorage (opcional)
     const handleStorageChange = () => {
       const newToken = localStorage.getItem("token");
       setToken(newToken);
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [setToken]);
 
   // ✅ Handlers optimizados para mejorar rendimiento del formulario
   const handleUsernameChange = useCallback((e) => {
     setForm(prev => ({ ...prev, username: e.target.value }));
-  }, []);
+  }, [setForm]);
 
   const handlePasswordChange = useCallback((e) => {
     setForm(prev => ({ ...prev, password: e.target.value }));
-  }, []);
+  }, [setForm]);
 
   const handleRoleChange = useCallback((e) => {
     setForm(prev => ({ ...prev, role: e.target.value, tienda: "" }));
-  }, []);
+  }, [setForm]);
 
   const handleTiendaChange = useCallback((e) => {
     setForm(prev => ({ ...prev, tienda: e.target.value }));
-  }, []);
+  }, [setForm]);
 
   const handleTelefonoChange = useCallback((e) => {
     setForm(prev => {
       const formattedPhone = formatPhoneNumber(e.target.value, prev.telefono);
       return { ...prev, telefono: formattedPhone };
     });
-  }, []);
+  }, [setForm, formatPhoneNumber]);
 
   // ✅ Handlers optimizados para datos personales
   const handlePersonalDataChange = useCallback((field) => (e) => {
@@ -96,18 +94,18 @@ function UsersPage() {
   const handleHistorialLaboralChange = useCallback((field) => (e) => {
     const value = field === 'seguroSocial' ? e.target.checked : e.target.value;
     setHistorialLaboral(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [setHistorialLaboral]);
 
   // ✅ Handlers optimizados para UI state
   const handleUIStateChange = useCallback((field, value) => {
     setUiState(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [setUiState]);
 
   // ✅ Handlers optimizados para edición de historial
   const handleEditHistorialChange = useCallback((field) => (e) => {
     const value = field === 'seguro' ? e.target.checked : e.target.value;
     setEditHistorial(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [setEditHistorial]);
 
   // ✅ Handlers optimizados para edición de datos personales
   const handleEditPersonalDataChange = useCallback((field) => (e) => {
@@ -1684,16 +1682,10 @@ const handleEdit = (user) => {
 
         {/* Modal para editar usuario */}
         {mostrarFormulario && editingId && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                handleCancelar();
-              }
-            }}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                 onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
@@ -1833,16 +1825,10 @@ const handleEdit = (user) => {
 
         {/* Modal para crear nuevo usuario */}
         {mostrarFormulario && !editingId && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                handleCancelar();
-              }
-            }}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto"
-                 onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
@@ -2211,17 +2197,10 @@ const handleEdit = (user) => {
 
         {/* Modal para editar historial laboral */}
         {editHistorial.id && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setEditHistorial(prev => ({...prev, id: null}));
-                clearEditStates();
-              }
-            }}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-                 onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
@@ -2520,12 +2499,10 @@ const handleEdit = (user) => {
 		
 		{/* ✅ Modal de asignación/edición de horarios */}
         {uiState.showScheduleModal && uiState.selectedEmployeeForSchedule && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={clearScheduleForm}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-                 onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 {/* Header con botón de cerrar */}
                 <div className="flex justify-between items-center mb-6">
@@ -3744,12 +3721,10 @@ const handleEdit = (user) => {
 
         {/* Modal de confirmación para eliminar */}
         {uiState.showDeleteModal && uiState.deleteCandidate && (
-          <div 
+          <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={cancelDeleteSchedule}
           >
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full"
-                 onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-red-600">
