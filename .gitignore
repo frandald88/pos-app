@@ -61,3 +61,7 @@ coverage/
 # Debug
 .vscode/launch.json
 debug.log
+
+# Backups comprimidos
+*.tar.gz
+*.zip
