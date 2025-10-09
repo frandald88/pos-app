@@ -267,56 +267,79 @@ router.get('/days-available/:userId', verifyToken, async (req, res) => {
 // ✅ ACTUALIZADO: Crear nueva solicitud usando EmployeeHistory
 router.post('/request', verifyToken, async (req, res) => {
   try {
-    const { startDate, endDate, replacement, tienda } = req.body;
-    
+    const { startDate, endDate, replacement, tienda, employeeId } = req.body;
+
     // Validaciones básicas
     if (!startDate || !endDate || !tienda) {
-      return res.status(400).json({ 
-        message: 'Faltan campos obligatorios: startDate, endDate, tienda' 
+      return res.status(400).json({
+        message: 'Faltan campos obligatorios: startDate, endDate, tienda'
       });
     }
-    
+
     const start = new Date(startDate);
     const end = new Date(endDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // Validar fechas
-    if (start >= end) {
-      return res.status(400).json({ 
-        message: 'La fecha de fin debe ser posterior a la fecha de inicio' 
-      });
-    }
-    
-    if (start < today) {
-      return res.status(400).json({ 
-        message: 'No se pueden solicitar vacaciones para fechas pasadas' 
+    if (start > end) {
+      return res.status(400).json({
+        message: 'La fecha de inicio no puede ser posterior a la fecha de fin'
       });
     }
 
-    const user = await User.findById(req.userId);
+    if (start < today) {
+      return res.status(400).json({
+        message: 'No se pueden solicitar vacaciones para fechas pasadas'
+      });
+    }
+
+    // Determinar el empleado: si hay employeeId (admin), usarlo; si no, usar req.userId
+    const targetEmployeeId = employeeId || req.userId;
+
+    // Verificar permisos: solo admin puede solicitar para otros
+    if (employeeId && employeeId !== req.userId) {
+      const currentUser = await User.findById(req.userId);
+      if (currentUser.role !== 'admin') {
+        return res.status(403).json({
+          message: 'Solo los administradores pueden solicitar vacaciones para otros empleados'
+        });
+      }
+    }
+
+    const user = await User.findById(targetEmployeeId);
     if (!user) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      return res.status(404).json({ message: 'Empleado no encontrado' });
     }
     
     // ✅ NUEVO: Buscar historial laboral para obtener fecha de ingreso
-    let employeeHistory = await EmployeeHistory.findOne({ 
-      employee: req.userId, 
-      isActive: true 
+    let employeeHistory = await EmployeeHistory.findOne({
+      employee: targetEmployeeId,
+      isActive: true
     });
 
     if (!employeeHistory) {
-      employeeHistory = await EmployeeHistory.findOne({ 
-        employee: req.userId 
+      employeeHistory = await EmployeeHistory.findOne({
+        employee: targetEmployeeId
       }).sort({ startDate: -1 });
     }
 
     const fechaIngreso = employeeHistory ? employeeHistory.startDate : user.createdAt;
     const totalDays = calcularDiasDisponibles(fechaIngreso);
-    
+
+    console.log('📅 Vacation request debug:', {
+      requesterId: req.userId,
+      targetEmployeeId,
+      username: user.username,
+      fechaIngreso,
+      hasEmployeeHistory: !!employeeHistory,
+      totalDays,
+      yearsOfService: ((new Date() - fechaIngreso) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(2)
+    });
+
     if (totalDays === 0) {
-      return res.status(400).json({ 
-        message: 'Aún no tienes días de vacaciones disponibles. Necesitas al menos 1 año de antigüedad desde tu fecha de ingreso.' 
+      return res.status(400).json({
+        message: 'Aún no tienes días de vacaciones disponibles. Necesitas al menos 1 año de antigüedad desde tu fecha de ingreso.'
       });
     }
 
@@ -333,21 +356,21 @@ router.post('/request', verifyToken, async (req, res) => {
     
     // Verificar si hay conflicto con otras solicitudes aprobadas
     const conflictingRequest = await VacationRequest.findOne({
-      employee: req.userId,
+      employee: targetEmployeeId,
       status: 'aprobada',
       $or: [
         { startDate: { $lte: end }, endDate: { $gte: start } }
       ]
     });
-    
+
     if (conflictingRequest) {
-      return res.status(400).json({ 
-        message: 'Ya tienes vacaciones aprobadas en esas fechas' 
+      return res.status(400).json({
+        message: `${user.username} ya tiene vacaciones aprobadas en esas fechas`
       });
     }
 
     const request = new VacationRequest({
-      employee: req.userId,
+      employee: targetEmployeeId,
       tienda,
       startDate: start,
       endDate: end,
@@ -497,10 +520,12 @@ router.patch('/:id/status', verifyToken, requireAdmin, async (req, res) => {
 router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { action = 'soft' } = req.body; // 'soft' o 'hard'
-    
+
+    // Buscar incluyendo solicitudes eliminadas
     const request = await VacationRequest.findById(req.params.id)
+      .setOptions({ includeDeleted: true })
       .populate('employee', 'username role');
-      
+
     if (!request) {
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
@@ -510,8 +535,8 @@ router.delete('/:id', verifyToken, requireAdmin, async (req, res) => {
     }
 
     if (action === 'hard') {
-      // Eliminación permanente
-      await VacationRequest.findByIdAndDelete(req.params.id);
+      // Eliminación permanente - usar deleteOne en lugar de findByIdAndDelete
+      await VacationRequest.deleteOne({ _id: req.params.id });
       
       res.json({ 
         message: 'Solicitud eliminada permanentemente',

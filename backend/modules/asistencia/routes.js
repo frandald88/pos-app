@@ -477,7 +477,7 @@ router.post("/absence", verifyToken, requireAdmin, async (req, res) => {
     }
 
     let absenceNotes = reason.trim();
-    
+
     if (scheduleInfo.hasSchedule && !scheduleInfo.isWorkday) {
       absenceNotes += " (Nota: No era día laboral según horario)";
     }
@@ -487,6 +487,7 @@ router.post("/absence", verifyToken, requireAdmin, async (req, res) => {
       date: startOfDay,
       status: "Absent",
       absenceReason: absenceNotes,
+      notes: absenceNotes, // También guardar en notes para que aparezca en reportes
       tienda: user.tienda,
     });
 

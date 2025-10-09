@@ -59,10 +59,10 @@ vacationRequestSchema.pre(/^find/, function(next) {
   next();
 });
 
-// Validación existente: fecha de fin debe ser posterior a fecha de inicio
+// Validación: fecha de fin no puede ser anterior a fecha de inicio
 vacationRequestSchema.pre('save', function(next) {
-  if (this.endDate <= this.startDate) {
-    next(new Error('La fecha de fin debe ser posterior a la fecha de inicio'));
+  if (this.endDate < this.startDate) {
+    next(new Error('La fecha de inicio no puede ser posterior a la fecha de fin'));
   }
   next();
 });

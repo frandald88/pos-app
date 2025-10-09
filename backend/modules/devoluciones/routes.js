@@ -267,8 +267,18 @@ router.get('/', verifyToken, async (req, res) => {
     // Filtros por fecha
     if (startDate || endDate) {
       filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate + 'T00:00:00.000Z');
-      if (endDate) filter.date.$lte = new Date(endDate + 'T23:59:59.999Z');
+      if (startDate) {
+        // Si startDate ya incluye hora (formato ISO), usarlo directamente
+        // Si no, agregar la hora por defecto (00:00:00)
+        const startDateStr = startDate.includes('T') ? startDate : startDate + 'T00:00:00.000Z';
+        filter.date.$gte = new Date(startDateStr);
+      }
+      if (endDate) {
+        // Si endDate ya incluye hora (formato ISO), usarlo directamente
+        // Si no, agregar la hora por defecto (23:59:59)
+        const endDateStr = endDate.includes('T') ? endDate : endDate + 'T23:59:59.999Z';
+        filter.date.$lte = new Date(endDateStr);
+      }
     }
     
     // Otros filtros
