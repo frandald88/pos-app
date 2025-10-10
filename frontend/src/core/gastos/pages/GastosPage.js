@@ -112,21 +112,24 @@ export default function ExpensesPage() {
     e.preventDefault();
     setModalError("");
 
-    const validation = validateExpenseForm(getFormData());
-    if (!validation.isValid) {
-      setModalError(validation.errors.join(', '));
-      return;
-    }
-
     try {
       if (editingGasto) {
-        // Modo edición - actualizar estado
+        // Modo edición - actualizar estado (solo validar estado)
+        if (!newStatus) {
+          setModalError("Debes seleccionar un estado");
+          return;
+        }
         await updateExpenseStatus(editingGasto._id, newStatus, adminNote);
         clearEditingForm();
         setIsModalOpen(false);
         setEditingGasto(null);
       } else {
-        // Modo creación
+        // Modo creación - validar todos los campos
+        const validation = validateExpenseForm(getFormData());
+        if (!validation.isValid) {
+          setModalError(validation.errors.join(', '));
+          return;
+        }
         await createExpense(getFormData());
         clearForm();
         setIsModalOpen(false);

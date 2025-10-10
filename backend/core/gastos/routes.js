@@ -364,7 +364,7 @@ router.get('/available-stores', verifyToken, async (req, res) => {
 
     if (user.role === 'admin') {
       // Admin puede ver todas las tiendas
-      const Tienda = require('../../core/tiendas/model');
+      const Tienda = require('../../modules/tiendas/model');
       availableStores = await Tienda.find({}, 'nombre').sort({ nombre: 1 });
     } else {
       // Vendedor/repartidor solo puede ver su tienda asignada

@@ -44,10 +44,9 @@ const authRoutes = require('./core/auth/routes');
 const usersRoutes = require('./core/users/routes');
 const productsRoutes = require('./core/products/routes');
 const salesRoutes = require('./core/sales/routes');
-const tiendasRoutes = require('./core/tiendas/routes');
 
 // Module routes - con try/catch para módulos opcionales
-let clientesRoutes, devolucionesRoutes, deliveryRoutes, reportesRoutes, attendanceRoutes, expensesRoutes, empleadosRoutes, cajaRoutes, vacacionesRoutes, schedulesRoutes;
+let clientesRoutes, devolucionesRoutes, deliveryRoutes, reportesRoutes, attendanceRoutes, expensesRoutes, empleadosRoutes, cajaRoutes, vacacionesRoutes, schedulesRoutes, tiendasRoutes;
 
 try {
   clientesRoutes = require('./modules/clientes/routes');
@@ -56,13 +55,13 @@ try {
 }
 
 try {
-  devolucionesRoutes = require('./modules/devoluciones/routes');
+  devolucionesRoutes = require('./core/devoluciones/routes');
 } catch (e) {
   // Module not found - silent in production
 }
 
 try {
-  deliveryRoutes = require('./modules/delivery/routes');
+  deliveryRoutes = require('./core/delivery/routes');
 } catch (e) {
   // Module not available - silent in production
 }
@@ -80,7 +79,7 @@ try {
 }
 
 try {
-  expensesRoutes = require('./modules/gastos/routes');
+  expensesRoutes = require('./core/gastos/routes');
 } catch (e) {
   // Module not available - silent in production
 }
@@ -92,7 +91,7 @@ try {
 }
 
 try {
-  cajaRoutes = require('./modules/caja/routes');
+  cajaRoutes = require('./core/caja/routes');
 } catch (e) {
   // Module not available - silent in production
 }
@@ -109,13 +108,19 @@ try {
   // Module not available - silent in production
 }
 
+try {
+  tiendasRoutes = require('./modules/tiendas/routes');
+} catch (e) {
+  // Module not available - silent in production
+}
+
 // Configure routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/sales', salesRoutes);
-app.use('/api/tiendas', tiendasRoutes);
 
+if (tiendasRoutes) app.use('/api/tiendas', tiendasRoutes);
 if (clientesRoutes) app.use('/api/clientes', clientesRoutes);
 if (devolucionesRoutes) app.use('/api/returns', devolucionesRoutes);
 if (deliveryRoutes) app.use('/api/orders', deliveryRoutes);

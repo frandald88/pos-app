@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyToken, requireAdmin } = require('../../shared/middleware/authMiddleware');
 const Order = require('./model');
 const User = require('../../core/users/model');
-const Tienda = require('../../core/tiendas/model');
+const Tienda = require('../../modules/tiendas/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const mongoose = require('mongoose');
 

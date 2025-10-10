@@ -1,4 +1,4 @@
-const Tienda = require('../../core/tiendas/model');
+const Tienda = require('../../modules/tiendas/model');
 const User = require('../../core/users/model');
 const Product = require('../../core/products/model');
 const Sale = require('../../core/sales/model');

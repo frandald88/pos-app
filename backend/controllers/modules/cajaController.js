@@ -1,5 +1,5 @@
 const Sale = require('../../core/sales/model');
-const Expense = require('../../modules/gastos/model');
+const Expense = require('../../core/gastos/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 
 class CajaController {
@@ -194,7 +194,7 @@ class CajaController {
 
       if (incluirDevoluciones === 'true') {
         try {
-          const Return = require('../../modules/devoluciones/model');
+          const Return = require('../../core/devoluciones/model');
           
           const filtroDevolucion = { date: { $gte: inicioMexico, $lte: finMexico } };
           if (tiendaId) {

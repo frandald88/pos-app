@@ -1,4 +1,4 @@
-const gastosRoutes = require('../../modules/gastos/routes');
+const gastosRoutes = require('../../core/gastos/routes');
 
 class GastosController {
   // Este controlador simplemente expone las rutas del módulo de gastos

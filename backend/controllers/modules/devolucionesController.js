@@ -1,4 +1,4 @@
-const devolucionesRoutes = require('../../modules/devoluciones/routes');
+const devolucionesRoutes = require('../../core/devoluciones/routes');
 
 class DevolucionesController {
   // Este controlador simplemente expone las rutas del módulo de devoluciones

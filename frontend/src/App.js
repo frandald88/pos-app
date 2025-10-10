@@ -14,17 +14,17 @@ import RoleProtectedRoute from "./shared/components/Layout/RoleProtectedRoute";
 import UsersPage from "./core/users/pages/UsersPage";
 import ProductsPage from "./core/products/pages/ProductsPage";
 import SalesPage from "./core/sales/pages/SalesPage";
-import TiendasPage from "./core/tiendas/pages/TiendasPage";
 
 // Optional modules
+import TiendasPage from "./modules/tiendas/pages/TiendasPage";
 import ClientesPage from "./modules/clientes/pages/ClientesPage";
 import EmpleadosPage from "./modules/empleados/pages/EmpleadosPage";
 import EmployeeHistoryPage from "./modules/empleados/pages/EmployeeHistoryPage";
-import GastosPage from "./modules/gastos/pages/GastosPage";
-import OrdersPage from "./modules/delivery/pages/OrdersPage";
-import OrderTrackingPage from "./modules/delivery/pages/OrderTrackingPage";
-import DevolucionesPage from "./modules/devoluciones/pages/DevolucionesPage";
-import CajaPage from "./modules/caja/pages/CajaPage";
+import GastosPage from "./core/gastos/pages/GastosPage";
+import OrdersPage from "./core/delivery/pages/OrdersPage";
+import OrderTrackingPage from "./core/delivery/pages/OrderTrackingPage";
+import DevolucionesPage from "./core/devoluciones/pages/DevolucionesPage";
+import CajaPage from "./core/caja/pages/CajaPage";
 import VacacionesRequestPage from "./modules/vacaciones/pages/VacacionesRequestPage";
 import VacacionesAdminPage from "./modules/vacaciones/pages/VacacionesAdminPage";
 import ReportesPage from "./modules/reportes/pages/ReportesPage";

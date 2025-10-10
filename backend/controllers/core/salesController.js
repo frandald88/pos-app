@@ -1,7 +1,7 @@
 const Sale = require('../../core/sales/model');
 const Product = require('../../core/products/model');
 const Cliente = require('../../modules/clientes/model');
-const Tienda = require('../../core/tiendas/model');
+const Tienda = require('../../modules/tiendas/model');
 const User = require('../../core/users/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const mongoose = require('mongoose');
@@ -284,7 +284,7 @@ class SalesController {
       
       
       // Agregar información de devoluciones para ventas canceladas con totalReturned > 0
-      const Return = require('../../modules/devoluciones/model');
+      const Return = require('../../core/devoluciones/model');
       for (let sale of sales) {
         if (sale.status === 'cancelada' && sale.totalReturned > 0) {
           const returnInfo = await Return.findOne({ saleId: sale._id })

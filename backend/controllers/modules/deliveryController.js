@@ -1,4 +1,4 @@
-const deliveryRoutes = require('../../modules/delivery/routes');
+const deliveryRoutes = require('../../core/delivery/routes');
 
 class DeliveryController {
   getRoutes() {
