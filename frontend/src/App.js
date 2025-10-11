@@ -2,6 +2,7 @@
 // REEMPLAZA COMPLETAMENTE tu App.js actual con este contenido
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LicenseProvider } from "./shared/contexts/LicenseContext";
 
 // Páginas principales (mantenidas en pages/)
 import LoginPage from "./pages/LoginPage";
@@ -31,10 +32,11 @@ import ReportesPage from "./modules/reportes/pages/ReportesPage";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Ruta de login */}
-        <Route path="/" element={<LoginPage />} />
+    <LicenseProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Ruta de login */}
+          <Route path="/" element={<LoginPage />} />
 
         {/* Core modules - Tiendas */}
         <Route
@@ -199,7 +201,8 @@ function App() {
         />
 
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </LicenseProvider>
   );
 }
 

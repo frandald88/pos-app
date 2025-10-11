@@ -5,6 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
+// Cargar sistema de licencias
+const { loadLicense, isModuleEnabled, getLicenseInfo } = require('./shared/middleware/licenseMiddleware');
+loadLicense();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -120,21 +124,54 @@ app.use('/api/users', usersRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/sales', salesRoutes);
 
-if (tiendasRoutes) app.use('/api/tiendas', tiendasRoutes);
-if (clientesRoutes) app.use('/api/clientes', clientesRoutes);
+// Core modules (siempre disponibles)
 if (devolucionesRoutes) app.use('/api/returns', devolucionesRoutes);
 if (deliveryRoutes) app.use('/api/orders', deliveryRoutes);
-if (reportesRoutes) app.use('/api/report', reportesRoutes);
-if (attendanceRoutes) app.use('/api/attendance', attendanceRoutes);
 if (expensesRoutes) app.use('/api/expenses', expensesRoutes);
-if (empleadosRoutes) app.use('/api/employees', empleadosRoutes);
 if (cajaRoutes) app.use('/api/caja', cajaRoutes);
-if (vacacionesRoutes) app.use('/api/vacations', vacacionesRoutes);
-if (schedulesRoutes) app.use('/api/schedules', schedulesRoutes);
+
+// Optional modules (requieren licencia)
+if (tiendasRoutes && isModuleEnabled('tiendas')) {
+  app.use('/api/tiendas', tiendasRoutes);
+  console.log('✅ Módulo "tiendas" habilitado');
+}
+
+if (clientesRoutes && isModuleEnabled('clientes')) {
+  app.use('/api/clientes', clientesRoutes);
+  console.log('✅ Módulo "clientes" habilitado');
+}
+
+if (reportesRoutes && isModuleEnabled('reportes')) {
+  app.use('/api/report', reportesRoutes);
+  console.log('✅ Módulo "reportes" habilitado');
+}
+
+if (empleadosRoutes && isModuleEnabled('empleados')) {
+  app.use('/api/employees', empleadosRoutes);
+  console.log('✅ Módulo "empleados" habilitado');
+}
+
+if (vacacionesRoutes && isModuleEnabled('vacaciones')) {
+  app.use('/api/vacations', vacacionesRoutes);
+  console.log('✅ Módulo "vacaciones" habilitado');
+}
+
+if (attendanceRoutes && isModuleEnabled('empleados')) {
+  app.use('/api/attendance', attendanceRoutes);
+  console.log('✅ Módulo "asistencia" habilitado (parte de empleados)');
+}
+
+if (schedulesRoutes && isModuleEnabled('empleados')) {
+  app.use('/api/schedules', schedulesRoutes);
+  console.log('✅ Módulo "schedules" habilitado (parte de empleados)');
+}
+
+// Endpoint para obtener información de licencia
+app.get('/api/license', getLicenseInfo);
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'POS Backend API is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -216,8 +253,10 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 POS System running on port ${PORT}`);
-  
+
   if (process.env.NODE_ENV !== 'production') {
     console.log(`🔧 Health check: http://localhost:${PORT}/api/health`);
   }
 });
+
+

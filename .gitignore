@@ -16,6 +16,9 @@ build/
 config/credentials.json
 config/database.json
 
+# Licencias (cada instalación tiene su propia licencia)
+license.json
+
 # Uploads y archivos de usuario
 backend/uploads/**
 !backend/uploads/.gitkeep

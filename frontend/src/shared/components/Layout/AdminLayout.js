@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import logo from "../../../assets/logo.png";
 import apiBaseUrl, { API_ENDPOINTS, getAuthHeaders } from "../../../config/api";
+import { useLicense } from "../../contexts/LicenseContext";
 
 export default function AdminLayout({ children }) {
   const location = useLocation();
@@ -11,6 +12,7 @@ export default function AdminLayout({ children }) {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { isModuleEnabled, loading: licenseLoading } = useLicense();
 
   // ✅ NUEVO: CSS personalizado para scrollbars corporativos
   useEffect(() => {
@@ -257,46 +259,65 @@ export default function AdminLayout({ children }) {
       title: "Ventas y Clientes",
       icon: "💰",
       items: [
-        { path: "/admin/ventas", title: "Punto de Venta", icon: "🛒", roles: ["all"] },
-        { path: "/admin/clientes", title: "Clientes", icon: "👤", roles: ["all"] },
-        { path: "/admin/devoluciones", title: "Devoluciones", icon: "↩️", roles: ["all"] },
-        { path: "/admin/seguimiento-pedidos", title: "Seguimiento", icon: "📍", roles: ["all"] },
-        { path: "/admin/ordenes", title: "Órdenes de Compra", icon: "📋", roles: ["all"] }
+        { path: "/admin/ventas", title: "Punto de Venta", icon: "🛒", roles: ["all"], module: null },
+        { path: "/admin/clientes", title: "Clientes", icon: "👤", roles: ["all"], module: "clientes" },
+        { path: "/admin/devoluciones", title: "Devoluciones", icon: "↩️", roles: ["all"], module: null },
+        { path: "/admin/seguimiento-pedidos", title: "Seguimiento", icon: "📍", roles: ["all"], module: null },
+        { path: "/admin/ordenes", title: "Órdenes de Compra", icon: "📋", roles: ["all"], module: null }
       ]
     },
     gestion: {
       title: "Gestión del Negocio",
       icon: "⚙️",
       items: [
-        { path: "/admin/tiendas", title: "Tiendas", icon: "🏪", roles: ["admin"] },
-        { path: "/admin/productos", title: "Productos", icon: "📦", roles: ["admin"] },
-        { path: "/admin/gastos", title: "Gastos", icon: "💸", roles: ["all"] },
-        { path: "/admin/caja", title: "Corte de Caja", icon: "💳", roles: ["admin"] }
+        { path: "/admin/tiendas", title: "Tiendas", icon: "🏪", roles: ["admin"], module: "tiendas" },
+        { path: "/admin/productos", title: "Productos", icon: "📦", roles: ["admin"], module: null },
+        { path: "/admin/gastos", title: "Gastos", icon: "💸", roles: ["all"], module: null },
+        { path: "/admin/caja", title: "Corte de Caja", icon: "💳", roles: ["admin"], module: null }
       ]
     },
     rrhh: {
       title: "Recursos Humanos",
       icon: "👥",
       items: [
-        { path: "/admin/usuarios", title: "Usuarios", icon: "👥", roles: ["admin"] },
-        { path: "/admin/empleados", title: "Empleados", icon: "👷", roles: ["all"] },
-        { path: "/admin/historial-empleados", title: "Historial Laboral", icon: "📜", roles: ["admin"] },
-        { path: "/admin/vacaciones", title: "Vacaciones", icon: "🏖️", roles: ["admin"] }
+        { path: "/admin/usuarios", title: "Usuarios", icon: "👥", roles: ["admin"], module: null },
+        { path: "/admin/empleados", title: "Empleados", icon: "👷", roles: ["all"], module: "empleados" },
+        { path: "/admin/historial-empleados", title: "Historial Laboral", icon: "📜", roles: ["admin"], module: "empleados" },
+        { path: "/admin/vacaciones", title: "Vacaciones", icon: "🏖️", roles: ["admin"], module: "vacaciones" }
       ]
     },
     reportes: {
       title: "Reportes y Análisis",
       icon: "📊",
       items: [
-        { path: "/admin/reportes", title: "Reportes", icon: "📊", roles: ["admin"] }
+        { path: "/admin/reportes", title: "Reportes", icon: "📊", roles: ["admin"], module: "reportes" }
       ]
     }
   };
 
-  // Filtrar items según el rol del usuario
+  // Filtrar items según el rol del usuario y la licencia
   const filterItemsByRole = (items) => {
-    if (isAdmin()) return items;
-    return items.filter(item => item.roles.includes("all"));
+    // Primero filtrar por rol
+    let filteredItems = items;
+    if (!isAdmin()) {
+      filteredItems = items.filter(item => item.roles.includes("all"));
+    }
+
+    // Si la licencia aún está cargando, mostrar todos los items (evitar pantalla vacía)
+    if (licenseLoading) {
+      return filteredItems;
+    }
+
+    // Luego filtrar por licencia
+    const finalItems = filteredItems.filter(item => {
+      // Si no requiere módulo específico (null), siempre está disponible
+      if (!item.module) return true;
+
+      // Si requiere módulo, verificar si está habilitado en la licencia
+      return isModuleEnabled(item.module);
+    });
+
+    return finalItems;
   };
 
   // Loading state
