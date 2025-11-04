@@ -4,7 +4,52 @@ const tiendaSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
   direccion: { type: String },
   telefono: { type: String },
-  activa: { type: Boolean, default: true }
+  activa: { type: Boolean, default: true },
+
+  // Configuración del ticket (específica para cada tienda)
+  ticketConfig: {
+    // Logo de la tienda (URL o base64)
+    logo: { type: String },
+
+    // Información del encabezado
+    mostrarLogo: { type: Boolean, default: false },
+    nombreNegocio: { type: String },
+    rfc: { type: String },
+
+    // Campos a mostrar en el ticket
+    camposMostrar: {
+      folio: { type: Boolean, default: true },
+      fecha: { type: Boolean, default: true },
+      hora: { type: Boolean, default: true },
+      cajero: { type: Boolean, default: true },
+      cliente: { type: Boolean, default: true },
+      metodoPago: { type: Boolean, default: true },
+      subtotal: { type: Boolean, default: true },
+      descuento: { type: Boolean, default: true },
+      iva: { type: Boolean, default: false },
+      propina: { type: Boolean, default: false },
+      cambio: { type: Boolean, default: true }
+    },
+
+    // Campos personalizados
+    camposPersonalizados: [{
+      nombre: { type: String },
+      valor: { type: String },
+      posicion: { type: String, enum: ['header', 'footer'], default: 'footer' }
+    }],
+
+    // Mensajes personalizados
+    mensajeSuperior: { type: String },
+    mensajeInferior: { type: String, default: '¡GRACIAS POR SU COMPRA!\nVuelva pronto' },
+
+    // Configuración visual
+    anchoTicket: { type: String, default: '80mm' }, // 58mm, 80mm
+    tamanoFuente: { type: String, default: 'normal' }, // small, normal, large
+
+    // Configuración fiscal
+    mostrarRFC: { type: Boolean, default: false },
+    leyendaFiscal: { type: String, default: 'Este ticket no es válido como factura' }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Tienda || mongoose.model('Tienda', tiendaSchema);

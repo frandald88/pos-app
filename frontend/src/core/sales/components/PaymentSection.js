@@ -62,19 +62,47 @@ const PaymentSection = ({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>Método de pago</label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-              style={{ 
-                '--tw-ring-color': '#46546b',
-                color: '#23334e'
-              }}
-            >
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="transferencia">🏦 Transferencia</option>
-              <option value="tarjeta">💳 Tarjeta</option>
-            </select>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setPaymentMethod('efectivo')}
+                className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  paymentMethod === 'efectivo' ? 'text-white' : ''
+                }`}
+                style={
+                  paymentMethod === 'efectivo'
+                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                }
+              >
+                💵 Efectivo
+              </button>
+              <button
+                onClick={() => setPaymentMethod('transferencia')}
+                className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  paymentMethod === 'transferencia' ? 'text-white' : ''
+                }`}
+                style={
+                  paymentMethod === 'transferencia'
+                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                }
+              >
+                🏦 Transferencia
+              </button>
+              <button
+                onClick={() => setPaymentMethod('tarjeta')}
+                className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  paymentMethod === 'tarjeta' ? 'text-white' : ''
+                }`}
+                style={
+                  paymentMethod === 'tarjeta'
+                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                }
+              >
+                💳 Tarjeta
+              </button>
+            </div>
           </div>
 
           {paymentMethod === 'efectivo' && (
@@ -152,22 +180,50 @@ const PaymentSection = ({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="space-y-2 mb-2">
                     <div>
                       <label className="block text-xs font-medium mb-1" style={{ color: '#374151' }}>Método</label>
-                      <select
-                        value={payment.method}
-                        onChange={(e) => onUpdateMixedPayment(payment.id, 'method', e.target.value)}
-                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1"
-                        style={{ 
-                          '--tw-ring-color': '#46546b',
-                          color: '#23334e'
-                        }}
-                      >
-                        <option value="efectivo">💵 Efectivo</option>
-                        <option value="transferencia">🏦 Transferencia</option>
-                        <option value="tarjeta">💳 Tarjeta</option>
-                      </select>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'efectivo')}
+                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
+                            payment.method === 'efectivo' ? 'text-white' : ''
+                          }`}
+                          style={
+                            payment.method === 'efectivo'
+                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                          }
+                        >
+                          💵
+                        </button>
+                        <button
+                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'transferencia')}
+                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
+                            payment.method === 'transferencia' ? 'text-white' : ''
+                          }`}
+                          style={
+                            payment.method === 'transferencia'
+                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                          }
+                        >
+                          🏦
+                        </button>
+                        <button
+                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'tarjeta')}
+                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
+                            payment.method === 'tarjeta' ? 'text-white' : ''
+                          }`}
+                          style={
+                            payment.method === 'tarjeta'
+                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                          }
+                        >
+                          💳
+                        </button>
+                      </div>
                     </div>
 
                     <div>

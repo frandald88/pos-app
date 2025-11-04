@@ -4,6 +4,7 @@ const Cliente = require('../../modules/clientes/model');
 const Tienda = require('../../modules/tiendas/model');
 const User = require('../../core/users/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
+const { getNextSequence } = require('../../shared/utils/counterHelper');
 const mongoose = require('mongoose');
 const PDFDocument = require('pdfkit');
 
@@ -31,11 +32,13 @@ class SalesController {
       if (!tienda) {
         return res.status(400).json({ message: 'La tienda es requerida' });
       }
-      
-      if (type === 'domicilio' && !deliveryPerson) {
-        return res.status(400).json({ message: 'Las ventas a domicilio requieren un repartidor' });
-      }
-      
+
+      // REMOVIDO: Ya no es obligatorio asignar repartidor en ventas a domicilio
+      // El repartidor se asigna después según disponibilidad
+      // if (type === 'domicilio' && !deliveryPerson) {
+      //   return res.status(400).json({ message: 'Las ventas a domicilio requieren un repartidor' });
+      // }
+
       // Validaciones para pagos mixtos
       if (paymentType === 'mixed') {
         if (!mixedPayments || !Array.isArray(mixedPayments) || mixedPayments.length === 0) {
@@ -71,8 +74,12 @@ class SalesController {
         }
       }
       
+      // Generar folio consecutivo
+      const folio = await getNextSequence('sale');
+
       // Preparar datos de la venta
       const saleData = {
+        folio,
         items,
         total,
         discount: discount || 0,
@@ -80,21 +87,25 @@ class SalesController {
         cliente,
         type,
         tienda,
-        user: req.userId
+        user: req.userId,
+        turno: req.turnoActivo ? req.turnoActivo._id : null // Asociar venta con turno activo
       };
 
-      // Solo agregar deliveryPerson si es venta a domicilio y hay un repartidor
-      if (type === 'domicilio' && deliveryPerson) {
+      // Solo agregar deliveryPerson si es venta a domicilio y hay un repartidor válido
+      // Validar que deliveryPerson no sea string vacío ni null
+      if (type === 'domicilio' && deliveryPerson && deliveryPerson.trim() !== '') {
         saleData.deliveryPerson = deliveryPerson;
+      } else {
+        saleData.deliveryPerson = null; // Explícitamente null si no hay repartidor
       }
-      
+
       // Agregar datos específicos según el tipo de pago
       if (paymentType === 'single') {
         saleData.method = method;
       } else {
         saleData.mixedPayments = mixedPayments;
       }
-      
+
       const newSale = new Sale(saleData);
       await newSale.save();
       
@@ -109,9 +120,9 @@ class SalesController {
       }
       
       const populatedSale = await Sale.findById(newSale._id)
-        .populate('tienda', 'nombre')
+        .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
         .populate('user', 'username')
-        .populate('cliente', 'nombre')
+        .populate('cliente', 'nombre telefono direccion')
         .populate('deliveryPerson', 'username');
       
       res.status(201).json({ 
@@ -274,9 +285,9 @@ class SalesController {
       
       
       const sales = await Sale.find(filter)
-        .populate('tienda', 'nombre')
+        .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
         .populate('user', 'username')
-        .populate('cliente', 'nombre')
+        .populate('cliente', 'nombre telefono direccion')
         .populate('deliveryPerson', 'username')
         .sort({ date: 1 }) // Más antiguos primero para pizzería
         .skip(skip)
@@ -385,7 +396,7 @@ class SalesController {
 
       const sale = await Sale.findById(id)
         .populate('cliente', 'nombre telefono direccion')
-        .populate('tienda', 'nombre direccion telefono')
+        .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
         .populate('user', 'username')
         .populate('deliveryPerson', 'username telefono');
 
@@ -431,10 +442,20 @@ class SalesController {
         // Devolver stock solo si la venta tiene productos con productId válido
         for (const item of sale.items) {
           if (item.productId) {
-            await Product.findByIdAndUpdate(
-              item.productId, 
-              { $inc: { stock: item.quantity } }
-            );
+            try {
+              const product = await Product.findById(item.productId);
+              if (product) {
+                await Product.findByIdAndUpdate(
+                  item.productId,
+                  { $inc: { stock: item.quantity } }
+                );
+              } else {
+                console.warn(`⚠️ Producto ${item.productId} no encontrado, no se devolvió stock`);
+              }
+            } catch (productError) {
+              console.error(`❌ Error al devolver stock del producto ${item.productId}:`, productError);
+              // Continuar con los demás productos en lugar de fallar completamente
+            }
           }
         }
       }
@@ -443,16 +464,24 @@ class SalesController {
       sale.status = status;
       await sale.save();
 
-      const updatedSale = await Sale.findById(id)
-        .populate('cliente', 'nombre telefono')
-        .populate('tienda', 'nombre')
-        .populate('user', 'username')
-        .populate('deliveryPerson', 'username');
+      // Intentar popular los campos relacionados
+      let updatedSale;
+      try {
+        updatedSale = await Sale.findById(id)
+          .populate('cliente', 'nombre telefono direccion')
+          .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
+          .populate('user', 'username')
+          .populate('deliveryPerson', 'username');
+      } catch (populateError) {
+        console.warn('⚠️ Error al popular campos relacionados, retornando venta sin popular:', populateError);
+        updatedSale = await Sale.findById(id);
+      }
 
       return successResponse(res, updatedSale, 'Estado actualizado exitosamente');
 
     } catch (error) {
-      console.error('Error al actualizar estado:', error);
+      console.error('❌ Error al actualizar estado:', error);
+      console.error('Stack trace:', error.stack);
       return errorResponse(res, 'Error al actualizar estado', 500);
     }
   }
@@ -667,7 +696,7 @@ class SalesController {
       const mixedPaymentSales = await Sale.find({
         ...filter,
         paymentType: 'mixed'
-      }).populate('tienda', 'nombre');
+      }).populate('tienda', 'nombre direccion telefono rfc ticketConfig');
       
       // Procesar estadísticas
       const stats = {
@@ -744,8 +773,8 @@ class SalesController {
       }
 
       const sales = await Sale.find(filter)
-        .populate('cliente', 'nombre telefono')
-        .populate('tienda', 'nombre')
+        .populate('cliente', 'nombre telefono direccion')
+        .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
         .populate('user', 'username')
         .sort({ date: -1 });
 
@@ -775,6 +804,94 @@ class SalesController {
     } catch (error) {
       console.error('Error obteniendo ventas por fecha:', error);
       return errorResponse(res, 'Error al obtener ventas por fecha', 500);
+    }
+  }
+
+  // Asignar repartidor a una venta
+  async assignDeliveryPerson(req, res) {
+    try {
+      const { id } = req.params;
+      const { deliveryPerson } = req.body;
+
+      if (!deliveryPerson) {
+        return errorResponse(res, 'El ID del repartidor es requerido', 400);
+      }
+
+      const sale = await Sale.findById(id);
+      if (!sale) {
+        return errorResponse(res, 'Venta no encontrada', 404);
+      }
+
+      // Actualizar el repartidor
+      sale.deliveryPerson = deliveryPerson;
+      await sale.save();
+
+      const updatedSale = await Sale.findById(id)
+        .populate('tienda', 'nombre direccion telefono rfc ticketConfig')
+        .populate('user', 'username')
+        .populate('cliente', 'nombre telefono direccion')
+        .populate('deliveryPerson', 'username');
+
+      return successResponse(res, {
+        sale: updatedSale
+      }, 'Repartidor asignado exitosamente');
+
+    } catch (error) {
+      console.error('Error al asignar repartidor:', error);
+      return errorResponse(res, 'Error al asignar repartidor', 500);
+    }
+  }
+
+  // Obtener ventas pendientes (en_preparacion, listo_para_envio, enviado)
+  // Para mostrar advertencia al cerrar turno
+  async getPendingSales(req, res) {
+    try {
+      const { tiendaId } = req.query;
+
+      if (!tiendaId) {
+        return errorResponse(res, 'El ID de la tienda es requerido', 400);
+      }
+
+      // Estados que se consideran "pendientes"
+      const pendingStatuses = ['en_preparacion', 'listo_para_envio', 'enviado'];
+
+      // Contar ventas pendientes por estado
+      const counts = await Sale.aggregate([
+        {
+          $match: {
+            tienda: new mongoose.Types.ObjectId(tiendaId),
+            status: { $in: pendingStatuses }
+          }
+        },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      // Transformar a objeto más legible
+      const pendingSales = {
+        en_preparacion: 0,
+        listo_para_envio: 0,
+        enviado: 0,
+        total: 0
+      };
+
+      counts.forEach(item => {
+        pendingSales[item._id] = item.count;
+        pendingSales.total += item.count;
+      });
+
+      return successResponse(res, {
+        pendingSales,
+        hasPending: pendingSales.total > 0
+      }, 'Ventas pendientes obtenidas exitosamente');
+
+    } catch (error) {
+      console.error('Error al obtener ventas pendientes:', error);
+      return errorResponse(res, 'Error al obtener ventas pendientes', 500);
     }
   }
 }

@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const cajaController = require('../../controllers/modules/cajaController');
-const { verifyToken, requireAdmin } = require('../../shared/middleware/authMiddleware');
+const { verifyToken, requireAdmin, requireRoles } = require('../../shared/middleware/authMiddleware');
 
-// Reporte de corte de caja
-router.get('/reporte', verifyToken, requireAdmin, cajaController.getReport);
+// Reporte de corte de caja - Acceso para admin y vendedor
+router.get('/reporte', verifyToken, requireRoles(['admin', 'vendedor']), cajaController.getReport);
 
-// Movimientos de caja del día
-router.get('/movimientos', verifyToken, requireAdmin, cajaController.getMovements);
+// Movimientos de caja del día - Acceso para admin y vendedor
+router.get('/movimientos', verifyToken, requireRoles(['admin', 'vendedor']), cajaController.getMovements);
 
-// Estado actual de caja (tiempo real)
-router.get('/estado', verifyToken, requireAdmin, cajaController.getStatus);
+// Estado actual de caja (tiempo real) - Acceso para admin y vendedor
+router.get('/estado', verifyToken, requireRoles(['admin', 'vendedor']), cajaController.getStatus);
 
 module.exports = router;

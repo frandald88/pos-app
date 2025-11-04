@@ -14,12 +14,50 @@ class TiendasController {
 
       console.log('🔍 includeArchived recibido:', includeArchived, 'tipo:', typeof includeArchived);
 
+      // ⭐ NUEVO: Si el usuario NO es admin, solo puede ver su tienda asignada
+      let tiendasPermitidas = null;
+      if (req.userRole !== 'admin') {
+        const usuario = await User.findById(req.userId);
+
+        if (!usuario) {
+          return errorResponse(res, 'Usuario no encontrado', 404);
+        }
+
+        if (!usuario.tienda) {
+          return successResponse(res, {
+            tiendas: [],
+            pagination: {
+              total: 0,
+              page: parseInt(page),
+              limit: parseInt(limit),
+              pages: 0
+            }
+          }, 'El usuario no tiene una tienda asignada');
+        }
+
+        // Filtrar solo por la tienda asignada al usuario
+        tiendasPermitidas = [usuario.tienda];
+        filter._id = usuario.tienda;
+      }
+
       // Por defecto, no incluir archivadas (solo si no se especifica o es false)
+      // Si ya hay filtro por tienda específica, agregar activa a AND
       if (includeArchived !== 'true') {
-        filter.$or = [
-          { activa: true },
-          { activa: { $exists: false } }  // Incluir tiendas sin campo activa (se consideran activas)
-        ];
+        const activaFilter = {
+          $or: [
+            { activa: true },
+            { activa: { $exists: false } }  // Incluir tiendas sin campo activa (se consideran activas)
+          ]
+        };
+
+        if (tiendasPermitidas) {
+          // Si hay filtro de tienda específica, combinar con AND
+          filter.$and = filter.$and || [];
+          filter.$and.push(activaFilter);
+          delete filter.$or;
+        } else {
+          filter.$or = activaFilter.$or;
+        }
         console.log('✅ Filtrando solo activas');
       } else {
         console.log('✅ Mostrando todas (incluyendo archivadas)');
@@ -202,7 +240,7 @@ class TiendasController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { nombre, direccion, telefono } = req.body;
+      const { nombre, direccion, telefono, ticketConfig } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return errorResponse(res, 'ID de tienda inválido', 400);
@@ -222,13 +260,21 @@ class TiendasController {
         return errorResponse(res, 'Ya existe otra tienda con este nombre', 400);
       }
 
+      // Preparar datos de actualización
+      const updateData = {
+        nombre: nombre.trim(),
+        direccion: direccion?.trim(),
+        telefono: telefono?.trim()
+      };
+
+      // Si se envía ticketConfig, agregarlo a la actualización
+      if (ticketConfig) {
+        updateData.ticketConfig = ticketConfig;
+      }
+
       const updatedTienda = await Tienda.findByIdAndUpdate(
         id,
-        {
-          nombre: nombre.trim(),
-          direccion: direccion?.trim(),
-          telefono: telefono?.trim()
-        },
+        updateData,
         { new: true, runValidators: true }
       );
 

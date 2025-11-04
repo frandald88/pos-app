@@ -82,17 +82,17 @@ const ClienteModal = ({
 
           <form onSubmit={onSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Nombre */}
-              <div className="md:col-span-2">
+              {/* ⭐ NUEVO: Nombre separado en 3 campos */}
+              <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                  Nombre Completo *
+                  Nombre(s) *
                 </label>
                 <input
                   type="text"
                   name="nombre"
-                  value={cliente.nombre}
+                  value={cliente.nombre || ''}
                   onChange={handleInputChange}
-                  placeholder="Ej: Juan Pérez García"
+                  placeholder="Ej: Jose Alfonso"
                   className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
                   style={{
                     borderColor: '#e5e7eb',
@@ -100,6 +100,47 @@ const ClienteModal = ({
                   }}
                   required
                 />
+              </div>
+
+              {/* Primer Apellido */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                  Primer Apellido
+                </label>
+                <input
+                  type="text"
+                  name="primerApellido"
+                  value={cliente.primerApellido || ''}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Aguilera"
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                  style={{
+                    borderColor: '#e5e7eb',
+                    focusRingColor: '#23334e'
+                  }}
+                />
+              </div>
+
+              {/* Segundo Apellido */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                  Segundo Apellido
+                </label>
+                <input
+                  type="text"
+                  name="segundoApellido"
+                  value={cliente.segundoApellido || ''}
+                  onChange={handleInputChange}
+                  placeholder="Ej: López"
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                  style={{
+                    borderColor: '#e5e7eb',
+                    focusRingColor: '#23334e'
+                  }}
+                />
+                <p className="text-xs mt-1" style={{ color: '#697487' }}>
+                  Opcional
+                </p>
               </div>
 
               {/* Teléfono */}
@@ -174,7 +215,10 @@ const ClienteModal = ({
             {/* Info de campos requeridos */}
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm" style={{ color: '#46546b' }}>
-                <span className="font-semibold">* Campos requeridos:</span> Nombre y Teléfono
+                <span className="font-semibold">* Campos requeridos:</span> Nombre(s) y Teléfono
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#697487' }}>
+                💡 Los apellidos son opcionales pero ayudan a evitar duplicados
               </p>
             </div>
 

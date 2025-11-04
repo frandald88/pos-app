@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useSalesTracking, useSalesFilters, useSalesActions } from '../hooks';
 import { OrderStats, OrderFilters, OrderCard } from '../components/tracking';
+import { useTurno } from '../../turnos/hooks/useTurno';
 
 export default function OrderTrackingPage() {
   // Hooks personalizados
@@ -17,6 +18,9 @@ export default function OrderTrackingPage() {
     setError
   } = useSalesTracking();
 
+  // ⭐ Hook para verificar turno de la tienda seleccionada
+  const { turnoActivo, refetch: refetchTurno } = useTurno();
+
   const {
     selectedStatus,
     selectedTienda,
@@ -31,6 +35,29 @@ export default function OrderTrackingPage() {
   } = useSalesFilters(allSales, globalStats);
 
   const { formatCurrency, formatDate } = useSalesActions();
+
+  // ⭐ Recargar turno cuando cambia la tienda seleccionada
+  useEffect(() => {
+    if (selectedTienda) {
+      // Si hay tienda seleccionada, buscar el turno de esa tienda
+      refetchTurno(selectedTienda);
+
+      // ⭐ Disparar evento para que AdminLayout actualice el botón de turno
+      const event = new CustomEvent('tiendaChanged', {
+        detail: { tiendaId: selectedTienda }
+      });
+      window.dispatchEvent(event);
+    } else {
+      // Si no hay tienda seleccionada, buscar el turno del usuario
+      refetchTurno();
+
+      // ⭐ Disparar evento sin tienda para que AdminLayout use turno del usuario
+      const event = new CustomEvent('tiendaChanged', {
+        detail: { tiendaId: null }
+      });
+      window.dispatchEvent(event);
+    }
+  }, [selectedTienda, refetchTurno]);
 
   // Recargar ventas cuando cambian los filtros
   useEffect(() => {
@@ -158,6 +185,7 @@ export default function OrderTrackingPage() {
                   formatDate={formatDate}
                   updatingOrderId={updatingOrderId}
                   updateStatus={handleUpdateStatus}
+                  turnoActivo={turnoActivo} // ⭐ Pasar turno de la tienda seleccionada
                 />
               );
             })}

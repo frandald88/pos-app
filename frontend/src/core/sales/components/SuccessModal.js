@@ -1,7 +1,108 @@
 import React from 'react';
+import { usePrintComanda } from '../../../shared/components/PrintComanda';
+import { usePrintTicket } from '../../../shared/components/PrintTicket';
 
 const SuccessModal = ({ isOpen, saleDetails, onClose }) => {
+  const { printComanda } = usePrintComanda();
+  const { printTicket } = usePrintTicket();
+
   if (!isOpen || !saleDetails) return null;
+
+  // Función para imprimir la comanda de cocina
+  const handlePrintComanda = () => {
+    // Transformar saleDetails al formato esperado por PrintComanda
+    const comandaData = {
+      _id: saleDetails.id,
+      folio: saleDetails.folio, // ⭐ Usar folio consecutivo del backend
+      fecha: saleDetails.fecha || new Date(),
+      total: saleDetails.total,
+      tipo: saleDetails.type, // mostrador, domicilio, recoger
+
+      // Transformar items al formato de la comanda
+      items: (saleDetails.itemsDetalle || []).map(item => ({
+        cantidad: item.quantity,
+        precio: item.price,
+        nombre: item.name,
+        producto: {
+          nombre: item.name
+        },
+        notas: item.note || ''
+      })),
+
+      // Usuario que registró la venta - usar el del backend si existe
+      usuario: saleDetails.usuario || {
+        nombre: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).nombre : 'Cajero',
+        username: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).username : 'cajero'
+      },
+
+      // Cliente
+      cliente: saleDetails.cliente !== 'Cliente general' ? {
+        nombre: saleDetails.cliente
+      } : null,
+
+      // Información de la tienda
+      tienda: saleDetails.tienda || {
+        nombre: 'MI RESTAURANTE',
+        direccion: 'Dirección del negocio',
+        telefono: '(XXX) XXX-XXXX'
+      }
+    };
+
+    printComanda(comandaData);
+  };
+
+  // Función para imprimir el ticket de venta (para el cliente)
+  const handlePrintTicket = () => {
+    // Transformar saleDetails al formato esperado por PrintTicket
+    const ticketData = {
+      _id: saleDetails.id,
+      folio: saleDetails.folio, // ⭐ Usar folio consecutivo del backend
+      fecha: saleDetails.fecha || new Date(),
+      total: saleDetails.total,
+      subtotal: saleDetails.subtotal || saleDetails.total,
+      descuento: saleDetails.descuento || 0,
+      metodoPago: saleDetails.paymentType === 'single'
+        ? (saleDetails.method === 'efectivo' ? 'Efectivo' :
+           saleDetails.method === 'transferencia' ? 'Transferencia' : 'Tarjeta')
+        : 'Pago mixto',
+      pagoCon: saleDetails.amountPaid,
+
+      // Transformar items al formato del ticket
+      items: (saleDetails.itemsDetalle || []).map(item => ({
+        cantidad: item.quantity,
+        precio: item.price,
+        nombre: item.name,
+        producto: {
+          nombre: item.name
+        },
+        notas: item.note || ''
+      })),
+
+      // Usuario - usar el del backend si existe
+      usuario: saleDetails.usuario || {
+        username: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).username : 'Cajero'
+      },
+
+      // Cliente - pasar objeto completo con dirección si existe
+      cliente: saleDetails.clienteDetalle || (saleDetails.cliente !== 'Cliente general' ? {
+        nombre: saleDetails.cliente,
+        direccion: saleDetails.clienteDireccion || null
+      } : null),
+
+      // Tipo de venta
+      type: saleDetails.type || saleDetails.tipo,
+
+      // Información de la tienda
+      tienda: saleDetails.tienda || {
+        nombre: 'MI NEGOCIO',
+        direccion: 'Dirección del negocio',
+        telefono: '(XXX) XXX-XXXX',
+        rfc: 'XXXXXXXXXXXXX'
+      }
+    };
+
+    printTicket(ticketData);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -92,27 +193,43 @@ const SuccessModal = ({ isOpen, saleDetails, onClose }) => {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        {/* Botones de impresión */}
+        <div className="flex gap-3 mb-3">
+          <button
+            onClick={handlePrintComanda}
+            className="flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 border hover:shadow-md"
+            style={{
+              color: '#fff',
+              borderColor: '#f59e0b',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+            }}
+            title="Imprimir comanda para cocina"
+          >
+            👨‍🍳 Comanda
+          </button>
+
+          <button
+            onClick={handlePrintTicket}
+            className="flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 border hover:shadow-md"
+            style={{
+              color: '#fff',
+              borderColor: '#10b981',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            }}
+            title="Imprimir ticket para cliente"
+          >
+            🧾 Ticket
+          </button>
+        </div>
+
+        {/* Botón continuar */}
+        <div>
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg"
+            className="w-full py-3 px-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg"
             style={{ background: 'linear-gradient(135deg, #697487 0%, #46546b 100%)' }}
           >
             Continuar Vendiendo
-          </button>
-          
-          <button
-            onClick={() => {
-              onClose();
-            }}
-            className="py-3 px-4 rounded-lg font-medium transition-all duration-200 border"
-            style={{ 
-              color: '#46546b',
-              borderColor: '#46546b',
-              backgroundColor: 'white'
-            }}
-          >
-            🖨️ Imprimir
           </button>
         </div>
 

@@ -5,13 +5,22 @@ export const useClienteSelection = (clientes) => {
   const [clienteFiltro, setClienteFiltro] = useState('');
   const [showClienteDropdown, setShowClienteDropdown] = useState(false);
 
+  // ⭐ Helper: Construir nombre completo del cliente
+  const getNombreCompleto = (cliente) => {
+    if (!cliente) return '';
+    return `${cliente.nombre || ''} ${cliente.primerApellido || ''} ${cliente.segundoApellido || ''}`.trim();
+  };
+
   // Efecto para manejar cliente preseleccionado desde localStorage
   useEffect(() => {
     const preselectedCliente = localStorage.getItem('clienteSeleccionado');
     if (preselectedCliente && clientes.length > 0) {
       setClienteSeleccionado(preselectedCliente);
       const clienteInfo = clientes.find(c => c._id === preselectedCliente);
-      if (clienteInfo) setClienteFiltro(clienteInfo.nombre);
+      if (clienteInfo) {
+        const nombreCompleto = getNombreCompleto(clienteInfo);
+        setClienteFiltro(nombreCompleto);
+      }
       localStorage.removeItem('clienteSeleccionado');
     }
   }, [clientes]);
@@ -25,7 +34,8 @@ export const useClienteSelection = (clientes) => {
   // Seleccionar cliente
   const selectCliente = (cliente) => {
     setClienteSeleccionado(cliente._id);
-    setClienteFiltro(cliente.nombre);
+    const nombreCompleto = getNombreCompleto(cliente);
+    setClienteFiltro(nombreCompleto);
     setShowClienteDropdown(false);
   };
 
@@ -39,13 +49,21 @@ export const useClienteSelection = (clientes) => {
   // Clientes filtrados para el dropdown
   const filteredClientes = useMemo(() => {
     if (!clienteFiltro || !clientes.length) return [];
-    
+
     return clientes
-      .filter(c =>
-        c.nombre.toLowerCase().includes(clienteFiltro.toLowerCase()) ||
-        c.telefono.includes(clienteFiltro) ||
-        c.email.toLowerCase().includes(clienteFiltro.toLowerCase())
-      )
+      .filter(c => {
+        const nombreCompleto = getNombreCompleto(c);
+        const filtroLower = clienteFiltro.toLowerCase();
+
+        return (
+          c.nombre?.toLowerCase().includes(filtroLower) ||
+          c.primerApellido?.toLowerCase().includes(filtroLower) ||
+          c.segundoApellido?.toLowerCase().includes(filtroLower) ||
+          nombreCompleto.toLowerCase().includes(filtroLower) ||
+          c.telefono?.includes(clienteFiltro) ||
+          c.email?.toLowerCase().includes(filtroLower)
+        );
+      })
       .slice(0, 5);
   }, [clientes, clienteFiltro]);
 
@@ -62,13 +80,16 @@ export const useClienteSelection = (clientes) => {
     showClienteDropdown,
     filteredClientes,
     selectedClienteInfo,
-    
+
     // Actions
     setClienteSeleccionado,
     setClienteFiltro,
     setShowClienteDropdown,
     handleClienteFilterChange,
     selectCliente,
-    clearClienteSelection
+    clearClienteSelection,
+
+    // ⭐ NUEVO: Helper
+    getNombreCompleto
   };
 };

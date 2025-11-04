@@ -17,7 +17,8 @@ export default function ClientesPage() {
     createCliente,
     updateCliente,
     deleteCliente,
-    setMsg
+    setMsg,
+    getNombreCompleto // ⭐ NUEVO: Helper para nombre completo
   } = useClientesData();
 
   const {
@@ -127,7 +128,8 @@ export default function ClientesPage() {
               </p>
             </div>
             
-            {currentUser?.role === "admin" && (
+            {/* ⭐ ACTUALIZADO: Permitir a admin, vendedor y repartidor crear clientes */}
+            {(currentUser?.role === "admin" || currentUser?.role === "vendedor" || currentUser?.role === "repartidor") && (
               <button
                 onClick={toggleForm}
                 className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
@@ -246,7 +248,7 @@ export default function ClientesPage() {
                       <td className="px-6 py-4">
                         <div>
                           <div className="font-medium" style={{ color: '#23334e' }}>
-                            {cliente.nombre}
+                            {getNombreCompleto(cliente)}
                           </div>
                         </div>
                       </td>
@@ -283,22 +285,25 @@ export default function ClientesPage() {
                             Vender
                           </button>
 
+                          {/* ⭐ ACTUALIZADO: Permitir editar a admin, vendedor y repartidor */}
+                          {(currentUser?.role === "admin" || currentUser?.role === "vendedor" || currentUser?.role === "repartidor") && (
+                            <button
+                              onClick={() => handleEditarCliente(cliente)}
+                              className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
+                              style={{ backgroundColor: '#46546b' }}
+                            >
+                              Editar
+                            </button>
+                          )}
+
+                          {/* ⭐ Solo admin puede eliminar */}
                           {currentUser?.role === "admin" && (
-                            <>
-                              <button
-                                onClick={() => handleEditarCliente(cliente)}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
-                                style={{ backgroundColor: '#46546b' }}
-                              >
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => handleEliminar(cliente._id)}
-                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
-                              >
-                                Eliminar
-                              </button>
-                            </>
+                            <button
+                              onClick={() => handleEliminar(cliente._id)}
+                              className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
+                            >
+                              Eliminar
+                            </button>
                           )}
                         </div>
                       </td>

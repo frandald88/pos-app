@@ -3,33 +3,69 @@ const Expense = require('../../core/gastos/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 
 class CajaController {
-  // Reporte de corte de caja con soporte para horas específicas y pagos mixtos
+  // Reporte de corte de caja con soporte para horas específicas, pagos mixtos y turnos
   async getReport(req, res) {
     try {
-      const { startDate, endDate, startTime = '00:00:00', endTime = '23:59:59', tiendaId, incluirDevoluciones = 'true' } = req.query;
+      const { startDate, endDate, startTime = '00:00:00', endTime = '23:59:59', tiendaId, turnoId, incluirDevoluciones = 'true' } = req.query;
       const mongoose = require('mongoose');
+      const Turno = require('../../core/turnos/model');
+      const Product = require('../../core/products/model');
 
-      console.log('🔍 BACKEND - Parámetros recibidos:', { startDate, endDate, startTime, endTime, tiendaId });
+      // ⭐ Tasa de IVA (10% como en reportes)
+      const IVA_RATE = 0.10;
 
-      if (!startDate || !endDate) {
-        console.log('❌ BACKEND - Faltan parámetros de fecha');
-        return errorResponse(res, 'Debes proporcionar startDate y endDate en formato YYYY-MM-DD', 400);
+      console.log('🔍 BACKEND - Parámetros recibidos:', { startDate, endDate, startTime, endTime, tiendaId, turnoId });
+
+      // ⭐ Si se proporciona turnoId, usar las fechas del turno
+      let turnoSeleccionado = null;
+      let inicioMexico, finMexico, tiendaIdFinal;
+
+      if (turnoId) {
+        console.log('🔍 BACKEND - Generando corte por turno:', turnoId);
+
+        turnoSeleccionado = await Turno.findById(turnoId)
+          .populate('usuario', 'username')
+          .populate('usuarioCierre', 'username')
+          .populate('tienda', 'nombre direccion telefono');
+
+        if (!turnoSeleccionado) {
+          return errorResponse(res, 'Turno no encontrado', 404);
+        }
+
+        // Usar fechas del turno
+        inicioMexico = turnoSeleccionado.fechaApertura;
+        finMexico = turnoSeleccionado.fechaCierre || new Date(); // Si está abierto, usar fecha actual
+        tiendaIdFinal = turnoSeleccionado.tienda._id.toString();
+
+        console.log('🔍 BACKEND - Fechas del turno:', {
+          inicio: inicioMexico.toISOString(),
+          fin: finMexico.toISOString(),
+          tienda: turnoSeleccionado.tienda.nombre
+        });
+      } else {
+        // Modo tradicional: usar fechas proporcionadas
+        if (!startDate || !endDate) {
+          console.log('❌ BACKEND - Faltan parámetros de fecha');
+          return errorResponse(res, 'Debes proporcionar startDate y endDate en formato YYYY-MM-DD, o turnoId', 400);
+        }
+
+        tiendaIdFinal = tiendaId;
+
+        // Construir fechas en zona horaria local (México UTC-6)
+        // Crear fechas locales sin forzar UTC
+        const inicio = new Date(`${startDate}T${startTime}`);
+        const fin = new Date(`${endDate}T${endTime}`);
+
+        // Ajustar a zona horaria de México si es necesario
+        const mexicoOffset = -6 * 60; // -6 horas en minutos
+        const adjustToMexicoTime = (date) => {
+          const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
+          return new Date(utcTime + (mexicoOffset * 60000));
+        };
+
+        inicioMexico = adjustToMexicoTime(inicio);
+        finMexico = adjustToMexicoTime(fin);
       }
-
-      // Construir fechas en zona horaria local (México UTC-6)
-      // Crear fechas locales sin forzar UTC
-      const inicio = new Date(`${startDate}T${startTime}`);
-      const fin = new Date(`${endDate}T${endTime}`);
-      
-      // Ajustar a zona horaria de México si es necesario
-      const mexicoOffset = -6 * 60; // -6 horas en minutos
-      const adjustToMexicoTime = (date) => {
-        const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000);
-        return new Date(utcTime + (mexicoOffset * 60000));
-      };
-      
-      const inicioMexico = adjustToMexicoTime(inicio);
-      const finMexico = adjustToMexicoTime(fin);
 
       console.log('🔍 BACKEND - Fechas construidas:', {
         inicioMexico: inicioMexico.toISOString(),
@@ -46,21 +82,39 @@ class CajaController {
       }
 
       // Filtros base usando fechas de México
-      const filtroVentas = { 
-        createdAt: { $gte: inicioMexico, $lte: finMexico },
-        status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta'] }
+      // ⭐ IMPORTANTE: Lógica combinada para contar ventas correctamente:
+      // 1. Ventas SIN devoluciones: usar updatedAt (para capturar ventas completadas en este turno)
+      // 2. Ventas CON devoluciones parciales: usar createdAt (para mantenerlas en el turno original donde se cobró)
+      // Esto evita que ventas se "muevan" al turno donde se hizo la devolución
+      const filtroVentas = {
+        status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta'] },
+        $or: [
+          // Ventas completadas durante este turno (sin devoluciones aún)
+          {
+            status: 'entregado_y_cobrado',
+            updatedAt: { $gte: inicioMexico, $lte: finMexico }
+          },
+          // Ventas con devoluciones parciales - contar en turno donde se vendió originalmente
+          {
+            status: 'parcialmente_devuelta',
+            createdAt: { $gte: inicioMexico, $lte: finMexico }
+          }
+        ]
       };
       const filtroGastos = { createdAt: { $gte: inicioMexico, $lte: finMexico }, status: 'aprobado' };
 
-      if (tiendaId) {
-        const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
+      if (tiendaIdFinal) {
+        const tiendaObjectId = new mongoose.Types.ObjectId(tiendaIdFinal);
         filtroVentas.tienda = tiendaObjectId;
         filtroGastos.tienda = tiendaObjectId;
       }
 
-      console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', filtroVentas);
+      console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', JSON.stringify(filtroVentas, null, 2));
       console.log('🔍 Buscando ventas desde:', inicioMexico.toISOString(), 'hasta:', finMexico.toISOString());
       console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta']);
+      console.log('💡 Lógica aplicada:');
+      console.log('  - Ventas sin devoluciones: se filtran por updatedAt (turno donde se completaron)');
+      console.log('  - Ventas con devoluciones: se filtran por createdAt (turno donde se cobraron originalmente)');
 
       // Ventas con soporte para pagos mixtos y devoluciones
       const ventasPorMetodo = await Sale.aggregate([
@@ -189,16 +243,239 @@ class CajaController {
         promedioMetodosPorVenta: 0
       };
 
+      // ⭐ NUEVO: Información del turno activo o del período
+      let turnoInfo = null;
+      if (turnoSeleccionado) {
+        // Si ya tenemos el turno seleccionado (modo turnoId), usarlo directamente
+        turnoInfo = {
+          _id: turnoSeleccionado._id,
+          efectivoInicial: turnoSeleccionado.efectivoInicial || 0,
+          efectivoFinal: turnoSeleccionado.efectivoFinal || null,
+          cajero: turnoSeleccionado.usuario?.username || 'N/A',
+          estacion: turnoSeleccionado.estacion || 'N/A',
+          fechaApertura: turnoSeleccionado.fechaApertura,
+          fechaCierre: turnoSeleccionado.fechaCierre,
+          estado: turnoSeleccionado.estado,
+          usuarioCierre: turnoSeleccionado.usuarioCierre?.username || null,
+          notasApertura: turnoSeleccionado.notasApertura || '',
+          notasCierre: turnoSeleccionado.notasCierre || '',
+          cerradoPor: turnoSeleccionado.usuarioCierre?.username || null
+        };
+      } else if (tiendaIdFinal) {
+        // Buscar turno que esté abierto durante el período del reporte (modo tradicional)
+        const turno = await Turno.findOne({
+          tienda: new mongoose.Types.ObjectId(tiendaIdFinal),
+          fechaApertura: { $lte: finMexico },
+          $or: [
+            { fechaCierre: { $gte: inicioMexico } },
+            { fechaCierre: null, estado: 'abierto' }
+          ]
+        })
+        .populate('usuario', 'username')
+        .populate('usuarioCierre', 'username')
+        .populate('tienda', 'nombre')
+        .sort({ fechaApertura: -1 })
+        .limit(1);
+
+        if (turno) {
+          turnoInfo = {
+            efectivoInicial: turno.efectivoInicial || 0,
+            efectivoFinal: turno.efectivoFinal || null,
+            cajero: turno.usuario?.username || 'N/A',
+            estacion: turno.estacion || 'N/A',
+            fechaApertura: turno.fechaApertura,
+            fechaCierre: turno.fechaCierre,
+            estado: turno.estado,
+            notasApertura: turno.notasApertura || '',
+            notasCierre: turno.notasCierre || '',
+            cerradoPor: turno.usuarioCierre?.username || null
+          };
+        }
+      }
+
+      // ⭐ NUEVO: Descuentos totales
+      const descuentosStats = await Sale.aggregate([
+        { $match: filtroVentas },
+        {
+          $group: {
+            _id: null,
+            totalDescuentos: { $sum: "$discount" },
+            ventasConDescuento: {
+              $sum: { $cond: [{ $gt: ["$discount", 0] }, 1, 0] }
+            }
+          }
+        }
+      ]);
+
+      const descuentos = descuentosStats[0] || {
+        totalDescuentos: 0,
+        ventasConDescuento: 0
+      };
+
+      // ⭐ NUEVO: Ventas canceladas
+      const ventasCanceladas = await Sale.countDocuments({
+        createdAt: { $gte: inicioMexico, $lte: finMexico },
+        status: 'cancelada',
+        ...(tiendaIdFinal && { tienda: new mongoose.Types.ObjectId(tiendaIdFinal) })
+      });
+
+      // ⭐ NUEVO: Por tipo de servicio
+      const ventasPorTipo = await Sale.aggregate([
+        { $match: filtroVentas },
+        {
+          $group: {
+            _id: "$type",
+            total: { $sum: { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] } },
+            cantidad: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const porTipoServicio = {
+        mostrador: { total: 0, cantidad: 0 },
+        domicilio: { total: 0, cantidad: 0 },
+        recoger: { total: 0, cantidad: 0 }
+      };
+
+      ventasPorTipo.forEach(tipo => {
+        if (porTipoServicio[tipo._id]) {
+          porTipoServicio[tipo._id] = {
+            total: Number(tipo.total.toFixed(2)),
+            cantidad: tipo.cantidad
+          };
+        }
+      });
+
+      // ⭐ NUEVO: Folio inicial y final
+      const foliosStats = await Sale.aggregate([
+        { $match: filtroVentas },
+        {
+          $group: {
+            _id: null,
+            folioInicial: { $min: "$folio" },
+            folioFinal: { $max: "$folio" }
+          }
+        }
+      ]);
+
+      const folios = foliosStats[0] || {
+        folioInicial: null,
+        folioFinal: null
+      };
+
+      // ⭐ NUEVO: Cálculo de IVA (desglose fiscal)
+      // Calcular IVA sobre el total de ventas después de devoluciones
+      const totalVentasConDevoluciones = totalVentas; // Ya tiene devoluciones restadas
+      const subtotalSinIVA = totalVentasConDevoluciones / (1 + IVA_RATE);
+      const ivaTotal = totalVentasConDevoluciones - subtotalSinIVA;
+
+      const impuestos = {
+        tasa: IVA_RATE,
+        tasaPorcentaje: (IVA_RATE * 100).toFixed(0) + '%',
+        subtotal: Number(subtotalSinIVA.toFixed(2)),
+        iva: Number(ivaTotal.toFixed(2)),
+        total: Number(totalVentasConDevoluciones.toFixed(2))
+      };
+
+      // ⭐ NUEVO: Por categoría de producto (Medium complexity)
+      const ventasPorCategoria = await Sale.aggregate([
+        { $match: filtroVentas },
+        { $unwind: "$items" },
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'items.productId',
+            foreignField: '_id',
+            as: 'producto'
+          }
+        },
+        { $unwind: { path: "$producto", preserveNullAndEmptyArrays: true } },
+        {
+          $group: {
+            _id: { $ifNull: ["$producto.category", "Sin categoría"] },
+            total: {
+              $sum: {
+                $multiply: [
+                  "$items.price",
+                  "$items.quantity",
+                  {
+                    $divide: [
+                      { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] },
+                      "$total"
+                    ]
+                  }
+                ]
+              }
+            },
+            cantidad: { $sum: "$items.quantity" }
+          }
+        },
+        { $sort: { total: -1 } }
+      ]);
+
+      const porCategoria = ventasPorCategoria.map(cat => ({
+        categoria: cat._id,
+        total: Number(cat.total.toFixed(2)),
+        cantidad: cat.cantidad
+      }));
+
+      // ⭐ NUEVO: Descuentos por categoría (Medium complexity)
+      const descuentosPorCategoria = await Sale.aggregate([
+        { $match: { ...filtroVentas, discount: { $gt: 0 } } },
+        { $unwind: "$items" },
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'items.productId',
+            foreignField: '_id',
+            as: 'producto'
+          }
+        },
+        { $unwind: { path: "$producto", preserveNullAndEmptyArrays: true } },
+        // ⭐ CORRECCIÓN: Calcular subtotal sin descuento para distribuir correctamente
+        {
+          $addFields: {
+            subtotalSinDescuento: { $add: ["$total", "$discount"] }
+          }
+        },
+        {
+          $group: {
+            _id: { $ifNull: ["$producto.category", "Sin categoría"] },
+            totalDescuentos: {
+              $sum: {
+                $multiply: [
+                  "$discount",
+                  {
+                    $divide: [
+                      { $multiply: ["$items.price", "$items.quantity"] },
+                      "$subtotalSinDescuento"  // ⭐ Usar subtotal SIN descuento
+                    ]
+                  }
+                ]
+              }
+            },
+            cantidad: { $sum: 1 }
+          }
+        },
+        { $sort: { totalDescuentos: -1 } }
+      ]);
+
+      const descuentosPorCat = descuentosPorCategoria.map(cat => ({
+        categoria: cat._id,
+        totalDescuentos: Number(cat.totalDescuentos.toFixed(2)),
+        cantidad: cat.cantidad
+      }));
+
       // Devoluciones (solo para información)
       let detallesDevoluciones = { total: 0, cantidad: 0 };
 
       if (incluirDevoluciones === 'true') {
         try {
           const Return = require('../../core/devoluciones/model');
-          
+
           const filtroDevolucion = { date: { $gte: inicioMexico, $lte: finMexico } };
-          if (tiendaId) {
-            const tiendaObjectId = new mongoose.Types.ObjectId(tiendaId);
+          if (tiendaIdFinal) {
+            const tiendaObjectId = new mongoose.Types.ObjectId(tiendaIdFinal);
             filtroDevolucion.tienda = tiendaObjectId;
           }
           
@@ -226,18 +503,25 @@ class CajaController {
 
       const corteFinal = Number((totalVentas - totalGastos).toFixed(2));
 
+      // ⭐ Contar ventas únicas correctamente (no por método de pago)
+      // Esto es importante porque pagos mixtos cuentan múltiples métodos pero es 1 sola venta
+      const totalVentasUnicas = await Sale.countDocuments(filtroVentas);
+      const totalGastosUnicos = await Expense.countDocuments(filtroGastos);
+
       const resumenGeneral = {
-        totalTransacciones: desglosVentas.efectivo.cantidad + desglosVentas.transferencia.cantidad + desglosVentas.tarjeta.cantidad,
-        promedioVenta: totalVentas > 0 ? Number((totalVentas / Math.max(1, desglosVentas.efectivo.cantidad + desglosVentas.transferencia.cantidad + desglosVentas.tarjeta.cantidad)).toFixed(2)) : 0,
-        totalGastosAprobados: desglosGastos.efectivo.cantidad + desglosGastos.transferencia.cantidad + desglosGastos.tarjeta.cantidad,
-        promedioGasto: totalGastos > 0 ? Number((totalGastos / Math.max(1, desglosGastos.efectivo.cantidad + desglosGastos.transferencia.cantidad + desglosGastos.tarjeta.cantidad)).toFixed(2)) : 0
+        totalTransacciones: totalVentasUnicas,
+        promedioVenta: totalVentas > 0 ? Number((totalVentas / Math.max(1, totalVentasUnicas)).toFixed(2)) : 0,
+        totalGastosAprobados: totalGastosUnicos,
+        promedioGasto: totalGastos > 0 ? Number((totalGastos / Math.max(1, totalGastosUnicos)).toFixed(2)) : 0
       };
 
       return successResponse(res, {
         periodo: {
           inicio: inicioMexico.toISOString(),
           fin: finMexico.toISOString(),
-          tiendaId: tiendaId || 'todas'
+          tiendaId: tiendaIdFinal || 'todas',
+          modo: turnoId ? 'turno' : 'periodo', // ⭐ Indicar el modo del reporte
+          turnoId: turnoId || null
         },
         ventas: {
           total: Number(totalVentas.toFixed(2)),
@@ -259,7 +543,19 @@ class CajaController {
           montoTotal: Number(estadisticasMixtas.montoTotalMixto.toFixed(2)),
           promedioMetodos: Number(estadisticasMixtas.promedioMetodosPorVenta.toFixed(2)),
           porcentajeDelTotal: totalVentas > 0 ? Number(((estadisticasMixtas.montoTotalMixto / totalVentas) * 100).toFixed(2)) : 0
-        }
+        },
+        // ⭐ NUEVOS DATOS
+        turno: turnoInfo,
+        descuentos: {
+          total: Number(descuentos.totalDescuentos.toFixed(2)),
+          ventasConDescuento: descuentos.ventasConDescuento
+        },
+        ventasCanceladas: ventasCanceladas,
+        porTipoServicio: porTipoServicio,
+        folios: folios,
+        porCategoria: porCategoria,
+        descuentosPorCategoria: descuentosPorCat,
+        impuestos: impuestos
       }, 'Reporte de caja generado exitosamente');
 
     } catch (err) {

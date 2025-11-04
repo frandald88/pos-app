@@ -3,10 +3,13 @@ import { useTiendasData } from "../hooks/useTiendasData";
 import { useTiendasForm } from "../hooks/useTiendasForm";
 import { useTiendasFilters } from "../hooks/useTiendasFilters";
 import TiendaModal from "../components/TiendaModal";
+import TicketConfigModal from "../components/TicketConfigModal";
 
 export default function TiendasPage() {
   const [modalError, setModalError] = useState("");
   const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
+  const [mostrarConfigTicket, setMostrarConfigTicket] = useState(false);
+  const [tiendaConfig, setTiendaConfig] = useState(null);
 
   // Hooks
   const {
@@ -157,6 +160,29 @@ export default function TiendasPage() {
       await restoreTienda(tiendaId);
     } catch (error) {
       console.error('Error restaurando tienda:', error);
+    }
+  };
+
+  // Handler para abrir configuración de ticket
+  const handleConfigTicket = (tienda) => {
+    setTiendaConfig(tienda);
+    setMostrarConfigTicket(true);
+  };
+
+  // Handler para guardar configuración de ticket
+  const handleGuardarConfigTicket = async (config) => {
+    try {
+      await updateTienda(tiendaConfig._id, {
+        ...tiendaConfig,
+        ticketConfig: config
+      });
+      setMsg('Configuración de ticket actualizada ✅');
+      setMostrarConfigTicket(false);
+      setTiendaConfig(null);
+      fetchTiendas();
+    } catch (error) {
+      console.error('Error al guardar configuración:', error);
+      setMsg('Error al guardar configuración ❌');
     }
   };
 
@@ -365,6 +391,14 @@ export default function TiendasPage() {
                             // Botones para tiendas activas
                             <>
                               <button
+                                onClick={() => handleConfigTicket(tienda)}
+                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
+                                style={{ backgroundColor: '#10b981' }}
+                                title="Configurar diseño del ticket"
+                              >
+                                🎨 Ticket
+                              </button>
+                              <button
                                 onClick={() => handleEditarTienda(tienda)}
                                 className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
                                 style={{ backgroundColor: '#46546b' }}
@@ -521,6 +555,18 @@ export default function TiendasPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal de Configuración de Ticket */}
+        {mostrarConfigTicket && tiendaConfig && (
+          <TicketConfigModal
+            tienda={tiendaConfig}
+            onClose={() => {
+              setMostrarConfigTicket(false);
+              setTiendaConfig(null);
+            }}
+            onSave={handleGuardarConfigTicket}
+          />
         )}
       </div>
     </div>

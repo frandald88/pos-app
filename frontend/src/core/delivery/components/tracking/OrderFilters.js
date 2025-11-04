@@ -1,4 +1,4 @@
-export default function OrderFilters({ 
+export default function OrderFilters({
   userRole,
   tiendas,
   selectedTienda,
@@ -9,76 +9,84 @@ export default function OrderFilters({
   searchTerm,
   setSearchTerm,
   filteredSales,
-  loading 
+  loading
 }) {
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Selector de tienda para admin */}
-          {userRole === 'admin' && (
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                Filtrar por tienda
-              </label>
-              <select
-                value={selectedTienda}
-                onChange={(e) => setSelectedTienda(e.target.value)}
-                className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
-                style={{ 
-                  borderColor: '#e5e7eb',
-                  focusRingColor: '#23334e'
-                }}
-                disabled={loading}
-              >
-                <option value="">🏪 Todas las tiendas</option>
-                {tiendas.map((tienda) => (
-                  <option key={tienda._id} value={tienda._id}>
-                    🏪 {tienda.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          
+      <div className="flex flex-col gap-6">
+        {/* Selector de tienda para admin */}
+        {userRole === 'admin' && (
           <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-              Filtrar por estado
+            <label className="block text-sm font-semibold mb-3" style={{ color: '#23334e' }}>
+              🏪 Filtrar por tienda
             </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors min-w-48"
-              style={{ 
-                borderColor: '#e5e7eb',
-                focusRingColor: '#23334e'
-              }}
-              disabled={loading}
-            >
-              {statusOptions.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.icon} {s.label}
-                </option>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTienda('')}
+                disabled={loading}
+                className={`px-4 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
+                  selectedTienda === '' ? 'text-white' : ''
+                }`}
+                style={
+                  selectedTienda === ''
+                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                }
+              >
+                Todas las tiendas
+              </button>
+              {tiendas.map((tienda) => (
+                <button
+                  key={tienda._id}
+                  onClick={() => setSelectedTienda(tienda._id)}
+                  disabled={loading}
+                  className={`px-4 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
+                    selectedTienda === tienda._id ? 'text-white' : ''
+                  }`}
+                  style={
+                    selectedTienda === tienda._id
+                      ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                      : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                  }
+                >
+                  {tienda.nombre}
+                </button>
               ))}
-            </select>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold" style={{ color: '#23334e' }}>
-                {filteredSales.length}
-              </div>
-              <div className="text-sm" style={{ color: '#697487' }}>
-                {loading ? "Cargando..." : "Pedidos"}
-              </div>
             </div>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-semibold mb-3" style={{ color: '#23334e' }}>
+            📊 Filtrar por estado
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {statusOptions.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSelectedStatus(s.value)}
+                disabled={loading}
+                className={`px-4 py-2.5 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 ${
+                  selectedStatus === s.value ? 'text-white' : ''
+                }`}
+                style={
+                  selectedStatus === s.value
+                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                }
+              >
+                {s.icon} {s.label}
+              </button>
+            ))}
           </div>
         </div>
-        
-        <div className="flex-1 max-w-md">
-          <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-            Buscar pedidos
-          </label>
+
+        {/* Búsqueda y contador */}
+        <div className="flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#23334e' }}>
+              🔍 Buscar pedidos
+            </label>
           <div className="relative">
             <input
               type="text"
@@ -95,6 +103,19 @@ export default function OrderFilters({
               <svg className="w-5 h-5" style={{ color: '#697487' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+            </div>
+          </div>
+          </div>
+
+          {/* Contador de pedidos */}
+          <div className="p-4 rounded-lg border-2" style={{ borderColor: '#cbd5e1', backgroundColor: 'white' }}>
+            <div className="text-center">
+              <div className="text-3xl font-bold" style={{ color: '#23334e' }}>
+                {filteredSales.length}
+              </div>
+              <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                {loading ? "Cargando..." : "Pedidos"}
+              </div>
             </div>
           </div>
         </div>

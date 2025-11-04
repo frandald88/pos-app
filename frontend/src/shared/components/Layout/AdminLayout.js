@@ -4,6 +4,9 @@ import axios from "axios";
 import logo from "../../../assets/logo.png";
 import apiBaseUrl, { API_ENDPOINTS, getAuthHeaders } from "../../../config/api";
 import { useLicense } from "../../contexts/LicenseContext";
+import { useTurno } from "../../../core/turnos/hooks/useTurno";
+import IniciarTurnoModal from "../../../core/turnos/components/IniciarTurnoModal";
+import CerrarTurnoModal from "../../../core/turnos/components/CerrarTurnoModal";
 
 export default function AdminLayout({ children }) {
   const location = useLocation();
@@ -13,6 +16,31 @@ export default function AdminLayout({ children }) {
   const [authError, setAuthError] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isModuleEnabled, loading: licenseLoading } = useLicense();
+
+  // Estados para modales de turno
+  const [showIniciarTurnoModal, setShowIniciarTurnoModal] = useState(false);
+  const [showCerrarTurnoModal, setShowCerrarTurnoModal] = useState(false);
+  const [tiendaSeleccionadaActual, setTiendaSeleccionadaActual] = useState(null);
+
+  // Hook de turno
+  const { turnoActivo, refetch: refetchTurno } = useTurno();
+
+  // Escuchar evento de cambio de tienda para actualizar turno
+  useEffect(() => {
+    const handleTiendaChanged = (event) => {
+      const { tiendaId } = event.detail;
+      // Guardar la tienda seleccionada
+      setTiendaSeleccionadaActual(tiendaId);
+      // Actualizar el turno activo para la nueva tienda seleccionada
+      refetchTurno(tiendaId);
+    };
+
+    window.addEventListener('tiendaChanged', handleTiendaChanged);
+
+    return () => {
+      window.removeEventListener('tiendaChanged', handleTiendaChanged);
+    };
+  }, [refetchTurno]);
 
   // ✅ NUEVO: CSS personalizado para scrollbars corporativos
   useEffect(() => {
@@ -234,6 +262,11 @@ export default function AdminLayout({ children }) {
     return currentUser?.role === "admin";
   };
 
+  // Función helper para verificar si tiene acceso a corte de caja
+  const hasAccessToCaja = () => {
+    return currentUser?.role === "admin" || currentUser?.role === "vendedor";
+  };
+
   // Obtener fecha y hora actual
   const getCurrentDateTime = () => {
     const now = new Date();
@@ -273,7 +306,7 @@ export default function AdminLayout({ children }) {
         { path: "/admin/tiendas", title: "Tiendas", icon: "🏪", roles: ["admin"], module: "tiendas" },
         { path: "/admin/productos", title: "Productos", icon: "📦", roles: ["admin"], module: null },
         { path: "/admin/gastos", title: "Gastos", icon: "💸", roles: ["all"], module: null },
-        { path: "/admin/caja", title: "Corte de Caja", icon: "💳", roles: ["admin"], module: null }
+        { path: "/admin/caja", title: "Corte de Caja", icon: "💳", roles: ["admin", "vendedor"], module: null }
       ]
     },
     rrhh: {
@@ -300,7 +333,10 @@ export default function AdminLayout({ children }) {
     // Primero filtrar por rol
     let filteredItems = items;
     if (!isAdmin()) {
-      filteredItems = items.filter(item => item.roles.includes("all"));
+      // Para usuarios que no son admin, mostrar items que incluyen "all" o el rol específico del usuario
+      filteredItems = items.filter(item =>
+        item.roles.includes("all") || item.roles.includes(currentUser?.role)
+      );
     }
 
     // Si la licencia aún está cargando, mostrar todos los items (evitar pantalla vacía)
@@ -539,8 +575,8 @@ export default function AdminLayout({ children }) {
       {/* ✅ CONTENIDO PRINCIPAL MEJORADO - con scroll corporativo */}
       <main className={`flex-1 flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'ml-20' : 'ml-80'}`}>
         {/* Header principal - FIJO con mejor sombra */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 z-20" 
-                style={{ 
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0 z-20"
+                style={{
                   boxShadow: '0 2px 10px rgba(35, 51, 78, 0.08)',
                   borderBottomColor: 'rgba(35, 51, 78, 0.1)'
                 }}>
@@ -566,11 +602,24 @@ export default function AdminLayout({ children }) {
                 {date} • {time}
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-4">
+              {/* Botón de Control de Turno */}
+              <button
+                onClick={() => turnoActivo ? setShowCerrarTurnoModal(true) : setShowIniciarTurnoModal(true)}
+                className="px-4 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg active:scale-95"
+                style={turnoActivo
+                  ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }
+                  : { background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white' }
+                }
+                title={turnoActivo && turnoActivo.usuario?.username ? `Turno abierto por ${turnoActivo.usuario.username}` : ''}
+              >
+                {turnoActivo ? '🟢 Turno: Abierto' : '🔴 Turno: Cerrado'}
+              </button>
+
               {/* Avatar del usuario */}
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg scroll-smooth-transition" 
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg scroll-smooth-transition"
                      style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
                      onMouseEnter={(e) => {
                        e.target.style.transform = 'scale(1.1)';
@@ -588,13 +637,44 @@ export default function AdminLayout({ children }) {
         </header>
 
         {/* ✅ CONTENIDO CON SCROLL CORPORATIVO MEJORADO */}
-        <div className="flex-1 overflow-y-auto corporate-scroll smooth-scroll scroll-fade p-6" 
-             style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="max-w-full">
+        <div className={`flex-1 ${location.pathname === '/admin/ventas' ? 'overflow-hidden' : 'overflow-y-auto corporate-scroll smooth-scroll scroll-fade p-6'}`}
+             style={{ backgroundColor: '#f4f6fa', height: location.pathname === '/admin/ventas' ? 'calc(100vh - 80px)' : 'auto' }}>
+          <div className="max-w-full h-full">
             {children}
           </div>
         </div>
       </main>
+
+      {/* Modales de Turno */}
+      {showIniciarTurnoModal && (
+        <IniciarTurnoModal
+          onClose={() => setShowIniciarTurnoModal(false)}
+          onSuccess={() => {
+            setShowIniciarTurnoModal(false);
+            // Si hay una tienda seleccionada, refrescar con esa tienda
+            // Si no, refrescar sin parámetro (busca turno del usuario)
+            refetchTurno(tiendaSeleccionadaActual);
+          }}
+        />
+      )}
+
+      {showCerrarTurnoModal && turnoActivo && (
+        <CerrarTurnoModal
+          turno={turnoActivo}
+          onClose={() => setShowCerrarTurnoModal(false)}
+          onSuccess={(turno) => {
+            setShowCerrarTurnoModal(false);
+            // Si hay una tienda seleccionada, refrescar con esa tienda
+            // Si no, refrescar sin parámetro (busca turno del usuario)
+            refetchTurno(tiendaSeleccionadaActual);
+            // Navegar a la página de corte de caja si el usuario es admin o vendedor
+            if (hasAccessToCaja()) {
+              navigate(`/admin/caja?turnoId=${turno._id}`);
+            }
+            // Para repartidores, se quedan en la página actual
+          }}
+        />
+      )}
     </div>
   );
 }

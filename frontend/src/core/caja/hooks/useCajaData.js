@@ -37,31 +37,36 @@ export const useCajaData = () => {
     }
   }, [token]);
 
-  // Generar reporte de corte
-  const generarCorte = async (fechaInicio, fechaFin, tiendaSeleccionada) => {
-    
-    if (!fechaInicio || !fechaFin) {
-      setError("Debes seleccionar fechas válidas ❌");
-      return false;
-    }
+  // Generar reporte de corte - soporta modo período o modo turno
+  const generarCorte = async (fechaInicio, fechaFin, tiendaSeleccionada, turnoId = null) => {
+    const params = {};
 
-    const startDateObj = new Date(fechaInicio);
-    const endDateObj = new Date(fechaFin);
+    // ⭐ Modo turno: solo necesitamos el turnoId
+    if (turnoId) {
+      params.turnoId = turnoId;
+    } else {
+      // ⭐ Modo período: necesitamos fechas
+      if (!fechaInicio || !fechaFin) {
+        setError("Debes seleccionar fechas válidas ❌");
+        return false;
+      }
 
-    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
-      setError("Las fechas proporcionadas no son válidas ❌");
-      return false;
-    }
+      const startDateObj = new Date(fechaInicio);
+      const endDateObj = new Date(fechaFin);
 
-    const params = {
-      startDate: startDateObj.toISOString().slice(0, 10),
-      endDate: endDateObj.toISOString().slice(0, 10),
-      startTime: startDateObj.toTimeString().slice(0, 8),
-      endTime: endDateObj.toTimeString().slice(0, 8)
-    };
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+        setError("Las fechas proporcionadas no son válidas ❌");
+        return false;
+      }
 
-    if (tiendaSeleccionada) {
-      params.tiendaId = tiendaSeleccionada;
+      params.startDate = startDateObj.toISOString().slice(0, 10);
+      params.endDate = endDateObj.toISOString().slice(0, 10);
+      params.startTime = startDateObj.toTimeString().slice(0, 8);
+      params.endTime = endDateObj.toTimeString().slice(0, 8);
+
+      if (tiendaSeleccionada) {
+        params.tiendaId = tiendaSeleccionada;
+      }
     }
 
 
@@ -124,6 +129,36 @@ export const useCajaData = () => {
     }
   };
 
+  // ⭐ NUEVO: Obtener turnos por fecha y tienda
+  const obtenerTurnos = async (fechaInicio, fechaFin, tiendaId = null) => {
+    try {
+      const params = {};
+
+      if (fechaInicio) {
+        params.fechaInicio = new Date(fechaInicio).toISOString().slice(0, 10);
+      }
+      if (fechaFin) {
+        params.fechaFin = new Date(fechaFin).toISOString().slice(0, 10);
+      }
+      if (tiendaId) {
+        params.tienda = tiendaId;
+      }
+
+      params.limit = 50; // Traer hasta 50 turnos
+
+      const response = await axios.get(`${apiBaseUrl}/api/turnos/historial`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params
+      });
+
+      return response.data.data.turnos || [];
+    } catch (error) {
+      console.error('❌ Error al obtener turnos:', error);
+      setError('Error al cargar turnos ❌');
+      return [];
+    }
+  };
+
   // Limpiar resultados
   const limpiarResultados = () => {
     setResultados(null);
@@ -149,6 +184,7 @@ export const useCajaData = () => {
     // Actions
     generarCorte,
     fetchMixedPaymentStats,
+    obtenerTurnos, // ⭐ NUEVO
     limpiarResultados
   };
 };

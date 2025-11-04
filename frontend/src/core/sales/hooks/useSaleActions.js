@@ -4,6 +4,8 @@ import salesService from '../services/salesService';
 export const useSaleActions = () => {
   const [msg, setMsg] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [saleDetails, setSaleDetails] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,10 +35,8 @@ export const useSaleActions = () => {
         return;
       }
 
-      if (saleType === 'domicilio' && !deliveryPerson) {
-        setMsg('Debe asignar un repartidor para domicilio ❌');
-        return;
-      }
+      // REMOVIDO: Ya no es obligatorio asignar repartidor para domicilio
+      // El repartidor disponible se asigna después, no al momento de la venta
 
       // Validar pagos según el tipo
       if (paymentType === 'mixed') {
@@ -63,16 +63,25 @@ export const useSaleActions = () => {
       // Preparar detalles para el modal
       const details = {
         id: response.sale.id || response.sale._id || Date.now(),
+        folio: response.sale.folio, // ⭐ Folio consecutivo desde el backend
+        fecha: response.sale.date || new Date(),
         total: totalWithTax,
         items: saleData.items.length,
+        itemsDetalle: saleData.items, // ⭐ Agregar items completos para impresión
         cliente: saleData.clienteNombre || 'Cliente general',
+        clienteDetalle: saleData.clienteDetalle || null, // ⭐ Objeto completo del cliente con dirección
         paymentType,
         method: paymentType === 'single' ? paymentMethod : 'mixto',
         mixedPayments: paymentType === 'mixed' ? mixedPayments : [],
         type: saleType,
-        change: paymentType === 'single' && paymentMethod === 'efectivo' 
+        change: paymentType === 'single' && paymentMethod === 'efectivo'
           ? Math.max(0, (parseFloat(amountPaid) || 0) - totalWithTax)
-          : (callbacks.getTotalChange ? callbacks.getTotalChange() : 0)
+          : (callbacks.getTotalChange ? callbacks.getTotalChange() : 0),
+        amountPaid: paymentType === 'single' ? amountPaid : null,
+        subtotal: totalWithTax - (saleData.discount || 0), // Subtotal antes del descuento
+        descuento: saleData.discount || 0,
+        tienda: saleData.tiendaCompleta || saleData.tienda, // Información completa de la tienda con ticketConfig
+        usuario: response.sale.user || { username: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).username : 'Cajero' } // ⭐ Usuario que registró la venta
       };
 
       setSaleDetails(details);
@@ -87,8 +96,22 @@ export const useSaleActions = () => {
 
     } catch (error) {
       console.error('Error al registrar venta:', error);
-      setMsg('Error al registrar venta ❌');
-      setTimeout(() => setMsg(''), 5000);
+
+      // Extraer el mensaje de error del backend
+      let errorMsg = 'Error al registrar venta';
+
+      if (error.response?.data?.message) {
+        // El backend envía el mensaje en response.data.message
+        errorMsg = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMsg = error.response.data.error;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
+      // Mostrar modal de error en lugar de mensaje pequeño
+      setErrorMessage(errorMsg);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -136,6 +159,12 @@ export const useSaleActions = () => {
     setSaleDetails(null);
   };
 
+  // Cerrar modal de error
+  const closeErrorModal = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
+  };
+
   // Limpiar mensajes
   const clearMessage = () => {
     setMsg('');
@@ -145,13 +174,16 @@ export const useSaleActions = () => {
     // State
     msg,
     showSuccessModal,
+    showErrorModal,
+    errorMessage,
     saleDetails,
     loading,
-    
+
     // Actions
     handleSale,
     handleQuote,
     closeSuccessModal,
+    closeErrorModal,
     setMsg,
     clearMessage
   };

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useProductState } from '../hooks/useProductState';
 import { useProductActions } from '../hooks/useProductActions';
 import { productService } from '../services/productService';
+import { usePrintProductLabel } from '../../../shared/components/PrintProductLabel';
 
 export default function ProductsPage() {
   const state = useProductState();
@@ -53,6 +54,7 @@ export default function ProductsPage() {
   
   const token = localStorage.getItem("token");
   const actions = useProductActions(state);
+  const { printLabel } = usePrintProductLabel();
 
   const {
     filtrarCategorias,
@@ -97,20 +99,26 @@ const handleSubmit = (e) => {
 
   setCargando(true);
 
-  const payload = editingId 
+  const payload = editingId
     ? {
         name: form.name,
         sku: form.sku,
+        barcode: form.barcode || undefined,
         price: form.price === "" ? 0 : parseFloat(form.price),
         category: form.category,
+        soldByWeight: form.soldByWeight || false,
+        weightUnit: form.soldByWeight ? (form.weightUnit || 'kg') : undefined,
         ...(userRole === "admin" && { tienda: tiendaSeleccionada }),
       }
     : {
         name: form.name,
         sku: form.sku,
+        barcode: form.barcode || undefined,
         price: form.price === "" ? 0 : parseFloat(form.price),
         stock: form.stock === "" ? 0 : parseInt(form.stock),
         category: form.category,
+        soldByWeight: form.soldByWeight || false,
+        weightUnit: form.soldByWeight ? (form.weightUnit || 'kg') : undefined,
         ...(userRole === "admin" && { tienda: tiendaSeleccionada }),
       };
 
@@ -741,6 +749,27 @@ const handleSubmit = (e) => {
                   )}
                 </div>
 
+                {/* Campo Código de Barras */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Código de Barras (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.barcode || ''}
+                    onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                    placeholder="Ej: 7501234567890"
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    📊 Para escanear con lector de códigos de barras
+                  </p>
+                </div>
+
                 {/* Campo de categoría con dropdown */}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
@@ -893,7 +922,7 @@ const handleSubmit = (e) => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Precio
+                    Precio {form.soldByWeight ? `(por ${form.weightUnit || 'kg'})` : ''}
                   </label>
                   <input
                     type="number"
@@ -903,12 +932,53 @@ const handleSubmit = (e) => {
                     onChange={(e) => setForm({ ...form, price: e.target.value })}
                     placeholder="0.00"
                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
+                    style={{
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
                   />
                 </div>
+
+                {/* Checkbox: Producto vendido por peso */}
+                <div className="flex items-center space-x-3 p-3 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
+                  <input
+                    type="checkbox"
+                    id={editingId ? "soldByWeightEdit" : "soldByWeight"}
+                    checked={form.soldByWeight || false}
+                    onChange={(e) => setForm({ ...form, soldByWeight: e.target.checked, weightUnit: e.target.checked ? (form.weightUnit || 'kg') : null })}
+                    className="w-5 h-5 rounded focus:ring-2"
+                    style={{ accentColor: '#23334e' }}
+                  />
+                  <label htmlFor={editingId ? "soldByWeightEdit" : "soldByWeight"} className="text-sm font-medium cursor-pointer" style={{ color: '#46546b' }}>
+                    ⚖️ Este producto se vende por peso
+                  </label>
+                </div>
+
+                {/* Unidad de peso - Solo visible si soldByWeight está activado */}
+                {form.soldByWeight && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Unidad de Medida
+                    </label>
+                    <select
+                      value={form.weightUnit || 'kg'}
+                      onChange={(e) => setForm({ ...form, weightUnit: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e',
+                        color: '#23334e'
+                      }}
+                    >
+                      <option value="kg">Kilogramos (kg)</option>
+                      <option value="g">Gramos (g)</option>
+                      <option value="lb">Libras (lb)</option>
+                    </select>
+                    <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                      💡 <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
+                    </p>
+                  </div>
+                )}
 
                 {/* Campo de Stock - Solo visible al CREAR producto */}
                   {!editingId && (
@@ -1183,6 +1253,27 @@ const handleSubmit = (e) => {
                   )}
                 </div>
 
+                {/* Campo Código de Barras */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                    Código de Barras (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.barcode || ''}
+                    onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                    placeholder="Ej: 7501234567890"
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{
+                      borderColor: '#e5e7eb',
+                      focusRingColor: '#23334e'
+                    }}
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    📊 Para escanear con lector de códigos de barras
+                  </p>
+                </div>
+
                 {/* Campo de categoría con dropdown */}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
@@ -1335,7 +1426,7 @@ const handleSubmit = (e) => {
 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Precio
+                    Precio {form.soldByWeight ? `(por ${form.weightUnit || 'kg'})` : ''}
                   </label>
                   <input
                     type="number"
@@ -1345,12 +1436,53 @@ const handleSubmit = (e) => {
                     onChange={(e) => setForm({ ...form, price: e.target.value })}
                     placeholder="0.00"
                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
+                    style={{
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
                   />
                 </div>
+
+                {/* Checkbox: Producto vendido por peso */}
+                <div className="flex items-center space-x-3 p-3 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
+                  <input
+                    type="checkbox"
+                    id={editingId ? "soldByWeightEdit" : "soldByWeight"}
+                    checked={form.soldByWeight || false}
+                    onChange={(e) => setForm({ ...form, soldByWeight: e.target.checked, weightUnit: e.target.checked ? (form.weightUnit || 'kg') : null })}
+                    className="w-5 h-5 rounded focus:ring-2"
+                    style={{ accentColor: '#23334e' }}
+                  />
+                  <label htmlFor={editingId ? "soldByWeightEdit" : "soldByWeight"} className="text-sm font-medium cursor-pointer" style={{ color: '#46546b' }}>
+                    ⚖️ Este producto se vende por peso
+                  </label>
+                </div>
+
+                {/* Unidad de peso - Solo visible si soldByWeight está activado */}
+                {form.soldByWeight && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Unidad de Medida
+                    </label>
+                    <select
+                      value={form.weightUnit || 'kg'}
+                      onChange={(e) => setForm({ ...form, weightUnit: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e',
+                        color: '#23334e'
+                      }}
+                    >
+                      <option value="kg">Kilogramos (kg)</option>
+                      <option value="g">Gramos (g)</option>
+                      <option value="lb">Libras (lb)</option>
+                    </select>
+                    <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                      💡 <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
+                    </p>
+                  </div>
+                )}
 
                 {/* Campo de Stock - Solo visible al CREAR producto */}
                 <div>
@@ -1626,6 +1758,18 @@ const handleSubmit = (e) => {
                             📦 Reabastecer
                           </button>
                         
+                          {product.barcode && (
+                            <button
+                              onClick={() => printLabel(product)}
+                              className="px-4 sm:px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md text-sm sm:text-base"
+                              style={{ backgroundColor: '#10b981' }}
+                              disabled={cargando}
+                              title="Imprimir etiqueta con código de barras"
+                            >
+                              🏷️ Etiqueta
+                            </button>
+                          )}
+
                           <button
                             onClick={() => handleEdit(product)}
                             className="px-4 sm:px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md text-sm sm:text-base"
@@ -1634,7 +1778,7 @@ const handleSubmit = (e) => {
                           >
                             ✏️ Editar
                           </button>
-                        
+
                         <button
                           onClick={() => handleDelete(product._id)}
                           className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"

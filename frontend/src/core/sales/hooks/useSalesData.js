@@ -61,16 +61,26 @@ export const useSalesData = () => {
     try {
       const users = await salesService.getDeliveryUsers();
       let filteredDelivery = users;
-      
+
       // Filtrar por tienda si es admin y se especifica tienda
       if (tiendaId && userRole === 'admin') {
         filteredDelivery = users.filter(u => u.tienda && u.tienda._id === tiendaId);
       }
-      
+
       setDeliveryUsers(filteredDelivery);
     } catch (err) {
       console.error('Error loading delivery users:', err);
       setDeliveryUsers([]);
+    }
+  };
+
+  // ⭐ NUEVO: Recargar lista de clientes
+  const reloadClientes = async () => {
+    try {
+      const clientesData = await salesService.getClientes();
+      setClientes(clientesData);
+    } catch (err) {
+      console.error('Error reloading clientes:', err);
     }
   };
 
@@ -95,14 +105,15 @@ export const useSalesData = () => {
     deliveryUsers,
     userRole,
     tiendaSeleccionada,
-    
+
     // State
     loading,
     error,
-    
+
     // Actions
     setTiendaSeleccionada,
     loadProducts,
-    loadDeliveryUsers
+    loadDeliveryUsers,
+    reloadClientes // ⭐ NUEVO
   };
 };

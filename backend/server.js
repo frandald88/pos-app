@@ -1,6 +1,7 @@
 ﻿const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cron = require('node-cron');
 require('dotenv').config();
 
 const app = express();
@@ -9,9 +10,14 @@ const app = express();
 const { loadLicense, isModuleEnabled, getLicenseInfo } = require('./shared/middleware/licenseMiddleware');
 loadLicense();
 
+// Importar servicio de cierre automático de turnos
+const { cerrarTurnosAutomaticamente } = require('./core/turnos/autoClose');
+
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Aumentar límite de tamaño del body para permitir imágenes en base64
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Middleware de logging para todas las peticiones
 app.use((req, res, next) => {
@@ -48,6 +54,15 @@ const authRoutes = require('./core/auth/routes');
 const usersRoutes = require('./core/users/routes');
 const productsRoutes = require('./core/products/routes');
 const salesRoutes = require('./core/sales/routes');
+
+// Importar rutas de turnos con manejo de errores
+let turnosRoutes;
+try {
+  turnosRoutes = require('./routes/core/turnos');
+  console.log('✅ Módulo de rutas de turnos cargado correctamente');
+} catch (error) {
+  console.error('❌ Error al cargar rutas de turnos:', error.message);
+}
 
 // Module routes - con try/catch para módulos opcionales
 let clientesRoutes, devolucionesRoutes, deliveryRoutes, reportesRoutes, attendanceRoutes, expensesRoutes, empleadosRoutes, cajaRoutes, vacacionesRoutes, schedulesRoutes, tiendasRoutes;
@@ -124,6 +139,14 @@ app.use('/api/users', usersRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/sales', salesRoutes);
 
+// Verificar y montar rutas de turnos
+if (turnosRoutes) {
+  app.use('/api/turnos', turnosRoutes);
+  console.log('✅ Rutas de turnos montadas en /api/turnos');
+} else {
+  console.error('❌ turnosRoutes es undefined - no se pudieron montar las rutas de turnos');
+}
+
 // Core modules (siempre disponibles)
 if (devolucionesRoutes) app.use('/api/returns', devolucionesRoutes);
 if (deliveryRoutes) app.use('/api/orders', deliveryRoutes);
@@ -181,15 +204,16 @@ app.get('/', (req, res) => {
 
 // Health check adicional
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     routes: {
       auth: '/api/auth',
-      users: '/api/users', 
+      users: '/api/users',
       products: '/api/products',
       sales: '/api/sales',
-      tiendas: '/api/tiendas',
+      turnos: turnosRoutes ? '/api/turnos' : 'not available',
+      tiendas: tiendasRoutes ? '/api/tiendas' : 'not available',
       clientes: clientesRoutes ? '/api/clientes' : 'not available',
       devoluciones: devolucionesRoutes ? '/api/devoluciones' : 'not available',
       returns: devolucionesRoutes ? '/api/returns' : 'not available',
@@ -200,7 +224,7 @@ app.get('/api/health', (req, res) => {
       employees: empleadosRoutes ? '/api/employees' : 'not available',
       caja: cajaRoutes ? '/api/caja' : 'not available',
       vacations: vacacionesRoutes ? '/api/vacations' : 'not available',
-      schedules: schedulesRoutes ? '/api/schedules' : 'not available' // ✅ NUEVO
+      schedules: schedulesRoutes ? '/api/schedules' : 'not available'
     }
   });
 });
@@ -257,6 +281,18 @@ app.listen(PORT, () => {
   if (process.env.NODE_ENV !== 'production') {
     console.log(`🔧 Health check: http://localhost:${PORT}/api/health`);
   }
+
+  // Iniciar cron job para cierre automático de turnos
+  // Se ejecuta todos los días a las 11:59 PM
+  cron.schedule('59 23 * * *', async () => {
+    console.log('\n⏰ Ejecutando tarea programada: Cierre automático de turnos');
+    await cerrarTurnosAutomaticamente();
+  }, {
+    scheduled: true,
+    timezone: "America/Mexico_City" // Ajusta según tu zona horaria
+  });
+
+  console.log('⏰ Cron job configurado: Cierre automático de turnos a las 11:59 PM');
 });
 
 

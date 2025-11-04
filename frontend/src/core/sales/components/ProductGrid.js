@@ -1,16 +1,133 @@
 import React, { useState } from 'react';
 
-const ProductGrid = ({ 
-  products, 
-  search, 
-  setSearch, 
-  onAddToCart, 
-  activeCategory, 
-  setActiveCategory 
+const ProductGrid = ({
+  products,
+  search,
+  setSearch,
+  onAddToCart,
+  activeCategory,
+  setActiveCategory
 }) => {
   const [addingCustomProduct, setAddingCustomProduct] = useState(false);
   const [customProduct, setCustomProduct] = useState({ name: '', price: '' });
   const [customProductError, setCustomProductError] = useState('');
+
+  // Función para obtener emoji/ícono según categoría del producto
+  const getCategoryIcon = (category) => {
+    const categoryLower = category?.toLowerCase() || '';
+
+    // Mapeo de categorías a emojis
+    const categoryIcons = {
+      // Alimentos
+      'bebidas': '🥤',
+      'bebida': '🥤',
+      'drinks': '🥤',
+      'refrescos': '🥤',
+      'jugos': '🧃',
+
+      // Comida
+      'comida': '🍽️',
+      'food': '🍽️',
+      'platillos': '🍽️',
+      'alimentos': '🍱',
+      'desayuno': '🍳',
+      'lunch': '🍔',
+      'cena': '🍲',
+
+      // Productos específicos
+      'pizza': '🍕',
+      'hamburguesa': '🍔',
+      'hamburguesas': '🍔',
+      'tacos': '🌮',
+      'tortas': '🥙',
+      'sandwich': '🥪',
+      'ensaladas': '🥗',
+      'ensalada': '🥗',
+      'pasta': '🍝',
+      'sushi': '🍣',
+
+      // Postres
+      'postres': '🍰',
+      'postre': '🍰',
+      'dessert': '🍰',
+      'helados': '🍦',
+      'helado': '🍦',
+      'pasteles': '🎂',
+      'galletas': '🍪',
+
+      // Panadería
+      'panaderia': '🥖',
+      'pan': '🍞',
+      'bakery': '🥖',
+
+      // Frutas y verduras
+      'frutas': '🍎',
+      'fruta': '🍎',
+      'verduras': '🥬',
+      'verdura': '🥬',
+      'vegetales': '🥕',
+
+      // Carnes
+      'carnes': '🥩',
+      'carne': '🥩',
+      'meat': '🥩',
+      'pollo': '🍗',
+      'pescado': '🐟',
+      'mariscos': '🦐',
+
+      // Lácteos
+      'lacteos': '🥛',
+      'leche': '🥛',
+      'queso': '🧀',
+      'yogurt': '🥛',
+
+      // Snacks
+      'snacks': '🍿',
+      'botanas': '🍿',
+      'dulces': '🍬',
+      'chocolates': '🍫',
+
+      // Café/Té
+      'cafe': '☕',
+      'coffee': '☕',
+      'te': '🍵',
+      'tea': '🍵',
+
+      // Alcohol
+      'cervezas': '🍺',
+      'cerveza': '🍺',
+      'vinos': '🍷',
+      'vino': '🍷',
+      'licores': '🍾',
+
+      // Otros
+      'abarrotes': '🛒',
+      'limpieza': '🧹',
+      'higiene': '🧴',
+      'farmacia': '💊',
+      'medicina': '💊',
+      'papeleria': '📝',
+      'electronica': '📱',
+      'ropa': '👕',
+      'calzado': '👟',
+      'juguetes': '🧸',
+      'libros': '📚',
+      'herramientas': '🔧',
+      'jardineria': '🌱',
+      'mascotas': '🐾',
+      'flores': '🌸',
+    };
+
+    // Buscar coincidencia en el mapeo
+    for (const [key, icon] of Object.entries(categoryIcons)) {
+      if (categoryLower.includes(key)) {
+        return icon;
+      }
+    }
+
+    // Ícono por defecto
+    return '📦';
+  };
 
   // Filtrar productos por búsqueda
   const filteredProducts = products.filter(p =>
@@ -57,93 +174,63 @@ const ProductGrid = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col mr-6 rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ backgroundColor: '#f4f6fa' }}>
-      {/* Header del panel de productos */}
-      <div className="px-6 py-4 text-white" style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">Catálogo de Productos</h2>
-            <p className="text-sm opacity-80">{products.length} productos disponibles</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
+    <div className="flex-1 flex flex-col rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ backgroundColor: '#f4f6fa' }}>
       {/* Barra de búsqueda y filtros */}
-      <div className="p-6 border-b border-gray-200" style={{ backgroundColor: '#f4f6fa' }}>
-        <div className="flex flex-col space-y-4">
+      <div className="px-4 py-3 border-b-2 shadow-sm" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', borderBottomColor: '#e2e8f0' }}>
+        <div className="flex gap-3 items-center">
           {/* Búsqueda */}
-          <div className="relative">
+          <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5" style={{ color: '#8c95a4' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" style={{ color: '#697487' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <input
               type="text"
-              placeholder="Buscar productos por nombre o categoría..."
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200"
-              style={{ 
+              placeholder="Buscar productos..."
+              className="block w-full pl-10 pr-4 py-2.5 text-sm font-medium border-2 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent shadow-sm transition-all hover:shadow-md"
+              style={{
                 '--tw-ring-color': '#46546b',
-                color: '#23334e'
+                color: '#23334e',
+                borderColor: '#cbd5e1',
+                backgroundColor: 'white'
               }}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          {/* Filtros por categoría */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveCategory('')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                activeCategory === '' 
-                  ? 'text-white shadow-md' 
-                  : 'border border-gray-300'
-              }`}
-              style={activeCategory === '' 
-                ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }
-                : { color: '#697487', backgroundColor: 'white' }
-              }
-            >
-              Todas
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setActiveCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  activeCategory === category 
-                    ? 'text-white shadow-md' 
-                    : 'border border-gray-300'
-                }`}
-                style={activeCategory === category 
-                  ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }
-                  : { color: '#697487', backgroundColor: 'white' }
-                }
-              >
-                {category} ({groupedByCategory[category]?.length || 0})
-              </button>
-            ))}
-          </div>
-
           {/* Botón producto personalizado */}
           {!addingCustomProduct && (
             <button
               onClick={() => setAddingCustomProduct(true)}
-              className="self-start flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="px-4 py-2.5 text-white text-sm font-semibold rounded-lg transition-all hover:shadow-lg active:scale-95 whitespace-nowrap shadow-md"
               style={{ background: 'linear-gradient(135deg, #697487 0%, #46546b 100%)' }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span>Producto Personalizado</span>
+              + Personalizado
             </button>
           )}
+        </div>
+
+        {/* Filtros por categoría */}
+        <div className="flex flex-wrap gap-2 mt-3">
+          <button
+            onClick={() => setActiveCategory('')}
+            className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${activeCategory === '' ? 'text-white' : 'border-2'}`}
+            style={activeCategory === '' ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' } : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }}
+          >
+            📋 Todas
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setActiveCategory(category)}
+              className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${activeCategory === category ? 'text-white' : 'border-2'}`}
+              style={activeCategory === category ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' } : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }}
+            >
+              {getCategoryIcon(category)} {category} ({groupedByCategory[category]?.length || 0})
+            </button>
+          ))}
         </div>
       </div>
 
@@ -216,32 +303,74 @@ const ProductGrid = ({
         </div>
       )}
 
-      {/* Grid de productos */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {/* Grid de productos - Vista compacta estilo POS */}
+      <div className="flex-1 p-2 overflow-y-auto" style={{ backgroundColor: '#fafbfc' }}>
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-1.5">
           {displayProducts.map((product) => (
-            <div
+            <button
               key={product._id}
               onClick={() => onAddToCart(product)}
-              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-lg cursor-pointer transition-all duration-200 transform hover:scale-105 group"
-              style={{ backgroundColor: '#f4f6fa' }}
+              className="bg-white border border-gray-200 rounded-lg p-2 hover:shadow-md cursor-pointer transition-all duration-150 active:scale-95 group relative"
+              style={{
+                minHeight: '110px',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
             >
-              <div className="aspect-square rounded-lg mb-3 flex items-center justify-center transition-all duration-200" 
-                   style={{ 
-                     background: 'linear-gradient(135deg, #f4f6fa 0%, #8c95a4 100%)'
+              {/* Indicador de producto por peso */}
+              {product.soldByWeight && (
+                <div
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ backgroundColor: '#10b981', color: 'white' }}
+                  title="Producto vendido por peso"
+                >
+                  ⚖
+                </div>
+              )}
+
+              {/* Ícono del producto - emoji por categoría */}
+              <div className="w-full aspect-square rounded-md mb-1.5 flex items-center justify-center transition-all duration-150"
+                   style={{
+                     background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                     maxHeight: '60px'
                    }}
               >
-                <svg className="w-8 h-8 text-white group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
+                <span className="text-3xl group-hover:scale-110 transition-transform duration-150">
+                  {getCategoryIcon(product.category)}
+                </span>
               </div>
-              <h3 className="font-semibold text-sm mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200"
-                  style={{ color: '#23334e' }}>
-                {product.name}
-              </h3>
-              <p className="text-lg font-bold" style={{ color: '#46546b' }}>${product.price}</p>
-              <p className="text-xs mt-1" style={{ color: '#8c95a4' }}>{product.category}</p>
-            </div>
+
+              {/* Nombre del producto - compacto */}
+              <div className="flex-1 flex flex-col justify-between min-h-0">
+                <h3 className="font-medium text-xs leading-tight mb-1 line-clamp-2 text-left"
+                    style={{ color: '#23334e', fontSize: '0.75rem' }}>
+                  {product.name}
+                </h3>
+
+                {/* Precio y unidad */}
+                <div className="mt-auto">
+                  <p className="text-sm font-bold" style={{ color: '#10b981' }}>
+                    ${product.price}
+                    {product.soldByWeight && (
+                      <span className="text-xs font-normal ml-0.5" style={{ color: '#6b7280' }}>
+                        /{product.weightUnit || 'kg'}
+                      </span>
+                    )}
+                  </p>
+                  {/* Badge de stock bajo (opcional) */}
+                  {product.stock !== undefined && product.stock <= 5 && product.stock > 0 && !product.soldByWeight && (
+                    <span className="text-xs px-1 py-0.5 rounded mt-0.5 inline-block" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                      Stock: {product.stock}
+                    </span>
+                  )}
+                  {product.stock === 0 && !product.soldByWeight && (
+                    <span className="text-xs px-1 py-0.5 rounded mt-0.5 inline-block" style={{ backgroundColor: '#fee2e2', color: '#991b1b' }}>
+                      Agotado
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
           ))}
         </div>
         

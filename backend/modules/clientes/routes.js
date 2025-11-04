@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const clientesController = require('../../controllers/modules/clientesController');
-const { verifyToken, requireAdmin } = require('../../shared/middleware/authMiddleware');
+const { verifyToken, requireAdmin, requireRoles } = require('../../shared/middleware/authMiddleware');
 const { validateRequired, validateEmail, validatePhone } = require('../../shared/middleware/validation');
 
-// Rutas de clientes - ahora solo llaman al controller
+// Rutas de clientes
 router.get('/', verifyToken, clientesController.getAll);
 
-router.post('/', 
-  verifyToken, 
+// ⭐ Cualquier usuario autenticado puede crear clientes
+router.post('/',
+  verifyToken,
   validateRequired(['nombre']),
   validateEmail,
   validatePhone,
@@ -19,15 +20,17 @@ router.get('/search/:term', verifyToken, clientesController.search);
 
 router.get('/:id', verifyToken, clientesController.getById);
 
-router.put('/:id', 
-  verifyToken, 
-  requireAdmin,
+// ⭐ ACTUALIZADO: Permitir a admin, vendedor y repartidor actualizar clientes
+router.put('/:id',
+  verifyToken,
+  requireRoles(['admin', 'vendedor', 'repartidor']),
   validateRequired(['nombre']),
   validateEmail,
   validatePhone,
   clientesController.update
 );
 
+// ⭐ Solo admin puede eliminar clientes
 router.delete('/:id', verifyToken, requireAdmin, clientesController.delete);
 
 module.exports = router;

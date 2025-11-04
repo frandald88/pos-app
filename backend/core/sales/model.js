@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const saleSchema = new mongoose.Schema({
+  folio: {
+    type: Number,
+    unique: true,
+    required: true
+  },
   items: [
     {
       productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: false },
@@ -85,12 +90,16 @@ const saleSchema = new mongoose.Schema({
     ref: 'Tienda',
     required: true,
   },
+  turno: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Turno',
+    required: false // Puede ser null para ventas antiguas antes del sistema de turnos
+  },
   deliveryPerson: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: function () {
-      return this.type === 'domicilio';
-    }
+    required: false, // Ya no es obligatorio - se asigna después según disponibilidad
+    default: null
   },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, default: Date.now },

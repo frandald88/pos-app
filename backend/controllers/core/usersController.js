@@ -81,9 +81,12 @@ class UsersController {
     try {
       // Obtener la tienda del usuario actual
       const currentUser = await User.findById(req.userId).select('tienda role');
-      
+
+      // Obtener parámetros de query (role y tienda opcionales)
+      const { role, tienda } = req.query;
+
       let filter = {};
-      
+
       // Si el usuario no es admin, filtrar por su tienda
       if (currentUser.role !== 'admin') {
         if (currentUser.tienda) {
@@ -92,12 +95,22 @@ class UsersController {
           // Si el usuario no-admin no tiene tienda, no devolver usuarios
           return res.json([]);
         }
+      } else {
+        // Si es admin, puede filtrar por tienda específica si se proporciona
+        if (tienda) {
+          filter.tienda = tienda;
+        }
       }
-      
-      const users = await User.find(filter).select('username role tienda telefono')
+
+      // Filtrar por rol si se proporciona
+      if (role) {
+        filter.role = role;
+      }
+
+      const users = await User.find(filter).select('username nombre role tienda telefono')
         .populate('tienda', 'nombre');
-      
-      console.log('✅ Users found:', users.length, 'for role:', currentUser.role);
+
+      console.log('✅ Users found:', users.length, 'with filters:', filter);
       res.json(users);
     } catch (err) {
       console.error('❌ Error fetching users:', err);

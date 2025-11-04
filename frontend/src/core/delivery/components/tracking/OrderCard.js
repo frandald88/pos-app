@@ -1,12 +1,13 @@
 import StatusActions from './StatusActions';
 
-export default function OrderCard({ 
-  sale, 
-  statusConfig, 
-  formatCurrency, 
+export default function OrderCard({
+  sale,
+  statusConfig,
+  formatCurrency,
   formatDate,
   updatingOrderId,
-  updateStatus 
+  updateStatus,
+  turnoActivo // ⭐ Recibir turno activo de la tienda seleccionada
 }) {
   
   return (
@@ -17,7 +18,7 @@ export default function OrderCard({
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
-                Pedido #{sale._id.slice(-8)}
+                Pedido #{sale.folio || sale._id.slice(-8)}
               </h3>
               <span
                 className="px-3 py-1 text-sm rounded-full font-medium text-white"
@@ -192,6 +193,7 @@ export default function OrderCard({
           updateStatus={updateStatus}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
+          turnoActivo={turnoActivo} // ⭐ Pasar turno activo
         />
       </div>
     </div>

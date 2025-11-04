@@ -6,6 +6,7 @@ import { LicenseProvider } from "./shared/contexts/LicenseContext";
 
 // Páginas principales (mantenidas en pages/)
 import LoginPage from "./pages/LoginPage";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
 
 // Componentes compartidos (movidos a shared/)
 import AdminLayout from "./shared/components/Layout/AdminLayout";
@@ -37,6 +38,9 @@ function App() {
         <Routes>
           {/* Ruta de login */}
           <Route path="/" element={<LoginPage />} />
+
+          {/* Ruta de acceso no autorizado */}
+          <Route path="/401" element={<UnauthorizedPage />} />
 
         {/* Core modules - Tiendas */}
         <Route
@@ -170,7 +174,7 @@ function App() {
           path="/admin/caja"
           element={
             <AdminLayout>
-              <RoleProtectedRoute allowedRoles={["admin"]}>
+              <RoleProtectedRoute allowedRoles={["admin", "vendedor"]}>
                 <CajaPage />
               </RoleProtectedRoute>
             </AdminLayout>

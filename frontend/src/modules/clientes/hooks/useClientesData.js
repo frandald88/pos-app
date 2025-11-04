@@ -114,6 +114,12 @@ export const useClientesData = () => {
     setMsg('');
   };
 
+  // ⭐ NUEVO: Helper para construir nombre completo
+  const getNombreCompleto = (cliente) => {
+    if (!cliente) return '';
+    return `${cliente.nombre || ''} ${cliente.primerApellido || ''} ${cliente.segundoApellido || ''}`.trim();
+  };
+
   // Efecto para cargar datos iniciales
   useEffect(() => {
     loadCurrentUser();
@@ -140,6 +146,9 @@ export const useClientesData = () => {
     setMsg,
     setClientes,
     setCurrentUser,
-    setCargando
+    setCargando,
+
+    // ⭐ NUEVO: Helpers
+    getNombreCompleto
   };
 };

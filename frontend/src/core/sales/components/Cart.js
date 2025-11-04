@@ -19,61 +19,83 @@ const Cart = ({
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {cartItems.map((item) => (
-        <div key={item._id} className="rounded-lg p-3 border border-gray-200" style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="flex justify-between items-start mb-2">
-            <h4 className="font-medium text-sm flex-1 mr-2" style={{ color: '#23334e' }}>{item.name}</h4>
+    <div className="p-2">
+      {/* Estilo ticket/recibo */}
+      {cartItems.map((item, index) => (
+        <div key={item._id} className="border-b border-gray-200 pb-2 mb-2">
+          {/* Línea 1: Nombre y botón eliminar */}
+          <div className="flex justify-between items-start mb-1">
+            <h4 className="font-semibold text-sm flex-1" style={{ color: '#23334e' }}>{item.name}</h4>
             <button
               onClick={() => onRemoveFromCart(item._id)}
-              className="transition-colors duration-200"
-              style={{ color: '#697487' }}
+              className="ml-2 transition-colors duration-200"
+              style={{ color: '#8c95a4' }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2">
+
+          {/* Línea 2: Cantidad, precio unitario y total */}
+          <div className="flex justify-between items-center text-sm mb-1">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => onUpdateQuantity(item._id, item.qty - 1)}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200"
-                style={{ 
-                  backgroundColor: '#8c95a4',
-                  color: 'white'
-                }}
+                className="w-7 h-7 rounded flex items-center justify-center transition-all active:scale-95 font-bold text-base"
+                style={{ backgroundColor: '#e5e7eb', color: '#374151' }}
               >
-                -
+                −
               </button>
-              <span className="w-8 text-center font-medium" style={{ color: '#23334e' }}>{item.qty}</span>
+              <span className="font-mono font-bold w-8 text-center text-base" style={{ color: '#23334e' }}>{item.qty}</span>
               <button
                 onClick={() => onUpdateQuantity(item._id, item.qty + 1)}
-                className="w-8 h-8 rounded-full text-white flex items-center justify-center transition-colors duration-200"
-                style={{ 
-                  background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)'
-                }}
+                className="w-7 h-7 rounded flex items-center justify-center transition-all active:scale-95 text-white font-bold text-base"
+                style={{ background: 'linear-gradient(135deg, #697487 0%, #46546b 100%)' }}
               >
                 +
               </button>
+              <span className="font-medium" style={{ color: '#697487' }}>× ${item.price}</span>
             </div>
-            <div className="text-right">
-              <p className="text-sm" style={{ color: '#697487' }}>${item.price} c/u</p>
-              <p className="font-bold" style={{ color: '#46546b' }}>${(item.qty * item.price).toFixed(2)}</p>
-            </div>
+            <span className="font-bold text-base" style={{ color: '#10b981' }}>${(item.qty * item.price).toFixed(2)}</span>
           </div>
 
+          {/* Línea 3: Nota (si existe o en hover) */}
+          {item.note ? (
+            <div className="text-sm italic px-2 py-1.5 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+              📝 {item.note}
+            </div>
+          ) : (
+            <button
+              onClick={(e) => {
+                const textarea = e.currentTarget.nextSibling;
+                e.currentTarget.style.display = 'none';
+                textarea.style.display = 'block';
+                textarea.focus();
+              }}
+              className="text-sm w-full px-2 py-2 border-0 focus:outline-none cursor-pointer text-left rounded transition-colors hover:bg-gray-50"
+              style={{ color: '#9ca3af', backgroundColor: 'transparent' }}
+            >
+              + nota...
+            </button>
+          )}
           <textarea
-            placeholder="Nota opcional (ej: sin cebolla, extra queso...)"
+            placeholder="Nota (ej: sin cebolla)..."
             value={item.note || ''}
             onChange={(e) => onUpdateNote(item._id, e.target.value)}
-            className="w-full p-2 text-xs border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:border-transparent"
-            style={{ 
-              '--tw-ring-color': '#46546b',
-              color: '#23334e'
+            onBlur={(e) => {
+              if (!e.target.value) {
+                e.target.style.display = 'none';
+                e.target.previousSibling.style.display = 'block';
+              }
             }}
-            rows={2}
+            className="text-sm w-full px-2 py-2 border border-gray-300 rounded resize-none focus:outline-none focus:ring-1"
+            style={{
+              '--tw-ring-color': '#46546b',
+              color: '#23334e',
+              display: item.note ? 'block' : 'none'
+            }}
+            rows={1}
           />
         </div>
       ))}
