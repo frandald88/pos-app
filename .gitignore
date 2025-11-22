@@ -22,6 +22,8 @@ license.json
 # Uploads y archivos de usuario
 backend/uploads/**
 !backend/uploads/.gitkeep
+apps/api/uploads/**
+!apps/api/uploads/.gitkeep
 uploads/**
 !uploads/.gitkeep
 

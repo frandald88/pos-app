@@ -1,44 +1,32 @@
 {
-  "name": "tupos-app",
-  "version": "1.0.0",
-  "description": "Aplicación POS para negocios pequeños y medianos",
-  "main": "main.js",
+  "name": "tupos-saas",
+  "version": "2.0.0",
+  "description": "POS SaaS para negocios - Multi-tenant",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/app",
+    "apps/landing"
+  ],
   "scripts": {
-    "postinstall": "cd frontend && npm install && cd ../backend && npm install",
-    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
-    "frontend": "cd frontend && npm start",
-    "backend": "cd backend && node server.js",
-    "build-frontend": "cd frontend && npm run build",
-    "electron": "npm run build-frontend && electron .",
-    "clean-dist": "rimraf dist",
-    "dist": "npm run clean-dist && npm run build-frontend && electron-builder"
+    "install:all": "npm install && npm install --workspaces",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:app\"",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:app\" \"npm run dev:landing\"",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:app": "cd apps/app && npm start",
+    "dev:landing": "cd apps/landing && npm start",
+    "build": "npm run build:app && npm run build:landing && npm run build:api",
+    "build:api": "cd apps/api && npm run build",
+    "build:app": "cd apps/app && npm run build",
+    "build:landing": "cd apps/landing && npm run build",
+    "start": "cd apps/api && npm start",
+    "test": "npm run test --workspaces"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0",
-    "electron": "^37.1.0",
-    "electron-builder": "^26.0.12",
-    "rimraf": "^6.0.1",
-    "wait-on": "^8.0.3"
+    "concurrently": "^9.2.0"
   },
-  "build": {
-    "appId": "com.tupos.app",
-    "files": [
-      "frontend/build/",
-      "backend/",
-      "main.js"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    }
-  },
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^17.0.1",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.16.1",
-    "multer": "^2.0.1",
-    "pdfkit": "^0.17.1"
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
