@@ -14,7 +14,7 @@ export default function RestaurantProtectedRoute({ children }) {
 
   try {
     const tenantConfig = JSON.parse(tenantConfigStr);
-    const isRestaurant = tenantConfig.isRestaurant || false;
+    const isRestaurant = tenantConfig.businessType === 'restaurant';
 
     if (!isRestaurant) {
       // Si no es restaurant, redirigir a ventas

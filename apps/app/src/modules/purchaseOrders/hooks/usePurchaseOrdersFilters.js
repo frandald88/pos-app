@@ -11,8 +11,13 @@ export const usePurchaseOrdersFilters = (orders) => {
 
     const term = searchTerm.toLowerCase();
     return orders.filter(order => {
+      // Manejar proveedor como string u objeto (datos viejos)
+      const proveedorNombre = typeof order.proveedor === 'object'
+        ? order.proveedor?.nombre
+        : order.proveedor;
+
       return (
-        order.proveedor?.toLowerCase().includes(term) ||
+        proveedorNombre?.toLowerCase().includes(term) ||
         order.producto?.toLowerCase().includes(term) ||
         order._id?.toLowerCase().includes(term)
       );

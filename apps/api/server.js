@@ -130,8 +130,9 @@ try {
 
 try {
   vacacionesRoutes = require('./modules/vacaciones/routes');
+  console.log('✅ Módulo de vacaciones cargado correctamente');
 } catch (e) {
-  // Module not available - silent in production
+  console.error('❌ Error al cargar módulo de vacaciones:', e.message);
 }
 
 try {

@@ -186,7 +186,50 @@ function requireTenant(req, res, next) {
   next();
 }
 
+/**
+ * Middleware para verificar acceso a features según el plan del tenant
+ * @param {string} feature - Nombre del feature a verificar
+ */
+function checkFeatureAccess(feature) {
+  return (req, res, next) => {
+    // Si no hay tenant, dejar que requireTenant lo maneje
+    if (!req.tenant) {
+      return next();
+    }
+
+    const { limits, subscription } = req.tenant;
+
+    // Mapeo de features a límites del tenant
+    const featureMap = {
+      'reports': true, // Siempre permitido (puede limitarse por plan)
+      'employees': limits?.maxEmployees !== 0,
+      'gastos': limits?.maxExpenses !== 0,
+      'clientes': limits?.maxClientes !== 0,
+      'delivery': limits?.maxDeliveries !== 0,
+      'vacaciones': true,
+      'asistencia': true,
+      'caja': true,
+      'devoluciones': true
+    };
+
+    // Por defecto, permitir acceso si no está en el mapa
+    const hasAccess = featureMap[feature] !== false;
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        message: `Tu plan actual no incluye acceso a ${feature}. Actualiza tu suscripción para usar esta función.`,
+        code: 'FEATURE_NOT_AVAILABLE',
+        feature,
+        currentPlan: subscription?.plan || 'unknown'
+      });
+    }
+
+    next();
+  };
+}
+
 module.exports = {
   identifyTenant,
-  requireTenant
+  requireTenant,
+  checkFeatureAccess
 };

@@ -32,7 +32,7 @@ class AuthController {
           ]
         })
           .populate('tienda', 'nombre')
-          .populate('tenantId', 'companyName subdomain'),
+          .populate('tenantId', 'companyName subdomain businessType'),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Database timeout')), 5000)
         )
@@ -135,7 +135,8 @@ class AuthController {
         tenant: {
           id: user.tenantId._id,
           companyName: user.tenantId.companyName,
-          subdomain: user.tenantId.subdomain
+          subdomain: user.tenantId.subdomain,
+          businessType: user.tenantId.businessType || 'supermarket'
         }
       };
 

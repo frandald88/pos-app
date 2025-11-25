@@ -1,6 +1,6 @@
 const VacationRequest = require('../../modules/vacaciones/model');
 const User = require('../../core/users/model');
-const EmployeeHistory = require('../empleados/model');
+const EmployeeHistory = require('../../modules/empleados/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 
 class VacacionesController {

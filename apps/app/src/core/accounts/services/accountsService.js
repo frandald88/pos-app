@@ -187,3 +187,155 @@ export const cancelAccount = async (id, reason) => {
     throw error;
   }
 };
+
+// Enviar items a cocina
+export const sendToKitchen = async (id) => {
+  try {
+    const response = await axios.post(`${API_URL}/${id}/send-to-kitchen`, {}, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error enviando a cocina:', error);
+    throw error;
+  }
+};
+
+// Obtener items en cocina
+export const getKitchenItems = async (filters = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (filters.tiendaId) params.append('tiendaId', filters.tiendaId);
+    if (filters.status) params.append('status', filters.status);
+
+    const response = await axios.get(`${API_URL}/kitchen/items?${params.toString()}`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo items de cocina:', error);
+    throw error;
+  }
+};
+
+// Marcar item como listo
+export const markItemReady = async (id, orderIdx, itemIdx) => {
+  try {
+    const response = await axios.patch(`${API_URL}/${id}/mark-ready`, {
+      orderIdx,
+      itemIdx
+    }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error marcando item como listo:', error);
+    throw error;
+  }
+};
+
+// Cancelar item
+export const cancelItem = async (id, orderIdx, itemIdx, reason) => {
+  try {
+    const response = await axios.patch(`${API_URL}/${id}/cancel-item`, {
+      orderIdx,
+      itemIdx,
+      reason
+    }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error cancelando item:', error);
+    throw error;
+  }
+};
+
+// Editar item (solo si está en estado 'pending')
+export const editItem = async (id, orderIdx, itemIdx, updates) => {
+  try {
+    const response = await axios.patch(`${API_URL}/${id}/edit-item`, {
+      orderIdx,
+      itemIdx,
+      ...updates
+    }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error editando item:', error);
+    throw error;
+  }
+};
+
+// ============ SUBCUENTAS ============
+
+// Agregar subcuenta
+export const addSubcuenta = async (id, name) => {
+  try {
+    const response = await axios.post(`${API_URL}/${id}/subcuentas`, { name }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error agregando subcuenta:', error);
+    throw error;
+  }
+};
+
+// Eliminar subcuenta
+export const removeSubcuenta = async (id, name) => {
+  try {
+    const response = await axios.delete(`${API_URL}/${id}/subcuentas`, {
+      headers: getAuthHeader(),
+      data: { name }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error eliminando subcuenta:', error);
+    throw error;
+  }
+};
+
+// Asignar item a subcuenta
+export const assignItemToSubcuenta = async (id, orderIdx, itemIdx, subcuentaName) => {
+  try {
+    const response = await axios.patch(`${API_URL}/${id}/subcuentas/assign`, {
+      orderIdx,
+      itemIdx,
+      subcuentaName
+    }, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error asignando item:', error);
+    throw error;
+  }
+};
+
+// Obtener resumen de subcuentas
+export const getSubcuentasSummary = async (id) => {
+  try {
+    const response = await axios.get(`${API_URL}/${id}/subcuentas/summary`, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error obteniendo resumen:', error);
+    throw error;
+  }
+};
+
+// Pagar subcuenta
+export const paySubcuenta = async (id, paymentData) => {
+  try {
+    const response = await axios.post(`${API_URL}/${id}/subcuentas/pay`, paymentData, {
+      headers: getAuthHeader()
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error pagando subcuenta:', error);
+    throw error;
+  }
+};

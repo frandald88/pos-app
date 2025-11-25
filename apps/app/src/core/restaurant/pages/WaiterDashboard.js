@@ -18,8 +18,11 @@ const WaiterDashboard = () => {
 
   // Modal para abrir mesa
   const [showOpenTableModal, setShowOpenTableModal] = useState(false);
-  const [selectedTable, setSelectedTable] = useState(null);
+  const [selectedTables, setSelectedTables] = useState([]);
   const [guestCount, setGuestCount] = useState(2);
+  const [subcuentaNames, setSubcuentaNames] = useState([]);
+  const [newSubcuentaName, setNewSubcuentaName] = useState('');
+  const [isSelectingMultiple, setIsSelectingMultiple] = useState(false);
 
   const tiendaId = localStorage.getItem('tiendaId');
   const turnoId = localStorage.getItem('turnoId');
@@ -78,32 +81,95 @@ const WaiterDashboard = () => {
       setTimeout(() => setError(''), 3000);
       return;
     }
-    setSelectedTable(table);
+    setSelectedTables([table]);
     setGuestCount(table.capacity || 2);
+    setSubcuentaNames([]);
+    setNewSubcuentaName('');
+    setIsSelectingMultiple(false);
     setShowOpenTableModal(true);
   };
 
+  const handleToggleTableSelection = (table) => {
+    if (table.status !== 'available') return;
+
+    const isSelected = selectedTables.some(t => t._id === table._id);
+    if (isSelected) {
+      setSelectedTables(selectedTables.filter(t => t._id !== table._id));
+    } else {
+      setSelectedTables([...selectedTables, table]);
+      // Actualizar capacidad total
+      const totalCapacity = [...selectedTables, table].reduce((sum, t) => sum + (t.capacity || 4), 0);
+      setGuestCount(totalCapacity);
+    }
+  };
+
+  const handleStartMultipleSelection = () => {
+    setIsSelectingMultiple(true);
+    setSelectedTables([]);
+    setGuestCount(0);
+    setSubcuentaNames([]);
+    setNewSubcuentaName('');
+  };
+
+  const handleCancelMultipleSelection = () => {
+    setIsSelectingMultiple(false);
+    setSelectedTables([]);
+  };
+
+  const handleConfirmMultipleSelection = () => {
+    if (selectedTables.length < 2) {
+      setError('Selecciona al menos 2 mesas para combinar');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    setShowOpenTableModal(true);
+  };
+
+  const handleAddSubcuentaName = () => {
+    const name = newSubcuentaName.trim();
+    if (name && !subcuentaNames.includes(name)) {
+      setSubcuentaNames([...subcuentaNames, name]);
+      setNewSubcuentaName('');
+    }
+  };
+
+  const handleRemoveSubcuentaName = (name) => {
+    setSubcuentaNames(subcuentaNames.filter(n => n !== name));
+  };
+
   const handleConfirmOpenTable = async () => {
+    if (selectedTables.length === 0) {
+      setError('Selecciona al menos una mesa');
+      return;
+    }
+
     try {
       const accountData = {
         tiendaId,
         turnoId,
-        tableId: selectedTable._id,
-        guestCount: parseInt(guestCount)
+        tableIds: selectedTables.map(t => t._id),
+        guestCount: parseInt(guestCount),
+        subcuentas: subcuentaNames.map(name => ({ name }))
       };
 
       const response = await createAccount(accountData);
       const newAccount = response.data.account;
 
-      setSuccess(`Mesa ${selectedTable.number} abierta exitosamente`);
+      const tableNumbers = selectedTables.map(t => t.number).join('+');
+      setSuccess(`Mesa${selectedTables.length > 1 ? 's' : ''} ${tableNumbers} abierta${selectedTables.length > 1 ? 's' : ''} exitosamente`);
       setShowOpenTableModal(false);
-      setSelectedTable(null);
+      setSelectedTables([]);
+      setSubcuentaNames([]);
+      setIsSelectingMultiple(false);
 
       // Navegar a la cuenta
       setTimeout(() => {
         navigate(`/restaurant/account/${newAccount._id}`);
       }, 1000);
     } catch (err) {
+      setShowOpenTableModal(false);
+      setSelectedTables([]);
+      setIsSelectingMultiple(false);
       setError(err.response?.data?.message || 'Error al abrir mesa');
       setTimeout(() => setError(''), 5000);
     }
@@ -253,29 +319,74 @@ const WaiterDashboard = () => {
                   <option value="cleaning">Limpieza</option>
                 </select>
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end gap-2">
                 <button
                   onClick={() => {
                     setSelectedSection('');
                     setSelectedStatus('');
                   }}
-                  className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
                 >
                   Limpiar Filtros
+                </button>
+                <button
+                  onClick={handleStartMultipleSelection}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                >
+                  Combinar Mesas
                 </button>
               </div>
             </div>
           </div>
 
+          {/* Indicador de selección múltiple */}
+          {isSelectingMultiple && (
+            <div className="bg-purple-100 border border-purple-400 text-purple-700 px-4 py-3 rounded mb-4">
+              <div className="flex justify-between items-center">
+                <span>
+                  <strong>Modo combinación:</strong> Selecciona las mesas disponibles a combinar
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelMultipleSelection}
+                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleConfirmMultipleSelection}
+                    disabled={selectedTables.length < 2}
+                    className={`px-3 py-1 rounded ${
+                      selectedTables.length >= 2
+                        ? 'bg-purple-600 text-white hover:bg-purple-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Confirmar ({selectedTables.length})
+                  </button>
+                </div>
+              </div>
+              {selectedTables.length > 0 && (
+                <div className="mt-2 text-sm">
+                  Mesas seleccionadas: <strong>{selectedTables.map(t => t.number).join(', ')}</strong>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Grid de Mesas */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {tables.map((table) => (
+            {tables.map((table) => {
+              const isSelected = isSelectingMultiple && selectedTables.some(t => t._id === table._id);
+              return (
               <div
                 key={table._id}
-                onClick={() => handleTableClick(table)}
-                className={`p-6 rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${getStatusColor(
-                  table.status
-                )}`}
+                onClick={() => isSelectingMultiple ? handleToggleTableSelection(table) : handleTableClick(table)}
+                className={`p-6 rounded-lg shadow-md border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  isSelected
+                    ? 'bg-purple-200 border-purple-500 ring-2 ring-purple-400'
+                    : getStatusColor(table.status)
+                }`}
               >
                 <div className="text-center">
                   <div className="text-3xl font-bold mb-2">Mesa {table.number}</div>
@@ -283,8 +394,16 @@ const WaiterDashboard = () => {
                   <div className="text-xs text-gray-600 mb-2">Cap: {table.capacity}</div>
                   <div className="text-sm font-bold mb-3">{getStatusText(table.status)}</div>
 
-                  {table.status === 'available' && (
+                  {isSelected && (
+                    <div className="text-xs text-purple-700 font-medium">✓ Seleccionada</div>
+                  )}
+
+                  {!isSelectingMultiple && table.status === 'available' && (
                     <div className="text-xs text-green-700 font-medium">Click para abrir</div>
+                  )}
+
+                  {isSelectingMultiple && table.status === 'available' && !isSelected && (
+                    <div className="text-xs text-purple-600 font-medium">Click para seleccionar</div>
                   )}
 
                   {table.status === 'occupied' && table.currentAccount && (
@@ -298,7 +417,8 @@ const WaiterDashboard = () => {
                   )}
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
 
           {tables.length === 0 && (
@@ -343,7 +463,9 @@ const WaiterDashboard = () => {
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                       <div>
                         <span className="font-medium">Mesa:</span>{' '}
-                        {account.tableId?.number || 'N/A'}
+                        {account.tableIds?.length > 0
+                          ? account.tableIds.map(t => t.number).join('+')
+                          : account.tableId?.number || 'N/A'}
                       </div>
                       <div>
                         <span className="font-medium">Comensales:</span>{' '}
@@ -388,14 +510,22 @@ const WaiterDashboard = () => {
       )}
 
       {/* Modal: Abrir Mesa */}
-      {showOpenTableModal && selectedTable && (
+      {showOpenTableModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              Abrir Mesa {selectedTable.number}
+              {isSelectingMultiple
+                ? `Combinar Mesas${selectedTables.length > 0 ? ` (${selectedTables.map(t => t.number).join('+')})` : ''}`
+                : `Abrir Mesa ${selectedTables[0]?.number || ''}`}
             </h2>
 
-            <div className="mb-6">
+            {isSelectingMultiple && selectedTables.length === 0 && (
+              <div className="mb-4 text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg">
+                Selecciona las mesas disponibles en el grid para combinarlas
+              </div>
+            )}
+
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Número de Comensales
               </label>
@@ -409,23 +539,75 @@ const WaiterDashboard = () => {
               />
             </div>
 
-            <div className="bg-gray-100 p-4 rounded-lg mb-6">
-              <div className="text-sm text-gray-600">
-                <div>
-                  <span className="font-medium">Sección:</span> {selectedTable.section}
+            {/* Subcuentas */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dividir cuenta por nombres (opcional)
+              </label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newSubcuentaName}
+                  onChange={(e) => setNewSubcuentaName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddSubcuentaName()}
+                  placeholder="Nombre del comensal"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={handleAddSubcuentaName}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                >
+                  +
+                </button>
+              </div>
+              {subcuentaNames.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {subcuentaNames.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    >
+                      {name}
+                      <button
+                        onClick={() => handleRemoveSubcuentaName(name)}
+                        className="text-blue-600 hover:text-blue-800 font-bold"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
-                <div>
-                  <span className="font-medium">Capacidad:</span> {selectedTable.capacity}{' '}
-                  personas
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Puedes agregar nombres ahora o durante el servicio
+              </p>
+            </div>
+
+            {selectedTables.length > 0 && (
+              <div className="bg-gray-100 p-4 rounded-lg mb-6">
+                <div className="text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Mesas:</span>{' '}
+                    {selectedTables.map(t => t.number).join(', ')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Sección:</span>{' '}
+                    {selectedTables[0]?.section}
+                  </div>
+                  <div>
+                    <span className="font-medium">Capacidad Total:</span>{' '}
+                    {selectedTables.reduce((sum, t) => sum + (t.capacity || 4), 0)} personas
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowOpenTableModal(false);
-                  setSelectedTable(null);
+                  setSelectedTables([]);
+                  setIsSelectingMultiple(false);
                 }}
                 className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-medium"
               >
@@ -433,9 +615,14 @@ const WaiterDashboard = () => {
               </button>
               <button
                 onClick={handleConfirmOpenTable}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+                disabled={selectedTables.length === 0}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium ${
+                  selectedTables.length > 0
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                Abrir Mesa
+                {selectedTables.length > 1 ? 'Abrir Mesas Combinadas' : 'Abrir Mesa'}
               </button>
             </div>
           </div>

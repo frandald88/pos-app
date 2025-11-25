@@ -28,12 +28,11 @@ const accountSchema = new mongoose.Schema({
     required: true
   },
 
-  // Mesa y mesero
-  tableId: {
+  // Mesa(s) - soporta mesas combinadas
+  tableIds: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Table',
-    required: true
-  },
+    ref: 'Table'
+  }],
 
   waiterId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -95,7 +94,13 @@ const accountSchema = new mongoose.Schema({
       // Tracking temporal
       sentToKitchenAt: Date,
       readyAt: Date,
-      servedAt: Date
+      servedAt: Date,
+
+      // Subcuenta (para división por nombre)
+      subcuentaName: {
+        type: String,
+        default: null
+      }
     }],
 
     orderedAt: {
@@ -187,7 +192,9 @@ const accountSchema = new mongoose.Schema({
     tip: {
       amount: Number,
       percentage: Number,
-      type: String
+      type: {
+        type: String
+      }
     },
 
     total: {
@@ -269,7 +276,67 @@ const accountSchema = new mongoose.Schema({
   guestCount: {
     type: Number,
     min: 1
-  }
+  },
+
+  // Subcuentas por nombre (para división)
+  subcuentas: [{
+    name: {
+      type: String,
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    isPaid: {
+      type: Boolean,
+      default: false
+    },
+    paidAt: Date,
+    paidBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    paymentMethod: {
+      type: String,
+      enum: ['efectivo', 'transferencia', 'tarjeta']
+    },
+    paymentType: {
+      type: String,
+      enum: ['single', 'mixed'],
+      default: 'single'
+    },
+    mixedPayments: [{
+      method: String,
+      amount: Number,
+      reference: String,
+      receivedAmount: Number
+    }],
+    tip: {
+      amount: {
+        type: Number,
+        default: 0
+      },
+      percentage: Number,
+      type: {
+        type: String,
+        enum: ['percentage', 'fixed', 'none'],
+        default: 'none'
+      }
+    },
+    subtotal: {
+      type: Number,
+      default: 0
+    },
+    total: {
+      type: Number,
+      default: 0
+    },
+    saleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Sale'
+    }
+  }]
 
 }, { timestamps: true });
 
@@ -277,7 +344,12 @@ const accountSchema = new mongoose.Schema({
 accountSchema.index({ tenantId: 1, folio: 1 }, { unique: true });
 accountSchema.index({ tenantId: 1, tiendaId: 1, status: 1 });
 accountSchema.index({ tenantId: 1, waiterId: 1, status: 1 });
-accountSchema.index({ tableId: 1, status: 1 });
+accountSchema.index({ tableIds: 1, status: 1 });
+
+// Virtual para compatibilidad - retorna la primera mesa
+accountSchema.virtual('tableId').get(function() {
+  return this.tableIds && this.tableIds.length > 0 ? this.tableIds[0] : null;
+});
 
 // ====== MÉTODOS DE INSTANCIA ======
 
@@ -303,7 +375,8 @@ accountSchema.methods.calculateTotals = function() {
     discountAmount = this.discount;
   }
 
-  this.total = subtotal - discountAmount + (this.tip?.amount || 0);
+  // Total NO incluye propina - la propina es un ingreso adicional separado
+  this.total = subtotal - discountAmount;
 
   return this;
 };
@@ -367,6 +440,67 @@ accountSchema.methods.areAllSplitsPaid = function() {
   }
 
   return this.splitConfig.every(split => split.paymentStatus === 'paid');
+};
+
+// Verificar si todas las subcuentas están pagadas
+accountSchema.methods.areAllSubcuentasPaid = function() {
+  if (!this.subcuentas || this.subcuentas.length === 0) {
+    return true; // No hay subcuentas, se puede pagar completa
+  }
+
+  return this.subcuentas.every(sub => {
+    // Subcuentas vacías (sin items asignados) se consideran como pagadas
+    const subtotal = this.getSubcuentaSubtotal(sub.name);
+    return sub.isPaid || subtotal === 0;
+  });
+};
+
+// Calcular subtotal de una subcuenta específica
+accountSchema.methods.getSubcuentaSubtotal = function(subcuentaName) {
+  let subtotal = 0;
+
+  this.orders.forEach(order => {
+    order.items.forEach(item => {
+      if (item.status !== 'cancelled' && item.subcuentaName === subcuentaName) {
+        subtotal += item.price * item.quantity;
+      }
+    });
+  });
+
+  return subtotal;
+};
+
+// Obtener items sin asignar a subcuenta
+accountSchema.methods.getUnassignedItems = function() {
+  const items = [];
+
+  this.orders.forEach((order, orderIdx) => {
+    order.items.forEach((item, itemIdx) => {
+      // Excluir items cancelados y items marcados como pagados sin asignar
+      if (item.status !== 'cancelled' && !item.subcuentaName) {
+        items.push({
+          orderIndex: orderIdx,
+          itemIndex: itemIdx,
+          ...item.toObject()
+        });
+      }
+    });
+  });
+
+  return items;
+};
+
+// Calcular totales por subcuenta
+accountSchema.methods.calculateSubcuentaTotals = function() {
+  this.subcuentas.forEach(subcuenta => {
+    if (!subcuenta.isPaid) {
+      subcuenta.subtotal = this.getSubcuentaSubtotal(subcuenta.name);
+      // Total NO incluye propina - la propina es un ingreso adicional separado
+      subcuenta.total = subcuenta.subtotal;
+    }
+  });
+
+  return this;
 };
 
 // ====== MIDDLEWARE PRE-SAVE ======

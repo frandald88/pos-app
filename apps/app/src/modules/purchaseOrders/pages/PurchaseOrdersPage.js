@@ -464,7 +464,7 @@ export default function PurchaseOrdersPage() {
                         Proveedor
                       </div>
                       <div className="font-bold" style={{ color: '#23334e' }}>
-                        {order.proveedor}
+                        {typeof order.proveedor === 'object' ? order.proveedor?.nombre : order.proveedor}
                       </div>
                     </div>
 

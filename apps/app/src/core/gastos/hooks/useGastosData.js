@@ -32,15 +32,19 @@ export const useGastosData = () => {
   // Cargar datos iniciales
   const loadInitialData = async () => {
     try {
-      const [storesData, proveedoresData] = await Promise.all([
+      const [storesResponse, proveedoresData] = await Promise.all([
         gastosService.getAvailableStores(),
         gastosService.getProviders()
       ]);
 
-      const { stores = [], userRole = 'vendedor', defaultStore: userDefaultStore = null } = storesData || {};
-      
+      // Extract data from response - backend returns {success, data: {stores, userRole, defaultStore}}
+      const storesData = storesResponse?.data || storesResponse || {};
+      const { stores = [], userRole = 'vendedor', defaultStore: userDefaultStore = null } = storesData;
+
       setAvailableStores(stores);
-      setProveedores(proveedoresData || []);
+      // Extract array from response - service may return {success, data} or array directly
+      const proveedoresArray = proveedoresData?.data || proveedoresData || [];
+      setProveedores(Array.isArray(proveedoresArray) ? proveedoresArray : []);
       setCanSelectMultipleStores(userRole === 'admin');
       setDefaultStore(userDefaultStore);
       
@@ -70,20 +74,30 @@ export const useGastosData = () => {
       console.log('Expenses response:', response);
       
       if (response) {
+        let expenses = [];
+
         if (Array.isArray(response)) {
-          setReportData(response);
-          setMsg(`Reporte cargado exitosamente ✅ - ${response.length} gastos encontrados`);
+          expenses = response;
+        } else if (response.success && response.data) {
+          // Standard backend response: {success: true, data: {expenses: [...], summary: {...}}}
+          if (Array.isArray(response.data)) {
+            expenses = response.data;
+          } else if (response.data.expenses && Array.isArray(response.data.expenses)) {
+            expenses = response.data.expenses;
+          }
         } else if (response.expenses && Array.isArray(response.expenses)) {
-          setReportData(response.expenses);
-          setMsg(`Reporte cargado exitosamente ✅ - ${response.expenses.length} gastos encontrados`);
+          expenses = response.expenses;
         } else if (response.data && Array.isArray(response.data)) {
-          setReportData(response.data);
-          setMsg(`Reporte cargado exitosamente ✅ - ${response.data.length} gastos encontrados`);
+          expenses = response.data;
         } else {
           console.error('Unexpected response structure:', response);
           setReportData([]);
           setMsg('Estructura de respuesta inesperada');
+          return;
         }
+
+        setReportData(expenses);
+        setMsg(`Reporte cargado exitosamente ✅ - ${expenses.length} gastos encontrados`);
       } else {
         setReportData([]);
         setMsg('No se encontraron gastos');
@@ -174,8 +188,10 @@ export const useGastosData = () => {
   // Buscar proveedores
   const searchProviders = async (query) => {
     try {
-      const providers = await gastosService.searchProviders(query);
-      return providers;
+      const response = await gastosService.searchProviders(query);
+      // Extract array from response
+      const providers = response?.data || response || [];
+      return Array.isArray(providers) ? providers : [];
     } catch (error) {
       console.error('Error al buscar proveedores:', error);
       return [];
@@ -186,7 +202,9 @@ export const useGastosData = () => {
   const fetchProveedores = async () => {
     try {
       const providers = await gastosService.getProviders();
-      setProveedores(providers);
+      // Extract array from response
+      const proveedoresArray = providers?.data || providers || [];
+      setProveedores(Array.isArray(proveedoresArray) ? proveedoresArray : []);
     } catch (error) {
       console.error('Error al cargar proveedores:', error);
     }

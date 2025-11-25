@@ -29,6 +29,7 @@ import SalesPage from "./core/sales/pages/SalesPage";
 import { TablesPage } from "./core/tables";
 import { AccountPage } from "./core/accounts";
 import { WaiterDashboard } from "./core/restaurant";
+import KitchenPage from "./core/restaurant/pages/KitchenPage";
 
 // Optional modules
 import TiendasPage from "./modules/tiendas/pages/TiendasPage";
@@ -258,6 +259,18 @@ function App() {
                 <RoleProtectedRoute allowedRoles={["admin", "vendedor"]}>
                   <WaiterDashboard />
                 </RoleProtectedRoute>
+              </RestaurantProtectedRoute>
+            </AdminLayout>
+          }
+        />
+
+        {/* Restaurant modules - Pantalla de Cocina */}
+        <Route
+          path="/restaurant/kitchen"
+          element={
+            <AdminLayout>
+              <RestaurantProtectedRoute>
+                <KitchenPage />
               </RestaurantProtectedRoute>
             </AdminLayout>
           }

@@ -110,8 +110,8 @@ class CajaController {
         ]
       };
       const filtroGastos = {
-        tenantId: req.tenantId, // Filtrar por tenant
-        createdAt: { $gte: inicioMexico, $lte: finMexico },
+        tenantId: tenantObjectId, // Filtrar por tenant (como ObjectId para aggregation)
+        updatedAt: { $gte: inicioMexico, $lte: finMexico }, // Usar updatedAt para capturar gastos aprobados durante el turno
         status: 'aprobado'
       };
 
@@ -122,11 +122,13 @@ class CajaController {
       }
 
       console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', JSON.stringify(filtroVentas, null, 2));
+      console.log('🔍 EJECUTANDO CONSULTA GASTOS con filtro:', JSON.stringify(filtroGastos, null, 2));
       console.log('🔍 Buscando ventas desde:', inicioMexico.toISOString(), 'hasta:', finMexico.toISOString());
       console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta']);
       console.log('💡 Lógica aplicada:');
       console.log('  - Ventas sin devoluciones: se filtran por updatedAt (turno donde se completaron)');
       console.log('  - Ventas con devoluciones: se filtran por createdAt (turno donde se cobraron originalmente)');
+      console.log('  - Gastos: se filtran por updatedAt (turno donde se aprobaron)');
 
       // Ventas con soporte para pagos mixtos y devoluciones
       const ventasPorMetodo = await Sale.aggregate([
@@ -212,6 +214,8 @@ class CajaController {
         }
       ]);
 
+      console.log('🔍 GASTOS ENCONTRADOS:', gastosPorMetodo);
+
       let totalGastos = 0;
       const desglosGastos = {
         efectivo: { total: 0, cantidad: 0 },
@@ -230,6 +234,7 @@ class CajaController {
       });
 
       console.log('🔍 TOTAL GASTOS CALCULADO:', totalGastos);
+      console.log('🔍 DESGLOSE GASTOS:', desglosGastos);
 
       // Estadísticas de pagos mixtos
       const mixedPaymentStats = await Sale.aggregate([
@@ -323,6 +328,25 @@ class CajaController {
       const descuentos = descuentosStats[0] || {
         totalDescuentos: 0,
         ventasConDescuento: 0
+      };
+
+      // ⭐ NUEVO: Propinas totales
+      const propinasStats = await Sale.aggregate([
+        { $match: filtroVentas },
+        {
+          $group: {
+            _id: null,
+            totalPropinas: { $sum: { $ifNull: ["$tip.amount", 0] } },
+            ventasConPropina: {
+              $sum: { $cond: [{ $gt: [{ $ifNull: ["$tip.amount", 0] }, 0] }, 1, 0] }
+            }
+          }
+        }
+      ]);
+
+      const propinas = propinasStats[0] || {
+        totalPropinas: 0,
+        ventasConPropina: 0
       };
 
       // ⭐ NUEVO: Ventas canceladas
@@ -566,6 +590,10 @@ class CajaController {
         descuentos: {
           total: Number(descuentos.totalDescuentos.toFixed(2)),
           ventasConDescuento: descuentos.ventasConDescuento
+        },
+        propinas: {
+          total: Number(propinas.totalPropinas.toFixed(2)),
+          ventasConPropina: propinas.ventasConPropina
         },
         ventasCanceladas: ventasCanceladas,
         porTipoServicio: porTipoServicio,

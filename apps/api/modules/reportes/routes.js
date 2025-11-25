@@ -61,6 +61,7 @@ router.get("/ventas", verifyToken, identifyTenant, requireTenant, checkFeatureAc
     });
 
     const filtro = {
+      tenantId: req.tenantId, // ✅ CRÍTICO: Filtrar por tenant
       date: {
         $gte: startDate,
         $lte: endDate,
@@ -343,6 +344,7 @@ router.get("/ventas/resumen", verifyToken, identifyTenant, requireTenant, checkF
     const endDate = new Date(fin + 'T23:59:59.999Z');
 
     const matchFilter = {
+      tenantId: new mongoose.Types.ObjectId(req.tenantId),
       date: { $gte: startDate, $lte: endDate }
     };
 
@@ -483,6 +485,7 @@ router.get("/productos/top", verifyToken, identifyTenant, requireTenant, checkFe
     const endDate = new Date(fin + 'T23:59:59.999Z');
 
     const matchFilter = {
+      tenantId: new mongoose.Types.ObjectId(req.tenantId),
       date: { $gte: startDate, $lte: endDate }
     };
 
@@ -548,6 +551,7 @@ router.get("/usuarios/performance", verifyToken, identifyTenant, requireTenant, 
     const endDate = new Date(fin + 'T23:59:59.999Z');
 
     const matchFilter = {
+      tenantId: new mongoose.Types.ObjectId(req.tenantId),
       date: { $gte: startDate, $lte: endDate }
     };
 
@@ -624,6 +628,7 @@ router.get("/ventas/mixed-payments", verifyToken, identifyTenant, requireTenant,
     const endDate = new Date(fin + 'T23:59:59.999Z');
 
     const matchFilter = {
+      tenantId: req.tenantId,
       date: { $gte: startDate, $lte: endDate },
       paymentType: 'mixed'
     };
@@ -727,6 +732,7 @@ router.get("/ventas/payment-combinations", verifyToken, identifyTenant, requireT
     const endDate = new Date(fin + 'T23:59:59.999Z');
 
     const matchFilter = {
+      tenantId: new mongoose.Types.ObjectId(req.tenantId),
       date: { $gte: startDate, $lte: endDate }
     };
 

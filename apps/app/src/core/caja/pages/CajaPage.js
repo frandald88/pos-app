@@ -114,7 +114,7 @@ export default function CajaPage() {
     } else {
       setTurnoActivo(null);
     }
-  }, [modoReporte]);
+  }, [modoReporte, tiendaSeleccionada]);
 
   const cargarTurnos = async () => {
     setTurnosLoading(true);
@@ -144,13 +144,18 @@ export default function CajaPage() {
   const cargarTurnoActivo = async () => {
     setTurnosLoading(true);
     try {
-      const result = await getTurnoActivo();
+      // Pasar tiendaSeleccionada si no es 'todas'
+      const tiendaId = tiendaSeleccionada !== 'todas' ? tiendaSeleccionada : null;
+      const result = await getTurnoActivo(tiendaId);
       if (result.success && result.data.turno) {
         setTurnoActivo(result.data.turno);
         setTurnoSeleccionado(result.data.turno._id);
       } else {
         setTurnoActivo(null);
-        setError('No tienes un turno activo. Debes abrir un turno para generar un pre-corte.');
+        const mensajeError = tiendaId
+          ? 'No hay un turno activo en la tienda seleccionada. Debes abrir un turno para generar un pre-corte.'
+          : 'No tienes un turno activo. Debes abrir un turno para generar un pre-corte.';
+        setError(mensajeError);
       }
     } catch (error) {
       console.error('Error al obtener turno activo:', error);
@@ -1311,6 +1316,37 @@ export default function CajaPage() {
                     </div>
                     <div className="text-lg font-bold" style={{ color: '#23334e' }}>
                       {formatCurrency(resultados.resumen.promedioGasto)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Propinas */}
+            {resultados.propinas && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+                  🪙 Propinas Recibidas
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                    <div className="text-2xl mb-2">💵</div>
+                    <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                      Total Propinas
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(resultados.propinas.total)}
+                    </div>
+                  </div>
+
+                  <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
+                    <div className="text-2xl mb-2">🧾</div>
+                    <div className="text-sm font-medium" style={{ color: '#697487' }}>
+                      Ventas con Propina
+                    </div>
+                    <div className="text-xl font-bold" style={{ color: '#23334e' }}>
+                      {resultados.propinas.ventasConPropina || 0}
                     </div>
                   </div>
                 </div>

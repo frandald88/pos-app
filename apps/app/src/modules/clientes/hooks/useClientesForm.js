@@ -7,6 +7,8 @@ export const useClientesForm = () => {
   // Estados del formulario nuevo cliente
   const [nuevoCliente, setNuevoCliente] = useState({
     nombre: '',
+    primerApellido: '',
+    segundoApellido: '',
     direccion: '',
     telefono: '',
     email: ''
@@ -16,6 +18,8 @@ export const useClientesForm = () => {
   const [editandoId, setEditandoId] = useState(null);
   const [editCliente, setEditCliente] = useState({
     nombre: '',
+    primerApellido: '',
+    segundoApellido: '',
     direccion: '',
     telefono: '',
     email: ''
@@ -78,6 +82,8 @@ export const useClientesForm = () => {
   const clearNewClienteForm = () => {
     setNuevoCliente({
       nombre: '',
+      primerApellido: '',
+      segundoApellido: '',
       direccion: '',
       telefono: '',
       email: ''
@@ -90,6 +96,8 @@ export const useClientesForm = () => {
     setEditandoId(cliente._id);
     setEditCliente({
       nombre: cliente.nombre || '',
+      primerApellido: cliente.primerApellido || '',
+      segundoApellido: cliente.segundoApellido || '',
       direccion: cliente.direccion || '',
       telefono: cliente.telefono || '',
       email: cliente.email || ''
@@ -101,6 +109,8 @@ export const useClientesForm = () => {
     setEditandoId(null);
     setEditCliente({
       nombre: '',
+      primerApellido: '',
+      segundoApellido: '',
       direccion: '',
       telefono: '',
       email: ''

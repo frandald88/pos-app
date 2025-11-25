@@ -20,16 +20,28 @@ function loadLicense() {
     console.error('❌ Error al cargar licencia:', error.message);
     console.log('⚠️  Usando configuración básica por defecto');
 
-    // Licencia básica por defecto
+    // Licencia básica por defecto - habilitar todos los módulos para desarrollo
     license = {
       clientId: 'unlicensed',
       clientName: 'Sin Licencia',
       tier: 'basic',
-      modules: {},
+      modules: {
+        tiendas: true,
+        clientes: true,
+        reportes: true,
+        empleados: true,
+        vacaciones: true,
+        asistencia: true,
+        schedules: true,
+        gastos: true,
+        devoluciones: true,
+        caja: true,
+        delivery: true
+      },
       features: {
-        maxUsers: 3,
-        maxStores: 1,
-        multiStore: false
+        maxUsers: 999,
+        maxStores: 999,
+        multiStore: true
       },
       active: true
     };

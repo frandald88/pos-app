@@ -98,7 +98,7 @@ export default function LoginPage() {
 
         // Guardar info del tenant
         if (response.data.data.tenant) {
-          localStorage.setItem("tenant", JSON.stringify(response.data.data.tenant));
+          localStorage.setItem("tenantConfig", JSON.stringify(response.data.data.tenant));
         }
 
         if (rememberMe) {

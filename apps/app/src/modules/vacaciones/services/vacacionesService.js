@@ -48,7 +48,8 @@ class VacacionesService {
         params
       }
     );
-    return response.data;
+    // Extract array from response
+    return response.data?.data || response.data || [];
   }
 
   // Obtener todas las solicitudes (admin)
@@ -60,7 +61,8 @@ class VacacionesService {
         params
       }
     );
-    return response.data;
+    // Extract array from response - backend returns {success, data, message}
+    return response.data?.data || response.data || [];
   }
 
   // Actualizar estado de solicitud (admin)

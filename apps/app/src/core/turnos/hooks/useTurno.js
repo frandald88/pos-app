@@ -25,7 +25,15 @@ export const useTurno = () => {
       });
 
       // El backend devuelve { success, message, data: { turno: ... } }
-      setTurnoActivo(response.data.data.turno);
+      const turno = response.data.data.turno;
+      setTurnoActivo(turno);
+
+      // Guardar turnoId en localStorage para uso en otros componentes
+      if (turno && turno._id) {
+        localStorage.setItem('turnoId', turno._id);
+      } else {
+        localStorage.removeItem('turnoId');
+      }
     } catch (err) {
       console.error('Error al obtener turno activo:', err);
       setError(err.response?.data?.message || 'Error al obtener turno activo');
@@ -48,8 +56,15 @@ export const useTurno = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setTurnoActivo(response.data.data.turno);
-      return { success: true, turno: response.data.data.turno };
+      const turno = response.data.data.turno;
+      setTurnoActivo(turno);
+
+      // Guardar turnoId en localStorage
+      if (turno && turno._id) {
+        localStorage.setItem('turnoId', turno._id);
+      }
+
+      return { success: true, turno };
     } catch (err) {
       console.error('Error al iniciar turno:', err);
       const errorMsg = err.response?.data?.message || 'Error al iniciar turno';
@@ -74,6 +89,10 @@ export const useTurno = () => {
       );
 
       setTurnoActivo(null);
+
+      // Remover turnoId de localStorage
+      localStorage.removeItem('turnoId');
+
       return { success: true, turno: response.data.data.turno };
     } catch (err) {
       console.error('Error al cerrar turno:', err);

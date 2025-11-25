@@ -238,7 +238,7 @@ export default function AdminLayout({ children }) {
         const storedTenantConfig = localStorage.getItem("tenantConfig");
         if (storedTenantConfig) {
           const tenantConfig = JSON.parse(storedTenantConfig);
-          setIsRestaurant(tenantConfig.isRestaurant || false);
+          setIsRestaurant(tenantConfig.businessType === 'restaurant');
         }
 
         setLoading(false);
@@ -260,7 +260,7 @@ export default function AdminLayout({ children }) {
 
       // ✨ NUEVO: Guardar información del tenant
       if (userData.tenant) {
-        setIsRestaurant(userData.tenant.isRestaurant || false);
+        setIsRestaurant(userData.tenant.businessType === 'restaurant');
         localStorage.setItem("tenantConfig", JSON.stringify(userData.tenant));
       }
 
@@ -348,6 +348,7 @@ export default function AdminLayout({ children }) {
       icon: "🍽️",
       items: [
         { path: "/restaurant/waiter", title: "Dashboard Mesero", icon: "👨‍🍳", roles: ["all"], module: null },
+        { path: "/restaurant/kitchen", title: "Cocina", icon: "🍳", roles: ["all"], module: null },
         { path: "/restaurant/tables", title: "Gestión de Mesas", icon: "🪑", roles: ["admin"], module: null }
       ]
     },

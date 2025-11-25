@@ -43,6 +43,8 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
   const totalDescuentos = resultados.descuentos?.total || 0;
   const ventasConDescuento = resultados.descuentos?.ventasConDescuento || 0;
   const ventasCanceladas = resultados.ventasCanceladas || 0;
+  const totalPropinas = resultados.propinas?.total || 0;
+  const ventasConPropina = resultados.propinas?.ventasConPropina || 0;
 
   const folioInicial = resultados.folios?.folioInicial || 'N/A';
   const folioFinal = resultados.folios?.folioFinal || 'N/A';
@@ -328,8 +330,8 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
                   <span>: {resultados.resumen?.totalTransacciones || 0}</span>
                 </div>
                 <div className="line-item">
-                  <span>PROPINAS</span>
-                  <span>: {formatCurrency(0)}</span>
+                  <span>PROPINAS ({ventasConPropina})</span>
+                  <span>: {formatCurrency(totalPropinas)}</span>
                 </div>
                 <div className="line-item">
                   <span>DESCUENTO MONETARIO</span>
