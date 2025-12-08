@@ -178,6 +178,8 @@ class EmpleadosController {
    */
   async getActivos(req, res) {
     try {
+      const startTime = Date.now();
+
       if (!req.tenantId) {
         return errorResponse(res, 'Tenant no identificado', 400);
       }
@@ -187,21 +189,30 @@ class EmpleadosController {
       const filter = { tenantId: req.tenantId, isActive: true };
       if (tiendaId) filter.tienda = tiendaId;
 
+      const step1Time = Date.now();
       const empleadosActivos = await EmployeeHistory.find(filter)
         .populate('employee', 'username role telefono')
         .populate('tienda', 'nombre')
-        .sort({ startDate: -1 });
+        .select('employee tienda startDate salary position nombre apellidoPaterno apellidoMaterno isActive')
+        .sort({ startDate: -1 })
+        .lean();
+
+      const step2Time = Date.now();
+      console.log(`⏱️ [getActivos] Query time: ${step2Time - step1Time}ms`);
 
       const empleadosConAntiguedad = empleadosActivos.map(emp => {
         const antiguedad = Math.floor((new Date() - emp.startDate) / (1000 * 60 * 60 * 24));
         return {
-          ...emp.toObject(),
+          ...emp,
           antiguedadDias: antiguedad,
           antiguedadMeses: Math.floor(antiguedad / 30),
           antiguedadAños: Math.floor(antiguedad / 365),
           sueldoDiario: emp.salary // Mapear para compatibilidad con frontend
         };
       });
+
+      const endTime = Date.now();
+      console.log(`⏱️ [getActivos] TIEMPO TOTAL: ${endTime - startTime}ms`);
 
       return successResponse(res, {
         empleados: empleadosConAntiguedad,
@@ -320,6 +331,8 @@ class EmpleadosController {
    */
   async getHistory(req, res) {
     try {
+      const startTime = Date.now();
+
       if (!req.tenantId) {
         return errorResponse(res, 'Tenant no identificado', 400);
       }
@@ -341,17 +354,26 @@ class EmpleadosController {
         query = query.setOptions({ includeDeleted: true });
       }
 
+      const step1Time = Date.now();
       const history = await query
         .populate('employee', 'username role telefono')
         .populate('tienda', 'nombre')
+        .select('employee tienda startDate endDate salary position isActive nombre apellidoPaterno apellidoMaterno seguroSocial motivoBaja razonBaja notes rfc curp numeroSeguroSocial createdAt')
         .sort({ createdAt: -1 })
-        .limit(parseInt(limit));
+        .limit(parseInt(limit))
+        .lean();
+
+      const step2Time = Date.now();
+      console.log(`⏱️ [getHistory] Query time: ${step2Time - step1Time}ms (${history.length} records)`);
 
       // Mapear salary a sueldoDiario para compatibilidad con frontend
       const mappedHistory = history.map(h => ({
-        ...h.toObject(),
+        ...h,
         sueldoDiario: h.salary
       }));
+
+      const endTime = Date.now();
+      console.log(`⏱️ [getHistory] TIEMPO TOTAL: ${endTime - startTime}ms`);
 
       return successResponse(res, mappedHistory, 'Historial obtenido exitosamente');
     } catch (error) {
@@ -370,7 +392,7 @@ class EmpleadosController {
       }
 
       const {
-        endDate, seguroSocial, motivoBaja, razonBaja, sueldoDiario, position, notes,
+        startDate, endDate, seguroSocial, motivoBaja, razonBaja, sueldoDiario, position, notes,
         nombre, apellidoPaterno, apellidoMaterno, rfc, curp, numeroSeguroSocial
       } = req.body;
       const { id } = req.params;
@@ -382,6 +404,18 @@ class EmpleadosController {
 
       const updateData = {};
 
+      // Fecha de inicio
+      if (startDate !== undefined) {
+        const startDateTime = new Date(startDate);
+
+        // Si ya existe una fecha de baja, validar que la nueva fecha de inicio sea anterior
+        if (history.endDate && startDateTime >= history.endDate) {
+          return errorResponse(res, 'La fecha de inicio debe ser anterior a la fecha de baja', 400);
+        }
+
+        updateData.startDate = startDateTime;
+      }
+
       // Campos laborales existentes
       if (endDate) {
         if (!motivoBaja || !razonBaja) {
@@ -389,7 +423,10 @@ class EmpleadosController {
         }
 
         const endDateTime = new Date(endDate);
-        if (endDateTime <= history.startDate) {
+        // Usar la fecha de inicio actualizada si existe, sino la del historial
+        const currentStartDate = updateData.startDate || history.startDate;
+
+        if (endDateTime <= currentStartDate) {
           return errorResponse(res, 'La fecha de baja debe ser posterior a la fecha de alta', 400);
         }
 
@@ -406,13 +443,13 @@ class EmpleadosController {
         }
         updateData.salary = parseFloat(sueldoDiario);
       }
-      if (position !== undefined) updateData.position = position.trim();
-      if (notes !== undefined) updateData.notes = notes.trim();
+      if (position !== undefined) updateData.position = position?.trim() || '';
+      if (notes !== undefined) updateData.notes = notes?.trim() || '';
 
       // Campos personales
-      if (nombre !== undefined) updateData.nombre = nombre.trim();
-      if (apellidoPaterno !== undefined) updateData.apellidoPaterno = apellidoPaterno.trim();
-      if (apellidoMaterno !== undefined) updateData.apellidoMaterno = apellidoMaterno.trim();
+      if (nombre !== undefined) updateData.nombre = nombre?.trim() || '';
+      if (apellidoPaterno !== undefined) updateData.apellidoPaterno = apellidoPaterno?.trim() || '';
+      if (apellidoMaterno !== undefined) updateData.apellidoMaterno = apellidoMaterno?.trim() || '';
       if (rfc !== undefined) updateData.rfc = rfc?.trim()?.toUpperCase() || null;
       if (curp !== undefined) updateData.curp = curp?.trim()?.toUpperCase() || null;
       if (numeroSeguroSocial !== undefined) updateData.numeroSeguroSocial = numeroSeguroSocial?.trim() || null;

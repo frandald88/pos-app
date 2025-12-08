@@ -51,7 +51,7 @@ function ChangePasswordPage() {
 
     try {
       const response = await fetch(`${API_URL}/api/auth/change-password`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`

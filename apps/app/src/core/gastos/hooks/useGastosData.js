@@ -62,17 +62,25 @@ export const useGastosData = () => {
     }
   };
 
-  // Cargar gastos para admin
+  // Cargar gastos según el rol del usuario
   const loadExpenses = async (filters = {}) => {
     try {
       setLoading(true);
       setMsg('');
-      
+
       console.log('Loading expenses with filters:', filters);
 
-      const response = await gastosService.getReport(filters);
+      let response;
+
+      // Admin usa /report con filtros, vendedor usa /mine (todos los gastos de su tienda)
+      if (currentUser?.role === 'admin') {
+        response = await gastosService.getReport(filters);
+      } else {
+        response = await gastosService.getMyExpenses(100);
+      }
+
       console.log('Expenses response:', response);
-      
+
       if (response) {
         let expenses = [];
 
@@ -102,7 +110,7 @@ export const useGastosData = () => {
         setReportData([]);
         setMsg('No se encontraron gastos');
       }
-      
+
       setTimeout(() => setMsg(''), 3000);
     } catch (error) {
       console.error('Error loading expenses:', error);
@@ -121,11 +129,9 @@ export const useGastosData = () => {
       console.log('Expense saved:', response);
       setMsg('Gasto guardado exitosamente ✅');
       
-      // Actualizar lista de proveedores y reporte
+      // Actualizar lista de proveedores y reporte (para todos los roles)
       await fetchProveedores();
-      if (currentUser?.role === 'admin') {
-        await loadExpenses();
-      }
+      await loadExpenses();
       
       setTimeout(() => setMsg(''), 3000);
       return response;
@@ -307,9 +313,9 @@ export const useGastosData = () => {
     loadInitialData();
   }, []);
 
-  // Efecto para cargar gastos cuando el usuario esté cargado y sea admin
+  // Efecto para cargar gastos cuando el usuario esté cargado (para admin y vendedor)
   useEffect(() => {
-    if (userLoaded && currentUser?.role === 'admin') {
+    if (userLoaded && currentUser?.role) {
       loadExpenses();
     }
   }, [userLoaded, currentUser]);

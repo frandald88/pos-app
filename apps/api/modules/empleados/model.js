@@ -200,4 +200,9 @@ employeeHistorySchema.index({ rfc: 1 }, { sparse: true });
 employeeHistorySchema.index({ curp: 1 }, { sparse: true });
 employeeHistorySchema.index({ isDeleted: 1 }); // ✅ NUEVO: Índice para soft delete
 
+// ✅ OPTIMIZACIÓN: Índices compuestos para queries más eficientes
+employeeHistorySchema.index({ tenantId: 1, isActive: 1 }); // getActivos query
+employeeHistorySchema.index({ tenantId: 1, employee: 1, isActive: 1 }); // getByEmployee query
+employeeHistorySchema.index({ tenantId: 1, createdAt: -1 }); // getHistory query con sorting
+
 module.exports = mongoose.models.EmployeeHistory || mongoose.model('EmployeeHistory', employeeHistorySchema);

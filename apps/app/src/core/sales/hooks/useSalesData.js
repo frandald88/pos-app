@@ -59,6 +59,7 @@ export const useSalesData = () => {
           // Sin tienda seleccionada, solo cargar clientes
           const clientesData = await salesService.getClientes();
           setClientes(clientesData);
+          initialLoadDone.current = true; // Marcar como cargado incluso sin tienda
         }
 
       } catch (err) {

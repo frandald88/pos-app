@@ -9,6 +9,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import PricingPage from "./pages/PricingPage";
 import BillingPage from "./pages/BillingPage";
@@ -63,6 +65,10 @@ function App() {
 
           {/* Ruta de cambio de contraseña obligatorio */}
           <Route path="/change-password" element={<ChangePasswordPage />} />
+
+          {/* Rutas de recuperación de contraseña */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Ruta de pricing pública */}
           <Route path="/pricing" element={<PricingPage />} />

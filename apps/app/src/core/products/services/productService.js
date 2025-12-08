@@ -3,9 +3,26 @@ import apiBaseUrl from '../../../config/api';
 
 export const productService = {
   // Obtener todos los productos
-  getAllProducts: async (token) => {
+  getAllProducts: async (token, filters = {}) => {
+    const params = {};
+
+    // Agregar filtros como query params
+    if (filters.tiendaId) {
+      params.tiendaId = filters.tiendaId;
+    }
+    if (filters.category) {
+      params.category = filters.category;
+    }
+    if (filters.search) {
+      params.search = filters.search;
+    }
+    if (filters.inStock !== undefined) {
+      params.inStock = filters.inStock;
+    }
+
     const response = await axios.get(`${apiBaseUrl}/api/products`, {
       headers: { Authorization: `Bearer ${token}` },
+      params
     });
     // El controller devuelve un objeto con products, pagination, stats
     // Pero el frontend solo necesita el array de products

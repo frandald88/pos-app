@@ -76,16 +76,34 @@ export default function TiendasPage() {
 
     try {
       if (editTienda) {
-        await updateTienda(editTienda._id, getEditTiendaData());
+        const dataToUpdate = getEditTiendaData();
+
+        // Si el evento tiene teléfono del modal, usarlo
+        if (e.telefonoCompleto !== undefined) {
+          dataToUpdate.telefono = e.telefonoCompleto;
+        }
+
+        console.log('📤 Enviando al backend (EDITAR):', dataToUpdate);
+        await updateTienda(editTienda._id, dataToUpdate);
         handleCerrarModal();
       } else {
-        await createTienda(getNewTiendaData());
+        const dataToCreate = getNewTiendaData();
+
+        // Si el evento tiene teléfono del modal, usarlo
+        if (e.telefonoCompleto !== undefined) {
+          dataToCreate.telefono = e.telefonoCompleto;
+        }
+
+        console.log('📤 Enviando al backend (CREAR):', dataToCreate);
+        await createTienda(dataToCreate);
         clearNewTiendaForm();
       }
       setMostrarFormulario(false);
       setModalError("");
     } catch (error) {
-      setModalError("Error al guardar tienda ❌");
+      console.error('Error al guardar tienda:', error);
+      const errorMessage = error.response?.data?.message || "Error al guardar tienda ❌";
+      setModalError(errorMessage);
     }
   };
 

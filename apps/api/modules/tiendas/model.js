@@ -61,5 +61,7 @@ const tiendaSchema = new mongoose.Schema({
 
 // Índices compuestos para multi-tenancy
 tiendaSchema.index({ tenantId: 1, nombre: 1 });
+// ✅ OPTIMIZACIÓN: Índice para queries de tiendas activas (usado en count)
+tiendaSchema.index({ tenantId: 1, activa: 1 });
 
 module.exports = mongoose.models.Tienda || mongoose.model('Tienda', tiendaSchema);

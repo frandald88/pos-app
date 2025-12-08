@@ -135,7 +135,9 @@ export default function ExpensesPage() {
         setIsModalOpen(false);
       }
     } catch (error) {
-      setModalError(error.message || "Error al procesar el gasto");
+      console.error('Error al procesar gasto:', error);
+      const errorMessage = error.response?.data?.message || error.message || "Error al procesar el gasto";
+      setModalError(errorMessage);
     }
   };
 
@@ -299,15 +301,15 @@ export default function ExpensesPage() {
           </div>
         )}
 
-        {/* Filtros y reporte para admin */}
-        {currentUser?.role === "admin" && (
+        {/* Filtros y reporte para admin y vendedor */}
+        {currentUser?.role && (
           <>
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
               <h3 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
                 Filtros de Reporte
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
@@ -319,32 +321,35 @@ export default function ExpensesPage() {
                     onChange={(e) => setFiltroProveedor(e.target.value)}
                     placeholder="Buscar por proveedor..."
                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
+                    style={{
                       borderColor: '#e5e7eb',
                       focusRingColor: '#23334e'
                     }}
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                    Tienda
-                  </label>
-                  <select
-                    value={filtroTienda}
-                    onChange={(e) => setFiltroTienda(e.target.value)}
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                    style={{ 
-                      borderColor: '#e5e7eb',
-                      focusRingColor: '#23334e'
-                    }}
-                  >
-                    <option value="">Todas las tiendas</option>
-                    {availableStores.map((t) => (
-                      <option key={t._id} value={t._id}>🏪 {t.nombre}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Solo admin puede filtrar por tienda */}
+                {currentUser?.role === "admin" && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
+                      Tienda
+                    </label>
+                    <select
+                      value={filtroTienda}
+                      onChange={(e) => setFiltroTienda(e.target.value)}
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                      style={{
+                        borderColor: '#e5e7eb',
+                        focusRingColor: '#23334e'
+                      }}
+                    >
+                      <option value="">Todas las tiendas</option>
+                      {availableStores.map((t) => (
+                        <option key={t._id} value={t._id}>🏪 {t.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
@@ -554,29 +559,31 @@ export default function ExpensesPage() {
                             )}
                           </div>
 
-                          {/* Acciones */}
-                          <div className="lg:w-80">
-                            <div className="flex flex-col gap-3">
-                              <button
-                                onClick={() => handleOpenEditModal(gasto)}
-                                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
-                                style={{ backgroundColor: '#46546b' }}
-                                disabled={loading}
-                              >
-                                ✏️ Actualizar Estado
-                              </button>
-
-                              {(gasto.status === "aprobado" || gasto.status === "denegado") && (
+                          {/* Acciones - Solo admin puede actualizar estado y eliminar */}
+                          {currentUser?.role === "admin" && (
+                            <div className="lg:w-80">
+                              <div className="flex flex-col gap-3">
                                 <button
-                                  onClick={() => handleDelete(gasto._id)}
-                                  className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
+                                  onClick={() => handleOpenEditModal(gasto)}
+                                  className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
+                                  style={{ backgroundColor: '#46546b' }}
                                   disabled={loading}
                                 >
-                                  🗑️ Eliminar
+                                  ✏️ Actualizar Estado
                                 </button>
-                              )}
+
+                                {(gasto.status === "aprobado" || gasto.status === "denegado") && (
+                                  <button
+                                    onClick={() => handleDelete(gasto._id)}
+                                    className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
+                                    disabled={loading}
+                                  >
+                                    🗑️ Eliminar
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
                     );

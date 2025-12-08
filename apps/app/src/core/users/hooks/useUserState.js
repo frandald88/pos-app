@@ -24,6 +24,7 @@ export const useUserState = () => {
   // Estados consolidados para edición de historial
   const [editHistorial, setEditHistorial] = useState({
     id: null,
+    historyId: null, // ID real del historial para actualizaciones
     endDate: "",
     seguro: false,
     motivo: "",

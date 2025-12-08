@@ -73,8 +73,9 @@ class AccountsController {
         return errorResponse(res, 'No hay un turno activo. Abre un turno primero.', 400);
       }
 
-      // Generar folio (único por tenant)
-      const folio = await getNextSequence(`account_${tenantId}`);
+      // Generar folio de venta (para trazabilidad y auditoría)
+      // El folio se genera al crear la cuenta y se mantiene cuando se genera la venta final
+      const folio = await getNextSequence(tenantId, 'sale');
 
       // Crear cuenta
       const account = new Account({
@@ -684,8 +685,9 @@ class AccountsController {
       const saleTotal = split.total;
 
       // Generar folio
-      const { getNextSequence } = require('../../shared/utils/counterHelper');
-      const folio = await getNextSequence(tenantId, 'sale');
+      // Usar el folio de la cuenta (ya generado al crear la cuenta)
+      // Agregar sufijo para identificar el split (ej: 00025-S1, 00025-S2)
+      const folio = `${account.folio}-S${splitNum}`;
 
       // Crear venta para este split
       const saleData = {
@@ -861,8 +863,8 @@ class AccountsController {
         totalToPay = account.subtotal - account.discount;
       }
 
-      // Generar folio
-      const folio = await getNextSequence(tenantId, 'sale');
+      // Usar el folio de la cuenta (ya generado al crear la cuenta)
+      const folio = account.folio;
 
       // Crear venta
       const saleData = {
@@ -1612,8 +1614,12 @@ class AccountsController {
         });
       });
 
-      // Generar folio
-      const folio = await getNextSequence(tenantId, 'sale');
+      // Usar el folio de la cuenta (ya generado al crear la cuenta)
+      // Agregar sufijo para identificar la subcuenta (ej: 00025-SC1, 00025-SC2)
+      const subcuentaIndex = account.subcuentas.findIndex(s => s.name === subcuentaName);
+      const folio = isPayingUnassigned
+        ? `${account.folio}-UN`
+        : `${account.folio}-SC${subcuentaIndex + 1}`;
 
       // Map payment method to correct enum value
       const methodMap = {

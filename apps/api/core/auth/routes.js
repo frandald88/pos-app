@@ -22,4 +22,17 @@ router.post('/refresh', authController.refreshToken);
 // Logout route
 router.post('/logout', authController.logout);
 
+// ========================================
+// RECUPERACIÓN DE CONTRASEÑA
+// ========================================
+
+// Solicitar recuperación de contraseña (público)
+router.post('/forgot-password', authController.forgotPassword);
+
+// Verificar token de reset (público)
+router.post('/verify-reset-token', authController.verifyResetToken);
+
+// Restablecer contraseña con token (público)
+router.post('/reset-password', authController.resetPassword);
+
 module.exports = router;

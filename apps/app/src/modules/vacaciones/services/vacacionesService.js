@@ -17,7 +17,8 @@ class VacacionesService {
       `${this.baseUrl}/days-available/${userId}`,
       { headers: this.getAuthHeaders() }
     );
-    return response.data;
+    // Extraer data del wrapper de respuesta estándar
+    return response.data.data || response.data;
   }
 
   // Obtener resumen de días tomados
@@ -26,7 +27,8 @@ class VacacionesService {
       `${this.baseUrl}/days-summary/${userId}`,
       { headers: this.getAuthHeaders() }
     );
-    return response.data;
+    // Extraer data del wrapper de respuesta estándar
+    return response.data.data || response.data;
   }
 
   // Crear solicitud de vacaciones

@@ -10,7 +10,7 @@ function TermsPage() {
           <div className="nav-content">
             <div className="logo">
               <a href="/">
-                <img src="/Astrometric_logo_1.png" alt="Astrometrika" style={{height: '40px'}} />
+                <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
               </a>
             </div>
             <div className="nav-links">
@@ -32,20 +32,20 @@ function TermsPage() {
           </p>
 
           <p>
-            Bienvenido a Astrometrika POS. Al acceder y utilizar nuestros servicios, aceptas estos
+            Bienvenido a AstroDish POS. Al acceder y utilizar nuestros servicios, aceptas estos
             Términos de Servicio. Por favor, léelos cuidadosamente antes de usar nuestra plataforma.
           </p>
 
           <h2>1. Aceptación de los Términos</h2>
           <p>
-            Al crear una cuenta, acceder o utilizar los servicios de Astrometrika POS, aceptas estar
+            Al crear una cuenta, acceder o utilizar los servicios de AstroDish POS, aceptas estar
             legalmente obligado por estos Términos de Servicio y nuestra Política de Privacidad. Si no
             estás de acuerdo con alguno de estos términos, no debes utilizar nuestros servicios.
           </p>
 
           <h2>2. Descripción del Servicio</h2>
           <p>
-            Astrometrika POS es una plataforma de punto de venta (POS) basada en la nube que permite a
+            AstroDish POS es una plataforma de punto de venta (POS) basada en la nube que permite a
             los negocios:
           </p>
           <ul>
@@ -58,7 +58,7 @@ function TermsPage() {
           </ul>
 
           <h2>3. Registro y Cuentas</h2>
-          <p>Para utilizar Astrometrika POS, debes:</p>
+          <p>Para utilizar AstroDish POS, debes:</p>
           <ul>
             <li>Ser mayor de 18 años o tener capacidad legal para contratar</li>
             <li>Proporcionar información precisa y completa durante el registro</li>
@@ -66,13 +66,13 @@ function TermsPage() {
             <li>Notificarnos inmediatamente sobre cualquier uso no autorizado</li>
           </ul>
           <p>
-            Eres responsable de todas las actividades que ocurran bajo tu cuenta. Astrometrika no será
+            Eres responsable de todas las actividades que ocurran bajo tu cuenta. AstroDish no será
             responsable por pérdidas causadas por el uso no autorizado de tu cuenta.
           </p>
 
           <h2>4. Planes y Pagos</h2>
           <p>
-            Astrometrika POS ofrece diferentes planes de suscripción. Al seleccionar un plan, aceptas:
+            AstroDish POS ofrece diferentes planes de suscripción. Al seleccionar un plan, aceptas:
           </p>
           <ul>
             <li>Pagar las tarifas aplicables según el plan seleccionado</li>
@@ -86,7 +86,7 @@ function TermsPage() {
           </p>
 
           <h2>5. Uso Aceptable</h2>
-          <p>Al usar Astrometrika POS, te comprometes a NO:</p>
+          <p>Al usar AstroDish POS, te comprometes a NO:</p>
           <ul>
             <li>Violar leyes o regulaciones aplicables</li>
             <li>Infringir derechos de propiedad intelectual de terceros</li>
@@ -100,7 +100,7 @@ function TermsPage() {
           <h2>6. Datos y Privacidad</h2>
           <p>
             <strong>Tus Datos:</strong> Conservas todos los derechos sobre los datos que ingresas en
-            Astrometrika POS. Nos otorgas una licencia limitada para procesar estos datos únicamente
+            AstroDish POS. Nos otorgas una licencia limitada para procesar estos datos únicamente
             para proporcionar el servicio.
           </p>
           <p>
@@ -114,8 +114,8 @@ function TermsPage() {
 
           <h2>7. Propiedad Intelectual</h2>
           <p>
-            Astrometrika POS y todo su contenido, características y funcionalidad (incluyendo software,
-            diseños, textos y gráficos) son propiedad de Astrometrika y están protegidos por las leyes
+            AstroDish POS y todo su contenido, características y funcionalidad (incluyendo software,
+            diseños, textos y gráficos) son propiedad de AstroDish y están protegidos por las leyes
             de propiedad intelectual de México y tratados internacionales.
           </p>
           <p>
@@ -130,7 +130,7 @@ function TermsPage() {
 
           <h2>8. Disponibilidad del Servicio</h2>
           <p>
-            Nos esforzamos por mantener Astrometrika POS disponible 24/7. Sin embargo, no garantizamos
+            Nos esforzamos por mantener AstroDish POS disponible 24/7. Sin embargo, no garantizamos
             que el servicio esté libre de interrupciones. Pueden ocurrir:
           </p>
           <ul>
@@ -141,7 +141,7 @@ function TermsPage() {
 
           <h2>9. Limitación de Responsabilidad</h2>
           <p>
-            En la máxima medida permitida por la ley, Astrometrika no será responsable por:
+            En la máxima medida permitida por la ley, AstroDish no será responsable por:
           </p>
           <ul>
             <li>Daños indirectos, incidentales o consecuentes</li>
@@ -156,7 +156,7 @@ function TermsPage() {
 
           <h2>10. Indemnización</h2>
           <p>
-            Aceptas indemnizar y mantener libre de responsabilidad a Astrometrika, sus directivos,
+            Aceptas indemnizar y mantener libre de responsabilidad a AstroDish, sus directivos,
             empleados y agentes, de cualquier reclamo, daño o gasto (incluyendo honorarios legales)
             que surjan de:
           </p>
@@ -173,7 +173,7 @@ function TermsPage() {
             <li>La cancelación será efectiva al final del período de facturación actual</li>
             <li>Tendrás acceso al servicio hasta que termine el período pagado</li>
           </ul>
-          <p><strong>Por Astrometrika:</strong></p>
+          <p><strong>Por AstroDish:</strong></p>
           <ul>
             <li>Podemos suspender o terminar tu cuenta por violación de estos términos</li>
             <li>En caso de falta de pago después de 15 días de vencimiento</li>
@@ -234,8 +234,25 @@ function TermsPage() {
       {/* Footer */}
       <footer className="footer">
         <div className="container">
-          <div className="footer-bottom" style={{borderTop: 'none', paddingTop: 0}}>
-            <p>&copy; 2025 Astrometrika. Todos los derechos reservados.</p>
+          <div className="footer-content">
+            <div className="footer-section">
+              <img src="/Astrodish_logo_2.png" alt="AstroDish" style={{height: '50px', marginBottom: '1rem'}} />
+              <p>AstroDish POS - El sistema en la nube que impulsa tu negocio.</p>
+            </div>
+            <div className="footer-section">
+              <h4>Producto</h4>
+              <a href="/#features">Características</a>
+              <a href="/#pricing">Precios</a>
+              <a href="/#contact">Contacto</a>
+            </div>
+            <div className="footer-section">
+              <h4>Legal</h4>
+              <a href="#/terms">Términos de Servicio</a>
+              <a href="#/privacy">Privacidad</a>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <p>&copy; 2025 AstroDish. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

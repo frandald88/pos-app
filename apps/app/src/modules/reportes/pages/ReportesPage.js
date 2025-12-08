@@ -126,7 +126,9 @@ export default function ReportsPage() {
       showDeleteTooltip(`${selectedSales.length} venta(s) eliminada(s)`, event);
       await handleGenerar();
     } catch (error) {
-      setMsg("Error al eliminar ventas seleccionadas");
+      console.error('Error al eliminar ventas:', error);
+      const errorMessage = error.response?.data?.message || "Error al eliminar ventas seleccionadas";
+      setMsg(errorMessage);
       setTimeout(() => setMsg(""), 3000);
     }
   };

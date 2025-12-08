@@ -116,5 +116,7 @@ vacationRequestSchema.index({ tienda: 1, status: 1 });
 vacationRequestSchema.index({ startDate: 1, endDate: 1 });
 vacationRequestSchema.index({ isDeleted: 1 }); // ✅ NUEVO: Índice para soft delete
 vacationRequestSchema.index({ createdAt: -1 });
+// ✅ OPTIMIZACIÓN: Índice compuesto para aggregate query de días disponibles
+vacationRequestSchema.index({ tenantId: 1, employee: 1, status: 1 });
 
 module.exports = mongoose.models.VacationRequest || mongoose.model('VacationRequest', vacationRequestSchema);

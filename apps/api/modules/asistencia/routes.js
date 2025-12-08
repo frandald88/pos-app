@@ -379,16 +379,25 @@ router.get("/schedule-check", verifyToken, identifyTenant, requireTenant, async 
 // ✅ NUEVO: Endpoint para obtener estado actual y entradas del día
 router.get("/status", verifyToken, identifyTenant, requireTenant, async (req, res) => {
   try {
+    const startTime = Date.now();
     const userId = req.userId;
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-    
+
+    const step1Time = Date.now();
     const attendance = await Attendance.findOne({
       userId,
       date: { $gte: startOfDay },
-    }).populate('userId', 'username role').populate('tienda', 'nombre');
-    
+    })
+      .populate('userId', 'username role')
+      .populate('tienda', 'nombre')
+      .select('userId tienda date checkInTime checkOutTime status isActive timeEntries hoursWorked totalBreakTime');
+
+    const step2Time = Date.now();
+    console.log(`⏱️ [getStatus Attendance] Query time: ${step2Time - step1Time}ms`);
+
     if (!attendance) {
+      console.log(`⏱️ [getStatus Attendance] TIEMPO TOTAL: ${Date.now() - startTime}ms (no attendance)`);
       return res.json({
         hasAttendance: false,
         currentStatus: { status: 'not_started', message: 'No ha iniciado jornada' },
@@ -399,11 +408,14 @@ router.get("/status", verifyToken, identifyTenant, requireTenant, async (req, re
         totalBreakTime: 0
       });
     }
-    
+
     const currentStatus = attendance.getCurrentStatus();
     const canCheckIn = attendance.canCheckIn();
     const canCheckOut = attendance.canCheckOut();
-    
+
+    const endTime = Date.now();
+    console.log(`⏱️ [getStatus Attendance] TIEMPO TOTAL: ${endTime - startTime}ms`);
+
     res.json({
       hasAttendance: true,
       currentStatus,
@@ -419,8 +431,8 @@ router.get("/status", verifyToken, identifyTenant, requireTenant, async (req, re
     });
   } catch (err) {
     console.error("Error obteniendo estado:", err);
-    res.status(500).json({ 
-      message: "Error al obtener estado", 
+    res.status(500).json({
+      message: "Error al obtener estado",
       error: err.message 
     });
   }

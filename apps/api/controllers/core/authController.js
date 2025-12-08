@@ -283,6 +283,250 @@ class AuthController {
   async logout(req, res) {
     return successResponse(res, {}, 'Logout exitoso');
   }
+
+  // ========================================
+  // RECUPERACIÓN DE CONTRASEÑA
+  // ========================================
+
+  /**
+   * Solicitar recuperación de contraseña
+   * POST /api/auth/forgot-password
+   */
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return errorResponse(res, 'El email es requerido', 400);
+      }
+
+      // Buscar usuario por email
+      const user = await User.findOne({
+        email: email.toLowerCase().trim()
+      }).select('_id username email tenantId');
+
+      // Por seguridad, siempre devolver mensaje genérico (no revelar si el email existe)
+      const genericMessage = 'Si el email existe en nuestro sistema, recibirás un enlace de recuperación';
+
+      if (!user || !user.email) {
+        // Log para auditoría
+        console.log(`⚠️ Intento de reset para email no registrado: ${email}`);
+        return successResponse(res, {}, genericMessage);
+      }
+
+      // Generar token único y seguro
+      const crypto = require('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+
+      // Hashear el token antes de guardarlo
+      const bcrypt = require('bcryptjs');
+      const hashedToken = await bcrypt.hash(resetToken, 10);
+
+      // Crear registro de reset
+      const PasswordReset = require('../../core/auth/passwordResetModel');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      await PasswordReset.create({
+        userId: user._id,
+        tenantId: user.tenantId,
+        token: hashedToken,
+        expiresAt,
+        requestIp: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent')
+      });
+
+      // Construir URL de reset
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+
+      // Enviar email
+      const emailService = require('../../shared/services/emailService');
+      await emailService.sendPasswordResetEmail({
+        to: user.email,
+        username: user.username,
+        resetUrl,
+        expiresInMinutes: 60
+      });
+
+      console.log(`✅ Email de recuperación enviado a: ${email}`);
+
+      return successResponse(res, {}, genericMessage);
+
+    } catch (error) {
+      console.error('❌ Error en forgot-password:', error);
+      console.error('Stack trace:', error.stack);
+      console.error('Error message:', error.message);
+      return errorResponse(res, 'Error al procesar solicitud', 500);
+    }
+  }
+
+  /**
+   * Verificar si un token de reset es válido
+   * POST /api/auth/verify-reset-token
+   */
+  async verifyResetToken(req, res) {
+    try {
+      const { token, email } = req.body;
+
+      if (!token || !email) {
+        return errorResponse(res, 'Token y email son requeridos', 400);
+      }
+
+      // Buscar usuario
+      const user = await User.findOne({
+        email: email.toLowerCase().trim()
+      }).select('_id');
+
+      if (!user) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Buscar token de reset
+      const PasswordReset = require('../../core/auth/passwordResetModel');
+      const resetRequests = await PasswordReset.find({
+        userId: user._id,
+        used: false,
+        expiresAt: { $gt: new Date() }
+      }).sort({ createdAt: -1 });
+
+      if (!resetRequests || resetRequests.length === 0) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Verificar el token contra cada request (por si hay múltiples)
+      const bcrypt = require('bcryptjs');
+      let validRequest = null;
+
+      for (const request of resetRequests) {
+        const isValid = await bcrypt.compare(token, request.token);
+        if (isValid) {
+          validRequest = request;
+          break;
+        }
+      }
+
+      if (!validRequest) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      return successResponse(res, {
+        valid: true,
+        expiresAt: validRequest.expiresAt
+      }, 'Token válido');
+
+    } catch (error) {
+      console.error('❌ Error verificando token:', error);
+      return errorResponse(res, 'Error al verificar token', 500);
+    }
+  }
+
+  /**
+   * Restablecer contraseña con token
+   * POST /api/auth/reset-password
+   */
+  async resetPassword(req, res) {
+    try {
+      const { token, email, newPassword } = req.body;
+
+      if (!token || !email || !newPassword) {
+        return errorResponse(res, 'Token, email y nueva contraseña son requeridos', 400);
+      }
+
+      // Validar fortaleza de contraseña
+      const { validatePassword } = require('../../shared/utils/passwordValidation');
+      const passwordValidation = validatePassword(newPassword, {
+        email: email
+      });
+
+      if (!passwordValidation.valid) {
+        return errorResponse(res, passwordValidation.message, 400, {
+          suggestions: passwordValidation.suggestions || []
+        });
+      }
+
+      // Buscar usuario
+      const user = await User.findOne({
+        email: email.toLowerCase().trim()
+      }).select('_id username email tenantId password');
+
+      if (!user) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Buscar token de reset válido
+      const PasswordReset = require('../../core/auth/passwordResetModel');
+      const resetRequests = await PasswordReset.find({
+        userId: user._id,
+        used: false,
+        expiresAt: { $gt: new Date() }
+      }).sort({ createdAt: -1 });
+
+      if (!resetRequests || resetRequests.length === 0) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Verificar el token
+      const bcrypt = require('bcryptjs');
+      let validRequest = null;
+
+      for (const request of resetRequests) {
+        const isValid = await bcrypt.compare(token, request.token);
+        if (isValid) {
+          validRequest = request;
+          break;
+        }
+      }
+
+      if (!validRequest) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Validar que la nueva contraseña sea diferente a la actual
+      const isSamePassword = await bcrypt.compare(newPassword, user.password);
+      if (isSamePassword) {
+        return errorResponse(res, 'La nueva contraseña debe ser diferente a la contraseña anterior', 400);
+      }
+
+      // Actualizar contraseña
+      user.password = newPassword; // El hook pre-save la hasheará
+      user.mustChangePassword = false; // Por si tenía flag de cambio forzado
+      await user.save();
+
+      // Marcar token como usado
+      await validRequest.markAsUsed();
+
+      // Invalidar todos los demás tokens de reset de este usuario
+      await PasswordReset.updateMany(
+        {
+          userId: user._id,
+          used: false,
+          _id: { $ne: validRequest._id }
+        },
+        {
+          used: true,
+          usedAt: new Date()
+        }
+      );
+
+      // Enviar email de confirmación
+      const emailService = require('../../shared/services/emailService');
+      await emailService.sendPasswordChangedEmail({
+        to: user.email,
+        username: user.username,
+        changeDate: new Date()
+      });
+
+      console.log(`✅ Contraseña restablecida para usuario: ${user.username}`);
+
+      return successResponse(res, {
+        message: 'Contraseña actualizada exitosamente'
+      }, 'Contraseña restablecida exitosamente');
+
+    } catch (error) {
+      console.error('❌ Error al restablecer contraseña:', error);
+      return errorResponse(res, 'Error al restablecer contraseña', 500);
+    }
+  }
 }
 
 module.exports = new AuthController();

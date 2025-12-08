@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import vacacionesService from '../services/vacacionesService';
 
 export default function useVacacionesData() {
@@ -9,6 +9,13 @@ export default function useVacacionesData() {
   const [loading, setLoading] = useState(false);
   const [updatingDays, setUpdatingDays] = useState(false);
   const [msg, setMsg] = useState('');
+
+  // ✅ OPTIMIZACIÓN: Refs para prevenir llamadas duplicadas
+  const loadingDaysRef = useRef(false);
+  const loadingSummaryRef = useRef(false);
+  const loadingReplacementsRef = useRef(false);
+  const lastUserIdRef = useRef(null);
+  const lastTiendaIdRef = useRef(null);
 
   // Cargar todos los usuarios (para admin)
   const loadUsers = useCallback(async () => {
@@ -26,6 +33,15 @@ export default function useVacacionesData() {
   const loadDaysAvailable = useCallback(async (userId) => {
     if (!userId) return;
 
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingDaysRef.current && lastUserIdRef.current === userId) {
+      console.log('⏭️ Skipping duplicate loadDaysAvailable call for:', userId);
+      return;
+    }
+
+    loadingDaysRef.current = true;
+    lastUserIdRef.current = userId;
+
     try {
       const data = await vacacionesService.getDaysAvailable(userId);
       setDaysAvailable(data);
@@ -33,12 +49,22 @@ export default function useVacacionesData() {
     } catch (error) {
       console.error('❌ Error loading available days:', error);
       setDaysAvailable(null);
+    } finally {
+      loadingDaysRef.current = false;
     }
   }, []);
 
   // Cargar resumen de días
   const loadDaysSummary = useCallback(async (userId) => {
     if (!userId) return;
+
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingSummaryRef.current && lastUserIdRef.current === userId) {
+      console.log('⏭️ Skipping duplicate loadDaysSummary call for:', userId);
+      return;
+    }
+
+    loadingSummaryRef.current = true;
 
     try {
       const data = await vacacionesService.getDaysSummary(userId);
@@ -47,6 +73,8 @@ export default function useVacacionesData() {
     } catch (error) {
       console.error('❌ Error loading days summary:', error);
       setDaysSummary(null);
+    } finally {
+      loadingSummaryRef.current = false;
     }
   }, []);
 
@@ -56,6 +84,15 @@ export default function useVacacionesData() {
       setReplacementOptions([]);
       return;
     }
+
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingReplacementsRef.current && lastTiendaIdRef.current === tiendaId) {
+      console.log('⏭️ Skipping duplicate loadReplacementOptions call for:', tiendaId);
+      return;
+    }
+
+    loadingReplacementsRef.current = true;
+    lastTiendaIdRef.current = tiendaId;
 
     console.log('🔍 Fetching replacement options for store:', tiendaId, 'role:', currentEmployeeRole);
 
@@ -103,6 +140,8 @@ export default function useVacacionesData() {
         console.error('❌ Error in fallback method:', fallbackError);
         setReplacementOptions([]);
       }
+    } finally {
+      loadingReplacementsRef.current = false;
     }
   }, []);
 

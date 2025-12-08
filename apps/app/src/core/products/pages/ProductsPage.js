@@ -81,6 +81,20 @@ export default function ProductsPage() {
     }
   }, [mostrarFormulario, setCategoriasFiltradas, setMostrarTodasCategorias]);
 
+  // Refetch products when store filter changes
+  useEffect(() => {
+    const filters = {};
+
+    // Only add tiendaId filter if a specific store is selected
+    if (filtroTienda && filtroTienda !== "") {
+      filters.tiendaId = filtroTienda;
+      console.log('🏪 Filtrando productos por tienda:', filtroTienda);
+    }
+
+    // Refetch products with the filter
+    fetchProducts(filters);
+  }, [filtroTienda]); // Refetch whenever filtroTienda changes
+
 const handleSubmit = (e) => {
   e.preventDefault();
   
@@ -175,7 +189,8 @@ const handleSubmit = (e) => {
       price: p.price,
       stock: p.stock,
       category: p.category,
-      tienda: p.tienda?._id || ""
+      tienda: p.tienda?._id || "",
+      barcode: p.barcode || ""
     });
     setEditingId(p._id);
     setTiendaSeleccionada(p.tienda?._id || "");

@@ -10,7 +10,7 @@ function PrivacyPage() {
           <div className="nav-content">
             <div className="logo">
               <a href="/">
-                <img src="/Astrometric_logo_1.png" alt="Astrometrika" style={{height: '40px'}} />
+                <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
               </a>
             </div>
             <div className="nav-links">
@@ -28,7 +28,7 @@ function PrivacyPage() {
           <h1>Política de Privacidad</h1>
 
           <p className="intro">
-            Astrometrika respeta tu privacidad. Tu información solo será utilizada para contactarte
+            AstroDish respeta tu privacidad. Tu información solo será utilizada para contactarte
             respecto a nuestros servicios. No compartimos tus datos.
           </p>
 
@@ -37,7 +37,7 @@ function PrivacyPage() {
           </p>
 
           <p>
-            Astrometrika está comprometida con la protección de tu privacidad. Esta Política de
+            AstroDish está comprometida con la protección de tu privacidad. Esta Política de
             Privacidad explica cómo recopilamos, usamos, divulgamos y protegemos tu información
             personal cuando interactúas con nuestro sitio web y servicios.
           </p>
@@ -93,7 +93,7 @@ function PrivacyPage() {
             <li>Oponerte al uso de tus datos (derechos ARCO)</li>
           </ul>
           <p>Para ejercer tus derechos, por favor contáctanos en:</p>
-          <p><a href="mailto:soporte@astrometrika.net">soporte@astrometrika.net</a></p>
+          <p><a href="mailto:soporte@astrodish.com">soporte@astrodish.com</a></p>
 
           <h2>6. Consentimiento y Actualizaciones</h2>
           <p>
@@ -116,8 +116,25 @@ function PrivacyPage() {
       {/* Footer */}
       <footer className="footer">
         <div className="container">
-          <div className="footer-bottom" style={{borderTop: 'none', paddingTop: 0}}>
-            <p>&copy; 2025 Astrometrika. Todos los derechos reservados.</p>
+          <div className="footer-content">
+            <div className="footer-section">
+              <img src="/Astrodish_logo_2.png" alt="AstroDish" style={{height: '50px', marginBottom: '1rem'}} />
+              <p>AstroDish POS - El sistema en la nube que impulsa tu negocio.</p>
+            </div>
+            <div className="footer-section">
+              <h4>Producto</h4>
+              <a href="/#features">Características</a>
+              <a href="/#pricing">Precios</a>
+              <a href="/#contact">Contacto</a>
+            </div>
+            <div className="footer-section">
+              <h4>Legal</h4>
+              <a href="#/terms">Términos de Servicio</a>
+              <a href="#/privacy">Privacidad</a>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <p>&copy; 2025 AstroDish. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

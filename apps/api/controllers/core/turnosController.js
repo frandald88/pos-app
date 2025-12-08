@@ -80,9 +80,12 @@ class TurnoController {
       const { tiendaId } = req.query;
 
       // Si se proporciona tiendaId, buscar turno de esa tienda específica
-      // Solo permitido para admins
       if (tiendaId) {
-        if (usuario.role !== 'admin') {
+        // Permitir si es admin O si es la tienda del usuario
+        const usuarioTiendaStr = usuario.tienda?.toString();
+        const tiendaIdStr = tiendaId.toString();
+
+        if (usuario.role !== 'admin' && usuarioTiendaStr !== tiendaIdStr) {
           return errorResponse(res, 'No tienes permiso para consultar turnos de otras tiendas', 403);
         }
 
@@ -144,7 +147,7 @@ class TurnoController {
       }
 
       // Validaciones
-      if (!efectivoInicial || efectivoInicial < 0) {
+      if (efectivoInicial === undefined || efectivoInicial === null || efectivoInicial < 0) {
         return errorResponse(res, 'El efectivo inicial es requerido y debe ser mayor o igual a 0', 400);
       }
 
@@ -189,15 +192,18 @@ class TurnoController {
         }
       }
 
-      // También verificar que el usuario no tenga un turno activo en OTRA tienda
-      const turnoExistenteUsuario = await Turno.findOne({
-        tenantId: req.tenantId,
-        usuario: req.userId,
-        estado: 'abierto'
-      }).populate('tienda', 'nombre');
+      // Para usuarios NO admin: verificar que no tengan un turno activo en OTRA tienda
+      // Los admins pueden tener múltiples turnos activos (uno por tienda)
+      if (usuario.role !== 'admin') {
+        const turnoExistenteUsuario = await Turno.findOne({
+          tenantId: req.tenantId,
+          usuario: req.userId,
+          estado: 'abierto'
+        }).populate('tienda', 'nombre');
 
-      if (turnoExistenteUsuario) {
-        return errorResponse(res, `Ya tienes un turno activo en ${turnoExistenteUsuario.tienda.nombre}. Ciérralo antes de iniciar uno nuevo`, 400);
+        if (turnoExistenteUsuario) {
+          return errorResponse(res, `Ya tienes un turno activo en ${turnoExistenteUsuario.tienda.nombre}. Ciérralo antes de iniciar uno nuevo`, 400);
+        }
       }
 
       // Obtener nombre de la estación (nombre del equipo)

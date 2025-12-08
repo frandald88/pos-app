@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import apiBaseUrl from "../config/api";
-import logo from "../assets/logo.png";
+import logo from "../assets/astrodishlogo1.png";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -237,22 +237,22 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#f4f6fa' }}>
       {/* Panel izquierdo - Información */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #23334e 0%, #46546b 50%, #697487 100%)' }}>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 50%, #7a9de8 100%)' }}>
         <div className="absolute inset-0">
-          <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#46546b' }}></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#697487', animationDelay: '2s' }}></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#8c95a4', animationDelay: '4s' }}></div>
+          <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#2b354f' }}></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#5e85e0', animationDelay: '2s' }}></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#7a9de8', animationDelay: '4s' }}></div>
         </div>
 
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
           <div className="max-w-md">
             <div className="mb-8">
-              <img src={logo} alt="Logo" className="w-20 h-20 mb-6 rounded-xl shadow-2xl bg-white/10 p-3" />
+              <img src={logo} alt="AstroDish POS" className="h-24 mb-6 shadow-2xl" style={{ maxWidth: '100%', objectFit: 'contain' }} />
               <h1 className="text-4xl font-bold mb-4 leading-tight">
                 {selectedPlan === 'pro' ? 'Plan Pro Anual' :
                  selectedPlan === 'basic' ? 'Plan Basic Anual' :
                  'Comienza con el Plan Lanzamiento'}
-                <span className="block text-2xl font-normal mt-2" style={{ color: '#8c95a4' }}>
+                <span className="block text-2xl font-normal mt-2" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
                   {selectedPlan === 'pro' ? '$8,499/año' :
                    selectedPlan === 'basic' ? '$5,999/año' :
                    '$1,249 por 3 meses'}
@@ -262,44 +262,44 @@ export default function RegisterPage() {
 
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Configuración instantánea</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Empieza a vender en menos de 5 minutos</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Empieza a vender en menos de 5 minutos</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Datos seguros</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Tu información protegida con encriptación</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Tu información protegida con encriptación</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Multi-usuario</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Agrega empleados y gestiona permisos</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Agrega empleados y gestiona permisos</p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(140, 149, 164, 0.1)', borderColor: 'rgba(140, 149, 164, 0.2)' }}>
-              <p className="text-sm" style={{ color: '#8c95a4' }}>
+            <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)' }}>
+              <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                 ✨ <strong>
                   {selectedPlan === 'pro' ? 'Plan Pro incluye:' :
                    selectedPlan === 'basic' ? 'Plan Basic incluye:' :
@@ -341,12 +341,12 @@ export default function RegisterPage() {
           {/* Header */}
           <div className="text-center">
             <div className="lg:hidden mb-6">
-              <img src={logo} alt="Logo" className="w-16 h-16 mx-auto rounded-xl shadow-lg" />
+              <img src={logo} alt="AstroDish POS" className="h-20 mx-auto shadow-lg" style={{ maxWidth: '100%', objectFit: 'contain' }} />
             </div>
-            <h2 className="text-3xl font-bold mb-2" style={{ color: '#23334e' }}>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#2b354f' }}>
               Crear cuenta
             </h2>
-            <p style={{ color: '#697487' }}>
+            <p style={{ color: '#2b354f' }}>
               Paso {currentStep} de 2: {currentStep === 1 ? 'Datos del negocio' : 'Datos del administrador'}
             </p>
           </div>
@@ -357,7 +357,7 @@ export default function RegisterPage() {
               className="h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${(currentStep / 2) * 100}%`,
-                background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)'
+                background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)'
               }}
             ></div>
           </div>
@@ -370,7 +370,7 @@ export default function RegisterPage() {
               {currentStep === 1 && (
                 <>
                   <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                    <label htmlFor="companyName" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                       Nombre del Negocio *
                     </label>
                     <input
@@ -380,14 +380,14 @@ export default function RegisterPage() {
                       value={businessData.companyName}
                       onChange={(e) => handleBusinessDataChange('companyName', e.target.value)}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                      style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                       placeholder="Mi Tienda S.A."
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="subdomain" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
-                      Subdomain * <span className="text-xs" style={{ color: '#8c95a4' }}>(solo letras, números y guiones)</span>
+                    <label htmlFor="subdomain" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
+                      Subdomain * <span className="text-xs" style={{ color: '#7a9de8' }}>(solo letras, números y guiones)</span>
                     </label>
                     <div className="flex items-center space-x-2">
                       <input
@@ -397,14 +397,14 @@ export default function RegisterPage() {
                         value={businessData.subdomain}
                         onChange={(e) => handleBusinessDataChange('subdomain', e.target.value)}
                         className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                        style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                        style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                         placeholder="mi-tienda"
                         minLength={3}
                         maxLength={30}
                       />
                       {subdomainStatus.checking && (
                         <div className="flex-shrink-0">
-                          <svg className="animate-spin h-5 w-5" style={{ color: '#8c95a4' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin h-5 w-5" style={{ color: '#2b354f' }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
@@ -438,7 +438,7 @@ export default function RegisterPage() {
               {currentStep === 2 && (
                 <>
                   <div>
-                    <label htmlFor="ownerName" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                    <label htmlFor="ownerName" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                       Nombre del Administrador *
                     </label>
                     <input
@@ -448,13 +448,13 @@ export default function RegisterPage() {
                       value={adminData.ownerName}
                       onChange={(e) => handleAdminDataChange('ownerName', e.target.value)}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                      style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                       placeholder="Juan Pérez"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="ownerEmail" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                    <label htmlFor="ownerEmail" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                       Email *
                     </label>
                     <input
@@ -464,13 +464,13 @@ export default function RegisterPage() {
                       value={adminData.ownerEmail}
                       onChange={(e) => handleAdminDataChange('ownerEmail', e.target.value)}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                      style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                       placeholder="admin@mi-tienda.com"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="ownerPassword" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                    <label htmlFor="ownerPassword" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                       Contraseña *
                     </label>
                     <input
@@ -480,26 +480,26 @@ export default function RegisterPage() {
                       value={adminData.ownerPassword}
                       onChange={(e) => handleAdminDataChange('ownerPassword', e.target.value)}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                      style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                       placeholder="••••••••"
                       minLength={8}
                     />
                     <div className="mt-2 text-xs">
-                      <p className="font-medium mb-1" style={{ color: '#8c95a4' }}>La contraseña debe tener:</p>
+                      <p className="font-medium mb-1" style={{ color: '#7a9de8' }}>La contraseña debe tener:</p>
                       <ul className="space-y-0.5">
-                        <li style={{ color: passwordValidation.minLength ? '#22c55e' : '#8c95a4' }}>
+                        <li style={{ color: passwordValidation.minLength ? '#22c55e' : '#7a9de8' }}>
                           {passwordValidation.minLength ? '✓' : '○'} Mínimo 8 caracteres
                         </li>
-                        <li style={{ color: passwordValidation.hasUppercase ? '#22c55e' : '#8c95a4' }}>
+                        <li style={{ color: passwordValidation.hasUppercase ? '#22c55e' : '#7a9de8' }}>
                           {passwordValidation.hasUppercase ? '✓' : '○'} Una letra mayúscula (A-Z)
                         </li>
-                        <li style={{ color: passwordValidation.hasLowercase ? '#22c55e' : '#8c95a4' }}>
+                        <li style={{ color: passwordValidation.hasLowercase ? '#22c55e' : '#7a9de8' }}>
                           {passwordValidation.hasLowercase ? '✓' : '○'} Una letra minúscula (a-z)
                         </li>
-                        <li style={{ color: passwordValidation.hasNumber ? '#22c55e' : '#8c95a4' }}>
+                        <li style={{ color: passwordValidation.hasNumber ? '#22c55e' : '#7a9de8' }}>
                           {passwordValidation.hasNumber ? '✓' : '○'} Un número (0-9)
                         </li>
-                        <li style={{ color: passwordValidation.hasSpecial ? '#22c55e' : '#8c95a4' }}>
+                        <li style={{ color: passwordValidation.hasSpecial ? '#22c55e' : '#7a9de8' }}>
                           {passwordValidation.hasSpecial ? '✓' : '○'} Un carácter especial (!@#$%^&*)
                         </li>
                       </ul>
@@ -507,7 +507,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                       Confirmar Contraseña *
                     </label>
                     <input
@@ -517,7 +517,7 @@ export default function RegisterPage() {
                       value={adminData.confirmPassword}
                       onChange={(e) => handleAdminDataChange('confirmPassword', e.target.value)}
                       className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent"
-                      style={{ '--tw-ring-color': '#46546b', color: '#23334e' }}
+                      style={{ '--tw-ring-color': '#2b354f', color: '#2b354f' }}
                       placeholder="••••••••"
                       minLength={6}
                     />
@@ -569,7 +569,7 @@ export default function RegisterPage() {
                     onClick={handlePrevStep}
                     disabled={loading}
                     className="flex-1 py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 transition-all duration-200"
-                    style={{ color: '#23334e', borderColor: '#d1d5db' }}
+                    style={{ color: '#2b354f', borderColor: '#d1d5db' }}
                   >
                     ← Atrás
                   </button>
@@ -580,8 +580,8 @@ export default function RegisterPage() {
                   disabled={loading || (currentStep === 1 && subdomainStatus.available !== true)}
                   className="flex-1 py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
                   style={{
-                    background: loading ? '#8c95a4' : 'linear-gradient(135deg, #46546b 0%, #23334e 100%)',
-                    '--tw-ring-color': '#46546b'
+                    background: loading ? '#7a9de8' : 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+                    '--tw-ring-color': '#2b354f'
                   }}
                 >
                   {loading ? (
@@ -604,19 +604,19 @@ export default function RegisterPage() {
 
           {/* Footer */}
           <div className="text-center">
-            <p className="text-sm" style={{ color: '#697487' }}>
+            <p className="text-sm" style={{ color: '#2b354f' }}>
               ¿Ya tienes una cuenta?{' '}
               <button
                 onClick={() => navigate('/login')}
                 className="font-medium transition-colors duration-200"
-                style={{ color: '#46546b' }}
-                onMouseEnter={(e) => e.target.style.color = '#23334e'}
-                onMouseLeave={(e) => e.target.style.color = '#46546b'}
+                style={{ color: '#2b354f' }}
+                onMouseEnter={(e) => e.target.style.color = '#5e85e0'}
+                onMouseLeave={(e) => e.target.style.color = '#2b354f'}
               >
                 Inicia sesión aquí
               </button>
             </p>
-            <p className="text-xs mt-4" style={{ color: '#8c95a4' }}>
+            <p className="text-xs mt-4" style={{ color: '#5e85e0' }}>
               Al crear una cuenta, aceptas nuestros Términos de Servicio y Política de Privacidad
             </p>
           </div>

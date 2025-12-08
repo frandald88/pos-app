@@ -10,6 +10,8 @@ class TiendasController {
   // Obtener todas las tiendas
   async getAll(req, res) {
     try {
+      const startTime = Date.now();
+
       const { search, includeStats = false, includeArchived, limit = 50, page = 1 } = req.query;
       const filter = {};
 
@@ -96,10 +98,21 @@ class TiendasController {
 
       console.log('📊 Filtro final de MongoDB:', JSON.stringify(filter, null, 2));
 
-      const tiendas = await Tienda.find(filter).sort({ nombre: 1 }).skip(skip).limit(parseInt(limit)).lean();
-      const total = await Tienda.countDocuments(filter);
+      const step1Time = Date.now();
+      // ✅ OPTIMIZACIÓN: Ejecutar query y count en paralelo
+      const [tiendas, total] = await Promise.all([
+        Tienda.find(filter)
+          .select('nombre direccion telefono activa isDeleted tenantId')
+          .sort({ nombre: 1 })
+          .skip(skip)
+          .limit(parseInt(limit))
+          .lean(),
+        Tienda.countDocuments(filter)
+      ]);
 
-      console.log(`✅ Encontradas ${tiendas.length} tiendas`);
+      const step2Time = Date.now();
+      console.log(`⏱️ [getAll Tiendas] Parallel query time: ${step2Time - step1Time}ms (both queries together)`);
+      console.log(`✅ Encontradas ${tiendas.length} tiendas de ${total} total`);
       console.log('Tiendas:', tiendas.map(t => ({ nombre: t.nombre, activa: t.activa })));
 
       if (includeStats === 'true') {
@@ -127,6 +140,9 @@ class TiendasController {
           };
         }
       }
+
+      const endTime = Date.now();
+      console.log(`⏱️ [getAll Tiendas] TIEMPO TOTAL: ${endTime - startTime}ms`);
 
       return successResponse(res, {
         tiendas,

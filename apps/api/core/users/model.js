@@ -50,6 +50,11 @@ userSchema.index({ tenantId: 1, email: 1 }, {
   sparse: true // Permite múltiples documentos sin email
 });
 
+// ✅ OPTIMIZACIÓN: Índices adicionales para queries comunes
+userSchema.index({ tenantId: 1, role: 1 }); // getAll users filtrado por role
+userSchema.index({ tenantId: 1, tienda: 1 }); // getAll users filtrado por tienda
+userSchema.index({ isDeleted: 1 }); // Queries de soft delete
+
 // ✅ Middleware para excluir usuarios eliminados automáticamente
 userSchema.pre(/^find/, function(next) {
   if (!this.getOptions().includeDeleted) {

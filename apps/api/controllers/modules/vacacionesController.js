@@ -2,12 +2,13 @@ const VacationRequest = require('../../modules/vacaciones/model');
 const User = require('../../core/users/model');
 const EmployeeHistory = require('../../modules/empleados/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
+const mongoose = require('mongoose');
 
 class VacacionesController {
   /**
    * Calcular días disponibles según antigüedad usando startDate del historial
    */
-  calcularDiasDisponibles(fechaIngreso) {
+  static calcularDiasDisponibles(fechaIngreso) {
     const ahora = new Date();
     const años = (ahora - fechaIngreso) / (1000 * 60 * 60 * 24 * 365.25);
     let dias = 0;
@@ -179,6 +180,7 @@ class VacacionesController {
    * Obtener días disponibles usando EmployeeHistory
    */
   async getDaysAvailable(req, res) {
+    const startTime = Date.now();
     try {
       if (!req.tenantId) {
         return errorResponse(res, 'Tenant no identificado', 400);
@@ -186,32 +188,62 @@ class VacacionesController {
 
       const { userId } = req.params;
 
+      console.log(`🔍 [getDaysAvailable] Buscando días disponibles para userId: ${userId}, tenantId: ${req.tenantId}`);
+
+      // Validar que userId es un ObjectId válido
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        console.log(`❌ userId no es un ObjectId válido: ${userId}`);
+        return errorResponse(res, 'ID de empleado inválido', 400);
+      }
+
+      // Convertir a ObjectId para asegurar comparación correcta
+      const employeeObjectId = new mongoose.Types.ObjectId(userId);
+      const step1Time = Date.now();
+
       // Solo admin puede consultar días de otros usuarios
       if (req.userId !== userId) {
         const currentUser = await User.findOne({ _id: req.userId, tenantId: req.tenantId });
+        if (!currentUser) {
+          console.log(`❌ Usuario actual no encontrado: ${req.userId}`);
+          return errorResponse(res, 'Usuario actual no encontrado', 404);
+        }
         if (currentUser.role !== 'admin') {
           return errorResponse(res, 'Solo puedes consultar tus propios días disponibles', 403);
         }
       }
 
-      const user = await User.findOne({ _id: userId, tenantId: req.tenantId });
+      const user = await User.findOne({ _id: employeeObjectId, tenantId: req.tenantId }).select('username email daysTaken createdAt').lean();
       if (!user) {
+        console.log(`❌ Empleado no encontrado con userId: ${userId}, tenantId: ${req.tenantId}`);
         return errorResponse(res, 'Empleado no encontrado', 404);
       }
+
+      const step2Time = Date.now();
+      console.log(`✅ Usuario encontrado: ${user.username} (${user.email}) [${step2Time - step1Time}ms]`);
 
       // Buscar historial laboral activo
       let employeeHistory = await EmployeeHistory.findOne({
         tenantId: req.tenantId,
-        employee: userId,
+        employee: employeeObjectId,
         isActive: true
-      });
+      }).select('startDate endDate isActive').lean();
+
+      const step3Time = Date.now();
+      console.log(`🔍 Historial activo encontrado: ${employeeHistory ? 'SÍ' : 'NO'} [${step3Time - step2Time}ms]`);
 
       // Fallback: Si no hay historial activo, buscar el más reciente
       if (!employeeHistory) {
         employeeHistory = await EmployeeHistory.findOne({
           tenantId: req.tenantId,
-          employee: userId
-        }).sort({ startDate: -1 });
+          employee: employeeObjectId
+        }).select('startDate endDate isActive').sort({ startDate: -1 }).lean();
+
+        const step4Time = Date.now();
+        console.log(`🔍 Historial más reciente encontrado: ${employeeHistory ? 'SÍ' : 'NO'} [${step4Time - step3Time}ms]`);
+      }
+
+      if (employeeHistory) {
+        console.log(`📋 Historial encontrado - ID: ${employeeHistory._id}, startDate: ${employeeHistory.startDate}, isActive: ${employeeHistory.isActive}`);
       }
 
       const fechaIngreso = employeeHistory ? employeeHistory.startDate : user.createdAt;
@@ -219,9 +251,16 @@ class VacacionesController {
 
       console.log(`📅 Calculando vacaciones para ${user.username} desde ${fechaIngreso} (fuente: ${source})`);
 
-      const totalDays = this.calcularDiasDisponibles(fechaIngreso);
+      if (!fechaIngreso) {
+        console.log(`❌ No hay fecha de ingreso disponible para el usuario ${user.username}`);
+        return errorResponse(res, 'No se pudo determinar la fecha de ingreso del empleado', 400);
+      }
+
+      const totalDays = VacacionesController.calcularDiasDisponibles(fechaIngreso);
 
       const daysTakenFromUser = user.daysTaken || 0;
+
+      const step5Time = Date.now();
 
       // Calcular días tomados de solicitudes aprobadas para comparación
       const usedDays = await VacationRequest.aggregate([
@@ -239,9 +278,15 @@ class VacacionesController {
         { $group: { _id: null, total: { $sum: "$days" } } }
       ]);
 
+      const step6Time = Date.now();
+      console.log(`📊 Aggregate query completada [${step6Time - step5Time}ms]`);
+
       const calculatedTakenDays = usedDays[0]?.total || 0;
       const takenDays = daysTakenFromUser;
       const availableDays = Math.max(0, totalDays - takenDays);
+
+      const endTime = Date.now();
+      console.log(`⏱️ [getDaysAvailable] TIEMPO TOTAL: ${endTime - startTime}ms`);
 
       return successResponse(res, {
         employee: user.username,
@@ -260,8 +305,9 @@ class VacacionesController {
         }
       }, 'Días disponibles calculados exitosamente');
     } catch (error) {
-      console.error('Error calculando días disponibles:', error);
-      return errorResponse(res, 'Error calculando días disponibles', 500);
+      console.error('❌ [getDaysAvailable] Error calculando días disponibles:', error);
+      console.error('Stack trace:', error.stack);
+      return errorResponse(res, `Error calculando días disponibles: ${error.message}`, 500);
     }
   }
 

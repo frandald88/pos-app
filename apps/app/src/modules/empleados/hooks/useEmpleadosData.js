@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import empleadosService from '../services/empleadosService';
 
 export const useEmpleadosData = () => {
@@ -9,6 +9,11 @@ export const useEmpleadosData = () => {
   const [timeEntries, setTimeEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+
+  // ✅ OPTIMIZACIÓN: Refs para prevenir llamadas duplicadas
+  const loadingUsersRef = useRef(false);
+  const loadingTiendasRef = useRef(false);
+  const loadingStatusRef = useRef(false);
 
   // Cargar usuario actual
   const loadCurrentUser = useCallback(async () => {
@@ -24,6 +29,14 @@ export const useEmpleadosData = () => {
 
   // Cargar lista de usuarios (empleados)
   const loadUsers = useCallback(async (currentUserData) => {
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingUsersRef.current) {
+      console.log('⏭️ Skipping duplicate loadUsers call');
+      return;
+    }
+
+    loadingUsersRef.current = true;
+
     try {
       if (currentUserData.role === 'admin') {
         const allUsers = await empleadosService.getAllUsers();
@@ -38,28 +51,50 @@ export const useEmpleadosData = () => {
     } catch (error) {
       setMsg('Error al cargar empleados ❌');
       throw error;
+    } finally {
+      loadingUsersRef.current = false;
     }
   }, []);
 
   // Cargar tiendas
   const loadTiendas = useCallback(async () => {
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingTiendasRef.current) {
+      console.log('⏭️ Skipping duplicate loadTiendas call');
+      return;
+    }
+
+    loadingTiendasRef.current = true;
+
     try {
       const response = await empleadosService.getAllTiendas();
       // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
       setTiendas(response.data.tiendas);
     } catch (error) {
       console.error('Error al cargar tiendas:', error);
+    } finally {
+      loadingTiendasRef.current = false;
     }
   }, []);
 
   // Cargar estado de asistencia
   const loadAttendanceStatus = useCallback(async () => {
+    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    if (loadingStatusRef.current) {
+      console.log('⏭️ Skipping duplicate loadAttendanceStatus call');
+      return;
+    }
+
+    loadingStatusRef.current = true;
+
     try {
       const status = await empleadosService.getAttendanceStatus();
       setAttendanceStatus(status);
       setTimeEntries(status.timeEntries || []);
     } catch (error) {
       console.error('Error cargando estado de asistencia:', error);
+    } finally {
+      loadingStatusRef.current = false;
     }
   }, []);
 

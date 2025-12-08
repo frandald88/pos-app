@@ -52,7 +52,8 @@ export const useTiendasData = () => {
       return response;
     } catch (error) {
       console.error('Error creating tienda:', error);
-      setMsg('Error al guardar tienda ❌');
+      const errorMessage = error.response?.data?.message || 'Error al guardar tienda ❌';
+      setMsg(errorMessage);
       setCargando(false);
       throw error;
     }
@@ -74,7 +75,8 @@ export const useTiendasData = () => {
       return response;
     } catch (error) {
       console.error('Error updating tienda:', error);
-      setMsg('Error al actualizar tienda ❌');
+      const errorMessage = error.response?.data?.message || 'Error al actualizar tienda ❌';
+      setMsg(errorMessage);
       setCargando(false);
       throw error;
     }

@@ -8,7 +8,8 @@ export const useProductState = () => {
     price: "",
     stock: "",
     category: "",
-    tienda: ""
+    tienda: "",
+    barcode: ""
   });
   const [editingId, setEditingId] = useState(null);
   const [msg, setMsg] = useState("");

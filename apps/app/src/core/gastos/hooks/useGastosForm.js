@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export const useGastosForm = (defaultStore = null, canSelectMultipleStores = true) => {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -11,6 +11,13 @@ export const useGastosForm = (defaultStore = null, canSelectMultipleStores = tru
   const [usarProveedorManual, setUsarProveedorManual] = useState(false);
   const [busquedaProveedor, setBusquedaProveedor] = useState('');
   const [proveedoresEncontrados, setProveedoresEncontrados] = useState([]);
+
+  // Actualizar tiendaSeleccionada cuando defaultStore cambia (para vendedores)
+  useEffect(() => {
+    if (!canSelectMultipleStores && defaultStore) {
+      setTiendaSeleccionada(defaultStore);
+    }
+  }, [defaultStore, canSelectMultipleStores]);
 
   // Estados para edición
   const [editingGastoId, setEditingGastoId] = useState(null);

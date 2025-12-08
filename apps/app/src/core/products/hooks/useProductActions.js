@@ -51,13 +51,20 @@ export const useProductActions = (state) => {
       .catch(() => console.error("Error al obtener SKU"));
   };
 
-  const fetchProducts = () => {
+  const fetchProducts = (filters = {}) => {
     setCargando(true);
-    productService.getAllProducts(token)
+
+    // Log de filtros aplicados
+    if (Object.keys(filters).length > 0) {
+      console.log('🔍 Obteniendo productos con filtros:', filters);
+    }
+
+    productService.getAllProducts(token, filters)
       .then((data) => {
         console.log('📦 Productos obtenidos (primeros 3):', data.slice(0, 3).map(p => ({
           name: p.name,
           sku: p.sku,
+          tienda: p.tienda?.nombre || 'Sin tienda',
           createdAt: p.createdAt,
           updatedAt: p.updatedAt
         })));
@@ -198,16 +205,17 @@ export const useProductActions = (state) => {
 
   const limpiarFormularioCompleto = () => {
     console.log('🧹 Limpiando formulario completo...');
-    
-    setForm({ 
-      name: "", 
-      sku: "", 
-      price: "", 
-      stock: "", 
-      category: "", 
-      tienda: "" 
+
+    setForm({
+      name: "",
+      sku: "",
+      price: "",
+      stock: "",
+      category: "",
+      tienda: "",
+      barcode: ""
     });
-    
+
     setEditingId(null);
     setTiendaSeleccionada("");
     setMostrarFormulario(false);
@@ -216,7 +224,7 @@ export const useProductActions = (state) => {
     resetCategoriasFiltradas([]);
     setMostrarTodasCategorias(false);
     setStockActualizado(false);
-    
+
     fetchNextSKU();
   };
 

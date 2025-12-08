@@ -1224,12 +1224,13 @@ const AccountPage = () => {
             </div>
 
             <div className="text-center mb-3">
-              <div className="text-lg font-bold text-orange-600">*** TICKET PRELIMINAR ***</div>
+              <div className="text-lg font-bold text-orange-600">*** TICKET DE VENTA ***</div>
+              <div className="text-sm text-gray-500">(Preliminar - Pendiente de pago)</div>
             </div>
 
             <div className="border-t border-b py-3 mb-4 space-y-1">
               <div className="text-center text-sm">
-                <div className="font-bold">Cuenta #{preliminaryTicketData.folio}</div>
+                <div className="font-bold">Folio: {preliminaryTicketData.folio}</div>
                 {preliminaryTicketData.subcuentaName && (
                   <div className="font-medium text-indigo-600">
                     Subcuenta: {preliminaryTicketData.subcuentaName}
@@ -1320,10 +1321,11 @@ const AccountPage = () => {
                           ${config.mensajeSuperior ? `<div class="text-sm">${config.mensajeSuperior}</div>` : ''}
                         </div>
                         <div class="center mb-2">
-                          <div class="bold text-orange">*** TICKET PRELIMINAR ***</div>
+                          <div class="bold text-orange">*** TICKET DE VENTA ***</div>
+                          <div class="text-sm">(Preliminar - Pendiente de pago)</div>
                         </div>
                         <div class="center border-b">
-                          <div class="bold">Cuenta #${preliminaryTicketData.folio}</div>
+                          <div class="bold">Folio: ${preliminaryTicketData.folio}</div>
                           ${preliminaryTicketData.subcuentaName ? `<div class="bold">Subcuenta: ${preliminaryTicketData.subcuentaName}</div>` : ''}
                           <div>Mesa: ${preliminaryTicketData.mesa}</div>
                           <div>Mesero: ${preliminaryTicketData.mesero}</div>

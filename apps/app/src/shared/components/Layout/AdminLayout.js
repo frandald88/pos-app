@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import logo from "../../../assets/logo.png";
+import logo from "../../../assets/astrodishlogo2_blank.png";
 import apiBaseUrl, { API_ENDPOINTS, getAuthHeaders } from "../../../config/api";
 import { useLicense } from "../../contexts/LicenseContext";
 import { useTurno } from "../../../core/turnos/hooks/useTurno";
@@ -232,6 +232,15 @@ export default function AdminLayout({ children }) {
       if (storedUser) {
         const user = JSON.parse(storedUser);
         console.log('✅ Usuario desde localStorage:', user);
+
+        // 🔒 SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
+        if (user.mustChangePassword && location.pathname !== '/change-password') {
+          console.log('⚠️ Usuario debe cambiar contraseña, redirigiendo...');
+          navigate('/change-password', { replace: true });
+          setLoading(false);
+          return;
+        }
+
         setCurrentUser(user);
 
         // ✨ NUEVO: Cargar configuración del tenant desde localStorage
@@ -253,6 +262,15 @@ export default function AdminLayout({ children }) {
 
       console.log('✅ Usuario obtenido del servidor:', response.data);
       const userData = response.data.user || response.data;
+
+      // 🔒 SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
+      if (userData.mustChangePassword && location.pathname !== '/change-password') {
+        console.log('⚠️ Usuario debe cambiar contraseña, redirigiendo...');
+        localStorage.setItem("user", JSON.stringify(userData));
+        navigate('/change-password', { replace: true });
+        setLoading(false);
+        return;
+      }
 
       setCurrentUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -431,7 +449,7 @@ export default function AdminLayout({ children }) {
   // Loading state
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #23334e 0%, #46546b 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-transparent mx-auto mb-4" style={{ borderColor: '#f4f6fa', borderTopColor: 'transparent' }}></div>
           <p className="text-lg text-white">Verificando autenticación...</p>
@@ -444,10 +462,10 @@ export default function AdminLayout({ children }) {
   // Error state
   if (authError) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #23334e 0%, #46546b 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="text-6xl mb-4" style={{ color: '#46546b' }}>🔒</div>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: '#23334e' }}>Error de Autenticación</h2>
+          <div className="text-6xl mb-4" style={{ color: '#2b354f' }}>🔒</div>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Error de Autenticación</h2>
           <p className="mb-4" style={{ color: '#697487' }}>{authError}</p>
           <div className="animate-pulse text-sm" style={{ color: '#8c95a4' }}>Redirigiendo al login...</div>
         </div>
@@ -458,10 +476,10 @@ export default function AdminLayout({ children }) {
   // No user data
   if (!currentUser) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #23334e 0%, #46546b 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="text-6xl mb-4" style={{ color: '#46546b' }}>⚠️</div>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: '#23334e' }}>Usuario no encontrado</h2>
+          <div className="text-6xl mb-4" style={{ color: '#2b354f' }}>⚠️</div>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Usuario no encontrado</h2>
           <p style={{ color: '#697487' }}>No se pudieron cargar los datos del usuario</p>
         </div>
       </div>
@@ -471,21 +489,21 @@ export default function AdminLayout({ children }) {
   return (
     <div className="h-screen overflow-hidden flex" style={{ backgroundColor: '#f4f6fa' }}>
       {/* ✅ SIDEBAR MEJORADO - con scroll corporativo oscuro */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-80'} shadow-2xl border-r transition-all duration-300 ease-in-out flex flex-col fixed left-0 top-0 h-full z-30`} 
-             style={{ 
-               backgroundColor: '#23334e', 
-               borderRightColor: '#46546b',
-               boxShadow: '4px 0 20px rgba(35, 51, 78, 0.15)'
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-80'} shadow-2xl border-r transition-all duration-300 ease-in-out flex flex-col fixed left-0 top-0 h-full z-30`}
+             style={{
+               backgroundColor: '#2b354f',
+               borderRightColor: '#5e85e0',
+               boxShadow: '4px 0 20px rgba(94, 133, 224, 0.15)'
              }}>
         
         {/* Header del sidebar */}
-        <div className="p-6 border-b flex-shrink-0" style={{ borderBottomColor: '#46546b' }}>
+        <div className="p-6 border-b flex-shrink-0" style={{ borderBottomColor: '#5e85e0' }}>
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
               <div className="flex items-center space-x-3">
-                <img src={logo} alt="Logo" className="w-12 h-12 rounded-lg shadow-lg bg-white/10 p-2" />
+                <img src={logo} alt="AstroDish POS" className="w-12 h-12 rounded-lg shadow-lg bg-white/10 p-2" />
                 <div>
-                  <h1 className="text-xl font-bold text-white">POS System</h1>
+                  <h1 className="text-xl font-bold text-white">AstroDish POS</h1>
                   <p className="text-sm" style={{ color: '#8c95a4' }}>Panel de Control</p>
                 </div>
               </div>
@@ -514,10 +532,10 @@ export default function AdminLayout({ children }) {
 
         {/* Información del usuario */}
         {!sidebarCollapsed && (
-          <div className="p-4 border-b flex-shrink-0" style={{ borderBottomColor: '#46546b', backgroundColor: 'rgba(70, 84, 107, 0.3)' }}>
+          <div className="p-4 border-b flex-shrink-0" style={{ borderBottomColor: '#5e85e0', backgroundColor: 'rgba(43, 53, 79, 0.3)' }}>
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg scroll-smooth-transition" 
-                   style={{ background: 'linear-gradient(135deg, #f4f6fa 0%, #8c95a4 100%)', color: '#23334e' }}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg scroll-smooth-transition"
+                   style={{ background: 'linear-gradient(135deg, #f4f6fa 0%, #8c95a4 100%)', color: '#2b354f' }}>
                 {currentUser.nombre?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
@@ -534,7 +552,7 @@ export default function AdminLayout({ children }) {
 
         {/* Información del sistema */}
         {!sidebarCollapsed && (
-          <div className="p-4 border-b flex-shrink-0" style={{ borderBottomColor: '#46546b' }}>
+          <div className="p-4 border-b flex-shrink-0" style={{ borderBottomColor: '#5e85e0' }}>
             <div className="text-xs space-y-1" style={{ color: '#8c95a4' }}>
               <div className="flex justify-between">
                 <span>📅 {date}</span>
@@ -581,12 +599,12 @@ export default function AdminLayout({ children }) {
                           ? "shadow-lg border-l-4" 
                           : ""
                       }`}
-                      style={location.pathname === item.path 
-                        ? { 
-                            background: 'linear-gradient(135deg, #46546b 0%, #697487 100%)', 
+                      style={location.pathname === item.path
+                        ? {
+                            background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
                             color: 'white',
                             borderLeftColor: '#f4f6fa',
-                            boxShadow: '0 4px 12px rgba(70, 84, 107, 0.3)'
+                            boxShadow: '0 4px 12px rgba(43, 53, 79, 0.3)'
                           }
                         : { color: '#8c95a4' }
                       }
@@ -627,7 +645,7 @@ export default function AdminLayout({ children }) {
         </nav>
 
         {/* Footer del sidebar */}
-        <div className="p-4 border-t flex-shrink-0" style={{ borderTopColor: '#46546b' }}>
+        <div className="p-4 border-t flex-shrink-0" style={{ borderTopColor: '#5e85e0' }}>
           <button
             onClick={handleLogout}
             className={`${sidebarCollapsed ? 'w-12 h-12 justify-center' : 'w-full'} flex items-center px-4 py-3 text-sm font-medium rounded-lg scroll-smooth-transition`}
@@ -662,7 +680,7 @@ export default function AdminLayout({ children }) {
                 }}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold scroll-smooth-transition" style={{ color: '#23334e' }}>
+              <h1 className="text-2xl font-bold scroll-smooth-transition" style={{ color: '#2b354f' }}>
                 {location.pathname === '/admin/ventas' && 'Punto de Venta'}
                 {location.pathname === '/admin/clientes' && 'Gestión de Clientes'}
                 {location.pathname === '/admin/productos' && 'Gestión de Productos'}
@@ -703,14 +721,14 @@ export default function AdminLayout({ children }) {
               {/* Avatar del usuario */}
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg scroll-smooth-transition"
-                     style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
+                     style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}
                      onMouseEnter={(e) => {
                        e.target.style.transform = 'scale(1.1)';
-                       e.target.style.boxShadow = '0 6px 20px rgba(35, 51, 78, 0.3)';
+                       e.target.style.boxShadow = '0 6px 20px rgba(43, 53, 79, 0.3)';
                      }}
                      onMouseLeave={(e) => {
                        e.target.style.transform = 'scale(1)';
-                       e.target.style.boxShadow = '0 4px 6px rgba(35, 51, 78, 0.1)';
+                       e.target.style.boxShadow = '0 4px 6px rgba(43, 53, 79, 0.1)';
                      }}>
                   {currentUser.nombre?.charAt(0).toUpperCase() || 'U'}
                 </div>

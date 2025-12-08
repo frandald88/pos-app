@@ -172,7 +172,9 @@ class GastosController {
   }
 
   /**
-   * Obtener gastos del usuario actual
+   * Obtener gastos del usuario actual o de su tienda
+   * - Admin: puede obtener todos los gastos (sin filtro de tienda)
+   * - Vendedor: obtiene TODOS los gastos de su tienda (no solo los que creó)
    */
   async getMine(req, res) {
     try {
@@ -188,14 +190,18 @@ class GastosController {
         return errorResponse(res, 'Usuario no encontrado', 404);
       }
 
-      let filter = { createdBy: req.userId, tenantId: req.tenantId };
+      let filter = { tenantId: req.tenantId };
 
-      // Si no es admin, filtrar solo gastos de su tienda
-      if (user.role !== 'admin' && user.tienda) {
+      // Si no es admin, filtrar por tienda asignada y mostrar todos los gastos de esa tienda
+      if (user.role !== 'admin') {
+        if (!user.tienda) {
+          return errorResponse(res, 'No tienes una tienda asignada', 400);
+        }
         filter.tienda = user.tienda;
       }
 
       const expenses = await Expense.find(filter)
+        .populate('createdBy', 'username')
         .populate('tienda', 'nombre')
         .sort({ createdAt: -1 })
         .limit(parseInt(limit));

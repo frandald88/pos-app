@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 
 const TiendaModal = ({
   isOpen,
@@ -11,17 +12,69 @@ const TiendaModal = ({
   modalError,
   setModalError
 }) => {
+  // Inicializar estados basados en tienda.telefono
+  const parsePhoneNumber = (phone) => {
+    if (!phone || phone.trim() === '') {
+      return { code: '+52', number: '' };
+    }
+
+    const match = phone.match(/^(\+\d+)\s*(.*)$/);
+    if (match) {
+      return { code: match[1], number: match[2].trim() };
+    }
+
+    // Si no tiene código de país, asumir que es solo el número
+    return { code: '+52', number: phone };
+  };
+
+  const initialPhone = parsePhoneNumber(tienda.telefono);
+  const [countryCode, setCountryCode] = useState(initialPhone.code);
+  const [phoneNumber, setPhoneNumber] = useState(initialPhone.number);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const lastTiendaTelefonoRef = useRef(tienda.telefono);
+
+  // Códigos de país comunes
+  const countryCodes = [
+    { code: '+52', country: 'México', flag: '🇲🇽' },
+    { code: '+1', country: 'Estados Unidos', flag: '🇺🇸' },
+    { code: '+1', country: 'Canadá', flag: '🇨🇦' },
+    { code: '+54', country: 'Argentina', flag: '🇦🇷' },
+    { code: '+56', country: 'Chile', flag: '🇨🇱' },
+    { code: '+57', country: 'Colombia', flag: '🇨🇴' },
+    { code: '+34', country: 'España', flag: '🇪🇸' },
+    { code: '+51', country: 'Perú', flag: '🇵🇪' },
+  ];
+
+  // Solo actualizar si tienda.telefono cambió REALMENTE (no por re-renders)
+  useEffect(() => {
+    if (isOpen && tienda.telefono !== lastTiendaTelefonoRef.current) {
+      console.log('📞 Teléfono cambió de', lastTiendaTelefonoRef.current, 'a', tienda.telefono);
+      lastTiendaTelefonoRef.current = tienda.telefono;
+
+      const parsed = parsePhoneNumber(tienda.telefono);
+      setCountryCode(parsed.code);
+      setPhoneNumber(parsed.number);
+    }
+  }, [isOpen, tienda.telefono]);
+
+  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowCountryDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (!isOpen) return null;
 
   // Handler unificado para manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    // Validar teléfono: solo números
-    if (name === 'telefono') {
-      const onlyNumbers = value.replace(/\D/g, '');
-      e.target.value = onlyNumbers;
-    }
 
     // Si estamos editando, pasar el evento y el nombre del campo
     // Si estamos creando, pasar solo el evento
@@ -36,16 +89,19 @@ const TiendaModal = ({
   const handleFormSubmit = (e) => {
     e.preventDefault();
 
-    // Validar teléfono si no está vacío
-    if (tienda.telefono && tienda.telefono.trim() !== '') {
-      const phoneDigits = tienda.telefono.replace(/\D/g, '');
-      if (phoneDigits.length !== 10) {
-        setModalError('El teléfono debe tener exactamente 10 dígitos');
-        return;
-      }
-    }
+    // Combinar código de país + número si hay número de teléfono
+    const fullPhone = phoneNumber.trim() ? `${countryCode} ${phoneNumber.trim()}` : '';
 
-    onSubmit(e);
+    console.log('📞 Enviando teléfono completo:', fullPhone);
+
+    // Crear evento personalizado con el teléfono
+    const customEvent = {
+      ...e,
+      preventDefault: () => {},
+      telefonoCompleto: fullPhone // ← Pasar el teléfono directamente
+    };
+
+    onSubmit(customEvent);
   };
 
   return (
@@ -150,23 +206,77 @@ const TiendaModal = ({
                 <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
                   Teléfono
                 </label>
-                <input
-                  type="tel"
-                  name="telefono"
-                  value={tienda.telefono}
-                  onChange={handleInputChange}
-                  placeholder="1234567890"
-                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
-                  style={{
-                    borderColor: '#e5e7eb',
-                    focusRingColor: '#23334e'
-                  }}
-                  maxLength="10"
-                  pattern="[0-9]{10}"
-                  title="Debe contener exactamente 10 dígitos"
-                />
+                <div className="flex gap-2">
+                  {/* Dropdown de código de país */}
+                  <div className="relative" style={{ minWidth: '160px' }} ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                      className="w-full px-3 py-3 border rounded-lg focus:outline-none focus:ring-2 flex items-center justify-between"
+                      style={{
+                        borderColor: '#e5e7eb',
+                        '--tw-ring-color': '#23334e'
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span style={{ fontSize: '1.25rem' }}>
+                          {countryCodes.find(c => c.code === countryCode)?.flag || '🏳️'}
+                        </span>
+                        <span className="font-medium" style={{ color: '#23334e' }}>
+                          {countryCode}
+                        </span>
+                      </span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown menu */}
+                    {showCountryDropdown && (
+                      <div
+                        className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        style={{ borderColor: '#e5e7eb', top: '100%' }}
+                      >
+                        {countryCodes.map((country, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => {
+                              setCountryCode(country.code);
+                              setShowCountryDropdown(false);
+                            }}
+                            className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                            style={countryCode === country.code ? { backgroundColor: '#f3f4f6' } : {}}
+                          >
+                            <span style={{ fontSize: '1.25rem' }}>{country.flag}</span>
+                            <span className="font-medium" style={{ color: '#23334e' }}>{country.code}</span>
+                            <span className="text-sm" style={{ color: '#697487' }}>({country.country})</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Input para el número */}
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      // Solo permitir números
+                      const value = e.target.value.replace(/\D/g, '');
+                      setPhoneNumber(value);
+                    }}
+                    placeholder="5551234567"
+                    className="flex-1 px-3 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors"
+                    style={{
+                      borderColor: '#e5e7eb',
+                      '--tw-ring-color': '#23334e'
+                    }}
+                    maxLength="15"
+                  />
+                </div>
                 <p className="text-xs mt-1" style={{ color: '#697487' }}>
-                  Opcional - Solo números, 10 dígitos (Ej: 5512345678)
+                  Opcional - Ejemplo: {countryCode} 5551234567
                 </p>
               </div>
             </div>

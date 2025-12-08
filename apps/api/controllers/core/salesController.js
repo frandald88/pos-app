@@ -121,16 +121,24 @@ class SalesController {
 
       const newSale = new Sale(saleData);
 
-      // ⚡ OPTIMIZACIÓN: Actualizar stock en paralelo mientras se guarda la venta
-      const stockUpdates = items
-        .filter(item => item.productId)
-        .map(item =>
-          Product.findOneAndUpdate(
-            { _id: item.productId, tenantId: req.tenantId },
-            { $inc: { stock: -item.quantity } },
-            { new: false } // No necesitamos el documento actualizado
-          )
-        );
+      // 📦 REDUCCIÓN DE STOCK: Solo para supermercados
+      // Restaurants y dark kitchens preparan items al momento (hamburguesas, etc.)
+      // Supermercados venden productos pre-hechos que deben restarse del inventario
+      const stockUpdates = [];
+
+      if (tenant?.businessType === 'supermarket') {
+        items
+          .filter(item => item.productId)
+          .forEach(item => {
+            stockUpdates.push(
+              Product.findOneAndUpdate(
+                { _id: item.productId, tenantId: req.tenantId },
+                { $inc: { stock: -item.quantity } },
+                { new: false }
+              )
+            );
+          });
+      }
 
       // Ejecutar guardado de venta y actualizaciones de stock en paralelo
       await Promise.all([
@@ -464,22 +472,29 @@ class SalesController {
           return errorResponse(res, 'Solo puedes cancelar pedidos en preparación o listos para envío', 400);
         }
 
-        // Devolver stock solo si la venta tiene productos con productId válido
-        for (const item of sale.items) {
-          if (item.productId) {
-            try {
-              const product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
-              if (product) {
-                await Product.findOneAndUpdate(
-                  { _id: item.productId, tenantId: req.tenantId },
-                  { $inc: { stock: item.quantity } }
-                );
-              } else {
-                console.warn(`⚠️ Producto ${item.productId} no encontrado, no se devolvió stock`);
+        // 📦 RESTAURACIÓN DE STOCK: Solo para supermercados
+        // Obtener el tipo de negocio del tenant
+        const Tenant = require('../../core/tenants/model');
+        const tenant = await Tenant.findById(req.tenantId).select('businessType');
+
+        if (tenant?.businessType === 'supermarket') {
+          // Devolver stock solo si la venta tiene productos con productId válido
+          for (const item of sale.items) {
+            if (item.productId) {
+              try {
+                const product = await Product.findOne({ _id: item.productId, tenantId: req.tenantId });
+                if (product) {
+                  await Product.findOneAndUpdate(
+                    { _id: item.productId, tenantId: req.tenantId },
+                    { $inc: { stock: item.quantity } }
+                  );
+                } else {
+                  console.warn(`⚠️ Producto ${item.productId} no encontrado, no se devolvió stock`);
+                }
+              } catch (productError) {
+                console.error(`❌ Error al devolver stock del producto ${item.productId}:`, productError);
+                // Continuar con los demás productos en lugar de fallar completamente
               }
-            } catch (productError) {
-              console.error(`❌ Error al devolver stock del producto ${item.productId}:`, productError);
-              // Continuar con los demás productos en lugar de fallar completamente
             }
           }
         }
@@ -547,15 +562,21 @@ class SalesController {
       // Obtener las ventas antes de eliminarlas para devolver stock si es necesario
       const sales = await Sale.find({ _id: { $in: ids }, tenantId: req.tenantId });
 
-      // Devolver stock de productos
-      for (const sale of sales) {
-        if (sale.status !== 'cancelada') {
-          for (const item of sale.items) {
-            if (item.productId) {
-              await Product.findOneAndUpdate(
-                { _id: item.productId, tenantId: req.tenantId },
-                { $inc: { stock: item.quantity } }
-              );
+      // 📦 RESTAURACIÓN DE STOCK: Solo para supermercados
+      const Tenant = require('../../core/tenants/model');
+      const tenant = await Tenant.findById(req.tenantId).select('businessType');
+
+      if (tenant?.businessType === 'supermarket') {
+        // Devolver stock de productos
+        for (const sale of sales) {
+          if (sale.status !== 'cancelada') {
+            for (const item of sale.items) {
+              if (item.productId) {
+                await Product.findOneAndUpdate(
+                  { _id: item.productId, tenantId: req.tenantId },
+                  { $inc: { stock: item.quantity } }
+                );
+              }
             }
           }
         }

@@ -112,9 +112,15 @@ class UsersController {
   // Obtener todos los usuarios (solo admin)
   async getAll(req, res) {
     try {
+      const startTime = Date.now();
+
       // Obtener la tienda del usuario actual
       const currentUser = await User.findOne({ _id: req.userId, tenantId: req.tenantId })
-        .select('tienda role');
+        .select('tienda role')
+        .lean();
+
+      const step1Time = Date.now();
+      console.log(`⏱️ [getAll Users] Current user query: ${step1Time - startTime}ms`);
 
       if (!currentUser) {
         return res.status(404).json({ message: 'Usuario actual no encontrado' });
@@ -147,10 +153,16 @@ class UsersController {
         filter.role = role;
       }
 
-      const users = await User.find(filter).select('username nombre role tienda telefono')
-        .populate('tienda', 'nombre');
+      const step2Time = Date.now();
+      const users = await User.find(filter)
+        .select('username nombre email role tienda telefono')
+        .populate('tienda', 'nombre')
+        .lean();
 
-      console.log('✅ Users found:', users.length, 'with filters:', filter);
+      const endTime = Date.now();
+      console.log(`⏱️ [getAll Users] Users query: ${endTime - step2Time}ms (${users.length} users)`);
+      console.log(`⏱️ [getAll Users] TIEMPO TOTAL: ${endTime - startTime}ms`);
+
       res.json(users);
     } catch (err) {
       console.error('❌ Error fetching users:', err);

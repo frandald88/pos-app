@@ -5,12 +5,13 @@ const User = require('../../core/users/model');
 const EmployeeHistory = require('../../modules/empleados/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const { COUNTRY_CODES, validateInternationalPhone } = require('../../shared/utils/phoneValidation');
+const emailService = require('../../shared/services/emailService');
 
 // Datos de ejemplo para productos - Supermercado/Frutería
 const SAMPLE_PRODUCTS_SUPERMARKET = [
   {
     name: 'Coca-Cola 600ml',
-    sku: 'COC-600',
+    sku: '1',
     barcode: '7501055300006',
     price: 15,
     cost: 10,
@@ -20,7 +21,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Agua Bonafont 1L',
-    sku: 'AGU-1L',
+    sku: '2',
     barcode: '7501055310005',
     price: 10,
     cost: 7,
@@ -30,7 +31,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Sabritas Original 45g',
-    sku: 'SAB-45',
+    sku: '3',
     barcode: '7501055320004',
     price: 18,
     cost: 12,
@@ -40,7 +41,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Pan Bimbo Blanco',
-    sku: 'PAN-BIM',
+    sku: '4',
     barcode: '7501055330003',
     price: 35,
     cost: 25,
@@ -50,7 +51,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Leche Lala 1L',
-    sku: 'LEC-1L',
+    sku: '5',
     barcode: '7501055340002',
     price: 22,
     cost: 17,
@@ -60,7 +61,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Huevo Bachoco 12 pzas',
-    sku: 'HUE-12',
+    sku: '6',
     barcode: '7501055350001',
     price: 45,
     cost: 35,
@@ -70,7 +71,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Aceite 123 900ml',
-    sku: 'ACE-900',
+    sku: '7',
     barcode: '7501055360000',
     price: 38,
     cost: 30,
@@ -80,7 +81,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
   },
   {
     name: 'Arroz Morelos 1kg',
-    sku: 'ARR-1K',
+    sku: '8',
     barcode: '7501055370009',
     price: 25,
     cost: 18,
@@ -94,7 +95,7 @@ const SAMPLE_PRODUCTS_SUPERMARKET = [
 const SAMPLE_PRODUCTS_RESTAURANT = [
   {
     name: 'Boneless',
-    sku: 'BON-001',
+    sku: '1',
     barcode: '',
     price: 129,
     cost: 65,
@@ -104,7 +105,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Hamburguesa Clásica',
-    sku: 'HAM-CLA',
+    sku: '2',
     barcode: '',
     price: 99,
     cost: 45,
@@ -114,7 +115,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Poke Bowl',
-    sku: 'POK-001',
+    sku: '3',
     barcode: '',
     price: 159,
     cost: 75,
@@ -124,7 +125,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Burro Percherón Mixto',
-    sku: 'BUR-MIX',
+    sku: '4',
     barcode: '',
     price: 89,
     cost: 40,
@@ -134,7 +135,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Ensalada Caesar',
-    sku: 'ENS-CAE',
+    sku: '5',
     barcode: '',
     price: 89,
     cost: 35,
@@ -144,7 +145,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Wrap Pollo Chipotle',
-    sku: 'WRA-CHI',
+    sku: '6',
     barcode: '',
     price: 79,
     cost: 35,
@@ -154,7 +155,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Pizza de Pepperoni',
-    sku: 'PIZ-PEP',
+    sku: '7',
     barcode: '',
     price: 169,
     cost: 70,
@@ -164,7 +165,7 @@ const SAMPLE_PRODUCTS_RESTAURANT = [
   },
   {
     name: 'Sushi California de Camarón',
-    sku: 'SUS-CAL',
+    sku: '8',
     barcode: '',
     price: 149,
     cost: 65,
@@ -598,6 +599,28 @@ class OnboardingController {
       tenant.metadata.teamInvited = true;
       await tenant.save();
 
+      // ✅ NUEVO: Enviar email con credenciales
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const loginUrl = `${frontendUrl}/login`;
+        const changePasswordUrl = `${frontendUrl}/change-password`;
+
+        await emailService.sendNewUserCredentialsEmail({
+          to: email.toLowerCase().trim(),
+          username: emailUsername,
+          email: email.toLowerCase().trim(),
+          tempPassword: tempPassword,
+          loginUrl: loginUrl,
+          changePasswordUrl: changePasswordUrl
+        });
+
+        console.log(`✅ Email de credenciales enviado a ${email}`);
+      } catch (emailError) {
+        // No fallar si el email falla, solo registrar el error
+        console.error('⚠️ Error enviando email de credenciales:', emailError.message);
+        console.log('📧 El usuario fue creado exitosamente, pero el email no pudo ser enviado');
+      }
+
       return successResponse(res, {
         user: {
           _id: newUser._id,
@@ -606,7 +629,8 @@ class OnboardingController {
           tienda: tienda.nombre
         },
         tempPassword: tempPassword,
-        message: `Usuario vendedor creado. Contraseña temporal: ${tempPassword}`
+        emailSent: true,
+        message: `Usuario vendedor creado. Se ha enviado un correo con las credenciales a ${email}`
       }, 'Miembro del equipo agregado exitosamente');
     } catch (error) {
       console.error('Error creando miembro del equipo:', error);

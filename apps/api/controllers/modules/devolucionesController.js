@@ -156,15 +156,22 @@ class DevolucionesController {
 
       await returnRecord.save();
 
-      // Actualizar stock de productos devueltos
-      for (const item of validatedItems) {
-        if (item.productId && item.condition === 'Nuevo') {
-          await Product.findByIdAndUpdate(
-            item.productId,
-            { $inc: { stock: item.quantity } }
-          );
+      // 📦 RESTAURACIÓN DE STOCK: Solo para supermercados
+      // Obtener el tipo de negocio del tenant
+      const Tenant = require('../../core/tenants/model');
+      const tenant = await Tenant.findById(req.tenantId).select('businessType');
+
+      if (tenant?.businessType === 'supermarket') {
+        // Actualizar stock de productos devueltos
+        for (const item of validatedItems) {
+          if (item.productId && item.condition === 'Nuevo') {
+            await Product.findByIdAndUpdate(
+              item.productId,
+              { $inc: { stock: item.quantity } }
+            );
+          }
+          // Si esta dañado o usado, no se devuelve al stock
         }
-        // Si esta danado o usado, no se devuelve al stock
       }
 
       // Actualizar el total de devoluciones y establecer status inteligente
@@ -389,13 +396,20 @@ class DevolucionesController {
 
       // Si se rechaza, revertir cambios en stock y venta
       if (status === 'rechazada') {
-        // Revertir stock
-        for (const item of returnRecord.returnedItems) {
-          if (item.productId && item.condition === 'Nuevo') {
-            await Product.findByIdAndUpdate(
-              item.productId,
-              { $inc: { stock: -item.quantity } }
-            );
+        // 📦 REVERSIÓN DE STOCK: Solo para supermercados
+        // Obtener el tipo de negocio del tenant
+        const Tenant = require('../../core/tenants/model');
+        const tenant = await Tenant.findById(req.tenantId).select('businessType');
+
+        if (tenant?.businessType === 'supermarket') {
+          // Revertir stock (quitarlo porque la devolución fue rechazada)
+          for (const item of returnRecord.returnedItems) {
+            if (item.productId && item.condition === 'Nuevo') {
+              await Product.findByIdAndUpdate(
+                item.productId,
+                { $inc: { stock: -item.quantity } }
+              );
+            }
           }
         }
 
@@ -405,7 +419,7 @@ class DevolucionesController {
 
         const updateData = { $inc: { totalReturned: -returnRecord.refundAmount } };
 
-        // Si no queda ninguna devolucion, restaurar a estado entregado
+        // Si no queda ninguna devolución, restaurar a estado entregado
         if (newTotalReturned <= 0 && sale.status === 'cancelada') {
           updateData.status = 'entregado_y_cobrado';
         }

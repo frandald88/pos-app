@@ -74,7 +74,9 @@ export default function ClientesPage() {
       }
       setModalError("");
     } catch (error) {
-      setModalError("Error al guardar cliente ❌");
+      console.error('Error al guardar cliente:', error);
+      const errorMessage = error.response?.data?.message || "Error al guardar cliente ❌";
+      setModalError(errorMessage);
     }
   };
 

@@ -968,7 +968,7 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       } else {
         // Modo edición: actualizar o crear historial si hay datos
         if (editHistorial.sueldo && editPersonalData.nombre) {
-          if (editHistorial.id) {
+          if (editHistorial.historyId) {
             // Actualizar historial existente
             const updatePayload = {
               sueldoDiario: parseFloat(editHistorial.sueldo),
@@ -984,7 +984,7 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
               numeroSeguroSocial: editPersonalData.numeroSeguroSocial?.trim() || null
             };
 
-            await axios.put(`${apiBaseUrl}/api/employees/history/${editHistorial.id}`, updatePayload, {
+            await axios.put(`${apiBaseUrl}/api/employees/history/${editHistorial.historyId}`, updatePayload, {
               headers: { Authorization: `Bearer ${token}` },
             });
           } else {
@@ -1033,6 +1033,7 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
     setCargando(true);
     const payload = {
       // Datos laborales existentes
+      startDate: editHistorial.startDate || null,
       endDate: editHistorial.endDate || null,
       seguroSocial: editHistorial.seguro,
       motivoBaja: editHistorial.motivo,
@@ -1040,7 +1041,7 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       sueldoDiario: editHistorial.sueldo ? parseFloat(editHistorial.sueldo) : undefined,
       position: editHistorial.position,
       notes: editHistorial.notes,
-      
+
       // ✅ CAMPOS PERSONALES QUE FALTABAN
       nombre: editPersonalData.nombre?.trim() || null,
       apellidoPaterno: editPersonalData.apellidoPaterno?.trim() || null,
@@ -1075,13 +1076,15 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
   const clearEditStates = useCallback(() => {
     setEditHistorial({
       id: null,
+      historyId: null,
       endDate: "",
       seguro: false,
       motivo: "",
       razon: "",
       sueldo: "",
       position: "",
-      notes: ""
+      notes: "",
+      startDate: ""
     });
     setEditPersonalData({
       nombre: "",
@@ -1145,9 +1148,9 @@ const handleEdit = async (user) => {
         numeroSeguroSocial: historyData.numeroSeguroSocial || ""
       });
 
-      // Llenar datos del historial
+      // Llenar datos del historial (sin establecer id para no abrir el modal de historial)
       setEditHistorial({
-        id: historyData._id,
+        id: null, // No establecer ID para evitar que se abra el modal de historial
         endDate: historyData.endDate ? new Date(historyData.endDate).toISOString().split('T')[0] : "",
         seguro: historyData.seguroSocial === 'Sí',
         motivo: historyData.motivoBaja || "",
@@ -1155,7 +1158,8 @@ const handleEdit = async (user) => {
         sueldo: historyData.sueldoDiario?.toString() || "",
         position: historyData.position || "",
         notes: historyData.notes || "",
-        startDate: historyData.startDate ? new Date(historyData.startDate).toISOString().split('T')[0] : ""
+        startDate: historyData.startDate ? new Date(historyData.startDate).toISOString().split('T')[0] : "",
+        historyId: historyData._id // Guardar el ID real aquí para actualizaciones
       });
     } else {
       // No tiene historial, limpiar campos
@@ -1169,6 +1173,7 @@ const handleEdit = async (user) => {
       });
       setEditHistorial({
         id: null,
+        historyId: null,
         endDate: "",
         seguro: false,
         motivo: "",
@@ -1192,6 +1197,7 @@ const handleEdit = async (user) => {
     });
     setEditHistorial({
       id: null,
+      historyId: null,
       endDate: "",
       seguro: false,
       motivo: "",
@@ -2003,7 +2009,7 @@ const handleEdit = async (user) => {
                   </div>
 
                   {/* Sección de datos personales (si hay historial) */}
-                  {(editHistorial.id || editHistorial.sueldo) && (
+                  {(editHistorial.historyId || editHistorial.sueldo || editHistorial.position) && (
                     <div className="mb-6">
                       <h3 className="text-lg font-medium mb-4" style={{ color: '#46546b' }}>
                         Datos Personales
@@ -2098,7 +2104,7 @@ const handleEdit = async (user) => {
                   )}
 
                   {/* Sección de historial laboral (si hay historial) */}
-                  {(editHistorial.id || editHistorial.sueldo) && (
+                  {(editHistorial.historyId || editHistorial.sueldo || editHistorial.position) && (
                     <div className="mb-6">
                       <h3 className="text-lg font-medium mb-4" style={{ color: '#46546b' }}>
                         Información Laboral
@@ -2178,7 +2184,7 @@ const handleEdit = async (user) => {
                   )}
 
                   {/* Opción para agregar historial si no existe */}
-                  {!editHistorial.id && !editHistorial.sueldo && form.role !== 'admin' && (
+                  {!editHistorial.historyId && !editHistorial.sueldo && !editHistorial.position && form.role !== 'admin' && (
                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800 mb-2">
                         Este usuario no tiene historial laboral registrado.

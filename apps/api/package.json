@@ -25,6 +25,7 @@
         "mongoose": "^8.16.0",
         "multer": "^2.0.2",
         "node-cron": "^4.2.1",
+        "nodemailer": "^7.0.11",
         "path-to-regexp": "^1.8.0",
         "pdfkit": "^0.17.2",
         "stripe": "^19.3.0"

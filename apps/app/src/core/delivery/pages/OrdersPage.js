@@ -136,7 +136,9 @@ export default function OrdersPage() {
         setModalError("");
         loadOrders(buildOrderFilters());
       } catch (error) {
-        setModalError("Error al actualizar orden ❌");
+        console.error('Error al actualizar orden:', error);
+        const errorMessage = error.response?.data?.message || "Error al actualizar orden ❌";
+        setModalError(errorMessage);
       }
     } else {
       // Crear nueva orden
@@ -157,7 +159,9 @@ export default function OrdersPage() {
         setModalError("");
         loadOrders(buildOrderFilters());
       } catch (error) {
-        setModalError("Error al crear orden ❌");
+        console.error('Error al crear orden:', error);
+        const errorMessage = error.response?.data?.message || "Error al crear orden ❌";
+        setModalError(errorMessage);
       }
     }
   };

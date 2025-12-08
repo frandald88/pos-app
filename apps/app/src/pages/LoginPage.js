@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiBaseUrl from "../config/api";
-import logo from "../assets/logo.png"; // Ajusta la ruta según tu estructura
+import logo from "../assets/astrodishlogo1.png"; // Logo de AstroDish
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -168,22 +168,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Panel izquierdo - Información corporativa */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #23334e 0%, #46546b 50%, #697487 100%)' }}>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 50%, #7a9de8 100%)' }}>
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0">
-          <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#46546b' }}></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#697487', animationDelay: '2s' }}></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#8c95a4', animationDelay: '4s' }}></div>
+          <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#2b354f' }}></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#5e85e0', animationDelay: '2s' }}></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#7a9de8', animationDelay: '4s' }}></div>
         </div>
 
         <div className="relative z-10 flex flex-col justify-center px-12 text-white">
           <div className="max-w-md">
             {/* Logo y branding */}
             <div className="mb-8">
-              <img src={logo} alt="Logo" className="w-20 h-20 mb-6 rounded-xl shadow-2xl bg-white/10 p-3" />
+              <img src={logo} alt="AstroDish POS" className="h-24 mb-6 shadow-2xl" style={{ maxWidth: '100%', objectFit: 'contain' }} />
               <h1 className="text-4xl font-bold mb-4 leading-tight">
-                Sistema POS
-                <span className="block text-2xl font-normal mt-2" style={{ color: '#8c95a4' }}>
+                
+                <span className="block text-2xl font-normal mt-2" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
                   Punto de Venta Profesional
                 </span>
               </h1>
@@ -192,56 +192,56 @@ export default function LoginPage() {
             {/* Características */}
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Rápido y Eficiente</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Procesamiento instantáneo de ventas</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Procesamiento instantáneo de ventas</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Seguro y Confiable</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Protección de datos empresariales</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Protección de datos empresariales</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(140, 149, 164, 0.2)' }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }}>
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Reportes Detallados</h3>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Análisis completo del negocio</p>
+                  <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Análisis completo del negocio</p>
                 </div>
               </div>
             </div>
 
             {/* Información del sistema */}
-            <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(140, 149, 164, 0.1)', borderColor: 'rgba(140, 149, 164, 0.2)' }}>
+            <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)' }}>
               <div className="text-sm space-y-2">
                 <div className="flex justify-between items-center">
-                  <span style={{ color: '#8c95a4' }}>📅 Fecha:</span>
-                  <span className="font-medium">{date}</span>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>📅 Fecha:</span>
+                  <span className="font-medium text-white">{date}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span style={{ color: '#8c95a4' }}>🕐 Hora:</span>
-                  <span className="font-medium">{time}</span>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>🕐 Hora:</span>
+                  <span className="font-medium text-white">{time}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span style={{ color: '#8c95a4' }}>🌐 Estado:</span>
-                  <span className="flex items-center">
+                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>🌐 Estado:</span>
+                  <span className="flex items-center text-white">
                     <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                     En línea
                   </span>
@@ -260,7 +260,7 @@ export default function LoginPage() {
             <div className="lg:hidden mb-6">
               <img src={logo} alt="Logo" className="w-16 h-16 mx-auto rounded-xl shadow-lg" />
             </div>
-            <h2 className="text-3xl font-bold mb-2" style={{ color: '#23334e' }}>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#2b354f' }}>
               Iniciar Sesión
             </h2>
             <p style={{ color: '#697487' }}>
@@ -273,7 +273,7 @@ export default function LoginPage() {
             <form className="space-y-6" onSubmit={handleLogin}>
               {/* Campo Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                   Email
                 </label>
                 <div className="relative">
@@ -289,10 +289,10 @@ export default function LoginPage() {
                     disabled={loading || showTenantSelector}
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:bg-gray-100 transition-all duration-200"
                     style={{
-                      '--tw-ring-color': '#46546b',
-                      color: '#23334e'
+                      '--tw-ring-color': '#2b354f',
+                      color: '#2b354f'
                     }}
-                    onFocus={(e) => e.target.style.setProperty('--tw-ring-color', '#46546b')}
+                    onFocus={(e) => e.target.style.setProperty('--tw-ring-color', '#2b354f')}
                     placeholder="tu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -302,7 +302,7 @@ export default function LoginPage() {
 
               {/* Campo Contraseña */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
+                <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: '#2b354f' }}>
                   Contraseña
                 </label>
                 <div className="relative">
@@ -317,11 +317,11 @@ export default function LoginPage() {
                     required
                     disabled={loading}
                     className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 disabled:bg-gray-100 transition-all duration-200"
-                    style={{ 
-                      '--tw-ring-color': '#46546b',
-                      color: '#23334e' 
+                    style={{
+                      '--tw-ring-color': '#2b354f',
+                      color: '#2b354f'
                     }}
-                    onFocus={(e) => e.target.style.setProperty('--tw-ring-color', '#46546b')}
+                    onFocus={(e) => e.target.style.setProperty('--tw-ring-color', '#2b354f')}
                     placeholder="Ingresa tu contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -359,24 +359,27 @@ export default function LoginPage() {
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 focus:ring-2"
-                    style={{ 
-                      '--tw-ring-color': '#46546b',
-                      accentColor: '#46546b'
+                    style={{
+                      '--tw-ring-color': '#2b354f',
+                      accentColor: '#2b354f'
                     }}
                   />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm" style={{ color: '#23334e' }}>
+                  <label htmlFor="remember-me" className="ml-2 block text-sm" style={{ color: '#2b354f' }}>
                     Recordarme
                   </label>
                 </div>
-                {/*<div className="text-sm">
-                  <a href="#" className="font-medium transition-colors duration-200" 
-                     style={{ color: '#46546b' }}
-                     onMouseEnter={(e) => e.target.style.color = '#23334e'}
-                     onMouseLeave={(e) => e.target.style.color = '#46546b'}
+                <div className="text-sm">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="font-medium transition-colors duration-200"
+                    style={{ color: '#2b354f' }}
+                    onMouseEnter={(e) => e.target.style.color = '#5e85e0'}
+                    onMouseLeave={(e) => e.target.style.color = '#2b354f'}
                   >
                     ¿Olvidaste tu contraseña?
-                  </a>
-                </div>*/}
+                  </button>
+                </div>
               </div>
 
               {/* Botón de submit */}
@@ -385,18 +388,18 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading}
                   className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
-                  style={{ 
-                    background: loading ? '#8c95a4' : 'linear-gradient(135deg, #46546b 0%, #23334e 100%)',
-                    '--tw-ring-color': '#46546b'
+                  style={{
+                    background: loading ? '#8c95a4' : 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+                    '--tw-ring-color': '#2b354f'
                   }}
                   onMouseEnter={(e) => {
                     if (!loading) {
-                      e.target.style.background = 'linear-gradient(135deg, #23334e 0%, #46546b 100%)';
+                      e.target.style.background = 'linear-gradient(135deg, #5e85e0 0%, #7a9de8 100%)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!loading) {
-                      e.target.style.background = 'linear-gradient(135deg, #46546b 0%, #23334e 100%)';
+                      e.target.style.background = 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)';
                     }
                   }}
                 >
@@ -453,7 +456,7 @@ export default function LoginPage() {
                           backgroundColor: 'white'
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.borderColor = '#46546b';
+                          e.target.style.borderColor = '#5e85e0';
                           e.target.style.backgroundColor = '#f8fafc';
                         }}
                         onMouseLeave={(e) => {
@@ -461,7 +464,7 @@ export default function LoginPage() {
                           e.target.style.backgroundColor = 'white';
                         }}
                       >
-                        <div className="font-semibold" style={{ color: '#23334e' }}>
+                        <div className="font-semibold" style={{ color: '#2b354f' }}>
                           {tenant.companyName}
                         </div>
                         <div className="text-xs" style={{ color: '#697487' }}>
@@ -495,15 +498,15 @@ export default function LoginPage() {
               <button
                 onClick={() => navigate('/register')}
                 className="font-medium transition-colors duration-200"
-                style={{ color: '#46546b' }}
-                onMouseEnter={(e) => e.target.style.color = '#23334e'}
-                onMouseLeave={(e) => e.target.style.color = '#46546b'}
+                style={{ color: '#5e85e0' }}
+                onMouseEnter={(e) => e.target.style.color = '#2b354f'}
+                onMouseLeave={(e) => e.target.style.color = '#5e85e0'}
               >
                 Regístrate aquí
               </button>
             </p>
             <p className="text-xs" style={{ color: '#8c95a4' }}>
-              © 2025 Sistema POS. Todos los derechos reservados.
+              © 2025 AstroDish POS. Todos los derechos reservados.
             </p>
             <p className="text-xs mt-1" style={{ color: '#8c95a4' }}>
               Versión 2.0.1 •

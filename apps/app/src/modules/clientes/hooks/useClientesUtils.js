@@ -156,6 +156,8 @@ export const useClientesUtils = () => {
   const prepareClienteData = (rawData) => {
     return {
       nombre: cleanText(rawData.nombre),
+      primerApellido: cleanText(rawData.primerApellido || ''),
+      segundoApellido: cleanText(rawData.segundoApellido || ''),
       direccion: cleanText(rawData.direccion),
       telefono: cleanPhoneNumber(rawData.telefono),
       email: cleanText(rawData.email)

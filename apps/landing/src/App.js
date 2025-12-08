@@ -56,7 +56,7 @@ function App() {
         <div className="container">
           <div className="nav-content">
             <div className="logo">
-              <img src="/Astrometric_logo_1.png" alt="Astrometrika" style={{height: '40px'}} />
+              <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
             </div>
             <div className="nav-links">
               <a href="#features">Características</a>
@@ -73,9 +73,10 @@ function App() {
       <section className="hero">
         <div className="container">
           <div className="hero-content">
+            <img src="/Astrodish_logo_2.png" alt="AstroDish POS" className="hero-logo" />
             <h1>El Sistema POS que impulsa tu negocio</h1>
             <p className="hero-subtitle">
-              Gestiona ventas, inventario y reportes desde la nube con Astrometrika POS.
+              Gestiona ventas, inventario y reportes desde la nube con AstroDish POS.
               Sin instalación, sin complicaciones.
             </p>
             <div className="hero-buttons">
@@ -97,39 +98,72 @@ function App() {
           <h2 className="section-title">Todo lo que necesitas para vender más</h2>
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">📊</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 3v18h18" />
+                  <path d="M18 17V9" />
+                  <path d="M13 17V5" />
+                  <path d="M8 17v-3" />
+                </svg>
+              </div>
               <h3>Reportes en Tiempo Real</h3>
               <p>Visualiza tus ventas, gastos y ganancias al instante con dashboards intuitivos.</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">📦</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+              </div>
               <h3>Control de Inventario</h3>
               <p>Gestiona tus productos, stock y alertas de forma automática.</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">👥</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
               <h3>Multi-tienda</h3>
               <p>Administra múltiples sucursales desde un solo lugar.</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">🔒</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+              </div>
               <h3>Seguro y Confiable</h3>
               <p>Tus datos protegidos con encriptación de nivel empresarial.</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">💳</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+              </div>
               <h3>Múltiples Métodos de Pago</h3>
               <p>Acepta efectivo, tarjeta, transferencias y pagos mixtos.</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">📱</div>
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                  <line x1="12" y1="18" x2="12.01" y2="18" />
+                </svg>
+              </div>
               <h3>Acceso desde Cualquier Lugar</h3>
-              <p>Usa Astrometrika POS desde cualquier dispositivo con conexión a internet.</p>
+              <p>Usa AstroDish POS desde cualquier dispositivo con conexión a internet.</p>
             </div>
           </div>
         </div>
@@ -235,7 +269,7 @@ function App() {
                 <div className="contact-icon">📧</div>
                 <div>
                   <h4>Email</h4>
-                  <a href="mailto:soporte@astrometrika.net">soporte@astrometrika.net</a>
+                  <a href="mailto:soporte@astrodish.com">soporte@astrodish.com</a>
                 </div>
               </div>
               <div className="contact-item">
@@ -344,8 +378,8 @@ function App() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <img src="/Astrometric_logo_2.png" alt="Astrometrika" style={{height: '50px', marginBottom: '1rem'}} />
-              <p>Astrometrika POS - El sistema en la nube que impulsa tu negocio.</p>
+              <img src="/Astrodish_logo_2.png" alt="AstroDish" style={{height: '50px', marginBottom: '1rem'}} />
+              <p>AstroDish POS - El sistema en la nube que impulsa tu negocio.</p>
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
@@ -360,7 +394,7 @@ function App() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2025 Astrometrika. Todos los derechos reservados.</p>
+            <p>&copy; 2025 AstroDish. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
