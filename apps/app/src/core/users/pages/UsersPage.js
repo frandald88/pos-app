@@ -2,10 +2,103 @@ import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import axios from "axios";
 import apiBaseUrl from "../../../config/api";
 
-// ✅ Imports de la nueva estructura modular
+// Imports de la nueva estructura modular
 import { useUserState } from "../hooks/useUserState";
 import { useScheduleData } from "../hooks/useScheduleData";
 import { usePhoneFormatter } from "../hooks/usePhoneFormatter";
+
+// SVG Icons - AstroDish Design System
+const Icons = {
+  // Iconos grandes para estadísticas (uniformes en tamaño)
+  users: () => <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>,
+  cart: () => <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  crown: () => <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M5 16L7 7L12 11L17 7L19 16H5ZM4 18H20V20H4V18Z" />
+    <circle cx="7" cy="6" r="2" />
+    <circle cx="12" cy="4" r="2" />
+    <circle cx="17" cy="6" r="2" />
+  </svg>,
+  truck: () => <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+  </svg>,
+  user: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>,
+  tag: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+  </svg>,
+  mail: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>,
+  phone: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+  </svg>,
+  store: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>,
+  clock: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  calendar: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>,
+  check: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>,
+  xmark: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>,
+  edit: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>,
+  trash: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>,
+  chart: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>,
+  sleep: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+  </svg>,
+  briefcase: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>,
+  clipboard: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>,
+  money: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  medical: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+  </svg>,
+  note: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>,
+  save: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+  </svg>,
+  eye: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>,
+  sparkles: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+  </svg>,
+  circleGreen: () => <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+  </svg>,
+  circleWhite: () => <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+  </svg>,
+  upload: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>
+};
 
 function UsersPage() {
   // ✅ Estados usando hooks personalizados
@@ -613,11 +706,11 @@ const handleNewUser = () => {
 
   const getRoleConfig = (role) => {
     const configs = {
-      'admin': { icon: '👑', color: '#8b5cf6', bgColor: 'bg-purple-100', textColor: 'text-purple-800', label: 'Administrador' },
-      'vendedor': { icon: '🛒', color: '#10b981', bgColor: 'bg-green-100', textColor: 'text-green-800', label: 'Vendedor' },
-      'repartidor': { icon: '🚚', color: '#3b82f6', bgColor: 'bg-blue-100', textColor: 'text-blue-800', label: 'Repartidor' }
+      'admin': { icon: Icons.crown, color: '#8b5cf6', bgColor: 'bg-purple-100', textColor: 'text-purple-800', label: 'Administrador' },
+      'vendedor': { icon: Icons.cart, color: '#10b981', bgColor: 'bg-green-100', textColor: 'text-green-800', label: 'Vendedor' },
+      'repartidor': { icon: Icons.truck, color: '#3b82f6', bgColor: 'bg-blue-100', textColor: 'text-blue-800', label: 'Repartidor' }
     };
-    return configs[role] || { icon: '👤', color: '#6b7280', bgColor: 'bg-gray-100', textColor: 'text-gray-800', label: role };
+    return configs[role] || { icon: Icons.user, color: '#6b7280', bgColor: 'bg-gray-100', textColor: 'text-gray-800', label: role };
   };
   
   // ✅ Función para crear horario personalizado
@@ -1288,8 +1381,8 @@ const handleEdit = async (user) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#23334e' }}>
-                👥
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: '#23334e' }}>
+                {Icons.users()}
               </div>
               <div>
                 <div className="text-2xl font-bold" style={{ color: '#23334e' }}>
@@ -1304,8 +1397,8 @@ const handleEdit = async (user) => {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-green-100">
-                🛒
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-green-600 bg-green-100">
+                {Icons.cart()}
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
@@ -1320,8 +1413,8 @@ const handleEdit = async (user) => {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-purple-100">
-                👑
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-purple-600 bg-purple-100">
+                {Icons.crown()}
               </div>
               <div>
                 <div className="text-2xl font-bold text-purple-600">
@@ -1336,8 +1429,8 @@ const handleEdit = async (user) => {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-blue-100">
-                🚚
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-blue-600 bg-blue-100">
+                {Icons.truck()}
               </div>
               <div>
                 <div className="text-2xl font-bold text-blue-600">
@@ -1520,7 +1613,7 @@ const handleEdit = async (user) => {
                       
                       {!templateData.schedule[dayIndex]?.isWorkday && (
                         <div className="text-center py-4 text-gray-500">
-                          <span className="text-2xl">😴</span>
+                          <div className="text-4xl">{Icons.sleep()}</div>
                           <div className="text-sm mt-2">Día de descanso</div>
                         </div>
                       )}
@@ -1531,7 +1624,9 @@ const handleEdit = async (user) => {
 
               {/* Resumen de la plantilla */}
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h4 className="font-medium text-purple-800 mb-3">📊 Resumen de la Plantilla</h4>
+                <h4 className="font-medium text-purple-800 mb-3 flex items-center gap-2">
+                  {Icons.chart()} Resumen de la Plantilla
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-purple-700">Días laborales:</span>
@@ -1607,9 +1702,9 @@ const handleEdit = async (user) => {
                   }}
                 >
                   <option value="">Todos los roles</option>
-                  <option value="admin">👑 Administrador</option>
-                  <option value="vendedor">🛒 Vendedor</option>
-                  <option value="repartidor">🚚 Repartidor</option>
+                  <option value="admin">Administrador</option>
+                  <option value="vendedor">Vendedor</option>
+                  <option value="repartidor">Repartidor</option>
                 </select>
               </div>
 
@@ -1629,7 +1724,7 @@ const handleEdit = async (user) => {
                   <option value="">Todas las tiendas</option>
                   {(tiendas || []).map((t) => (
                     <option key={t._id} value={t._id}>
-                      🏪 {t.nombre}
+                      {t.nombre}
                     </option>
                   ))}
                 </select>
@@ -1708,8 +1803,8 @@ const handleEdit = async (user) => {
                       {/* Información del usuario */}
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: roleConfig.color }}>
-                            {roleConfig.icon}
+                          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: roleConfig.color }}>
+                            {roleConfig.icon()}
                           </div>
                           <div>
                             <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
@@ -1723,22 +1818,22 @@ const handleEdit = async (user) => {
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                              🏷️
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
+                              {Icons.tag()}
                             </div>
                             <div>
                               <div className="text-sm font-medium" style={{ color: '#46546b' }}>
                                 Rol
                               </div>
-                              <span className={`px-3 py-1 text-sm rounded-full font-medium ${roleConfig.bgColor} ${roleConfig.textColor}`}>
-                                {roleConfig.icon} {roleConfig.label}
+                              <span className={`px-3 py-1 text-sm rounded-full font-medium ${roleConfig.bgColor} ${roleConfig.textColor} flex items-center gap-1`}>
+                                {roleConfig.icon()} {roleConfig.label}
                               </span>
                             </div>
                           </div>
 
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                              ✉️
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
+                              {Icons.mail()}
                             </div>
                             <div>
                               <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -1751,8 +1846,8 @@ const handleEdit = async (user) => {
                           </div>
 
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                              📞
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
+                              {Icons.phone()}
                             </div>
                             <div>
                               <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -1765,8 +1860,8 @@ const handleEdit = async (user) => {
                           </div>
 
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                              🏪
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
+                              {Icons.store()}
                             </div>
                             <div>
                               <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -1782,17 +1877,17 @@ const handleEdit = async (user) => {
                         {/* ✅ Indicador de horario asignado para no-admins */}
                         {user.role !== 'admin' && (
                           <div className="flex items-center gap-2 mt-3">
-                            <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" 
-                                 style={{ backgroundColor: userHasActiveSchedule(user._id) ? '#dcfce7' : '#fef3c7', 
+                            <div className="w-6 h-6 rounded-lg flex items-center justify-center"
+                                 style={{ backgroundColor: userHasActiveSchedule(user._id) ? '#dcfce7' : '#fef3c7',
                                           color: userHasActiveSchedule(user._id) ? '#166534' : '#92400e' }}>
-                              {userHasActiveSchedule(user._id) ? '✅' : '⏰'}
+                              {userHasActiveSchedule(user._id) ? Icons.check() : Icons.clock()}
                             </div>
                             <div>
                               <div className="text-xs font-medium" style={{ color: '#46546b' }}>
                                 Estado de Horario
                               </div>
-                              <div className="text-sm" style={{ 
-                                color: userHasActiveSchedule(user._id) ? '#166534' : '#92400e' 
+                              <div className="text-sm" style={{
+                                color: userHasActiveSchedule(user._id) ? '#166534' : '#92400e'
                               }}>
                                 {userHasActiveSchedule(user._id) ? 'Horario Asignado' : 'Sin Horario'}
                               </div>
@@ -1807,39 +1902,39 @@ const handleEdit = async (user) => {
                         {user.role !== 'admin' && !userHasActiveSchedule(user._id) && (
                           <button
                             onClick={() => handleOpenScheduleForm(user)}
-                            className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                            style={{ 
+                            className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                            style={{
                               backgroundColor: '#8b5cf6',
                               color: 'white'
                             }}
                             disabled={cargando}
                           >
-                            📅 Horario
+                            {Icons.calendar()} Horario
                           </button>
                         )}
                         
                         <button
                           onClick={() => handleEdit(user)}
-                          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                          style={{ 
+                          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                          style={{
                             backgroundColor: '#f59e0b',
                             color: 'white'
                           }}
                           disabled={cargando}
                         >
-                          ✏️ Editar
+                          {Icons.edit()} Editar
                         </button>
                         
                         <button
                           onClick={() => handleDelete(user._id, user.username)}
-                          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                          style={{ 
+                          className="px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                          style={{
                             backgroundColor: '#ef4444',
                             color: 'white'
                           }}
                           disabled={cargando}
                         >
-                          🗑️ Eliminar
+                          {Icons.trash()} Eliminar
                         </button>
                       </div>
                     </div>
@@ -1974,9 +2069,9 @@ const handleEdit = async (user) => {
                           }}
                           disabled={cargando}
                         >
-                          <option value="vendedor">🛒 Vendedor</option>
-                          <option value="admin">👑 Administrador</option>
-                          <option value="repartidor">🚚 Repartidor</option>
+                          <option value="vendedor">Vendedor</option>
+                          <option value="admin">Administrador</option>
+                          <option value="repartidor">Repartidor</option>
                         </select>
                       </div>
 
@@ -1999,7 +2094,7 @@ const handleEdit = async (user) => {
                             <option value="">-- Selecciona tienda --</option>
                             {(tiendas || []).map((t) => (
                               <option key={t._id} value={t._id}>
-                                🏪 {t.nombre}
+                                {t.nombre}
                               </option>
                             ))}
                           </select>
@@ -2366,9 +2461,9 @@ const handleEdit = async (user) => {
                       }}
                       disabled={cargando}
                     >
-                      <option value="vendedor">🛒 Vendedor</option>
-                      <option value="admin">👑 Administrador</option>
-                      <option value="repartidor">🚚 Repartidor</option>
+                      <option value="vendedor">Vendedor</option>
+                      <option value="admin">Administrador</option>
+                      <option value="repartidor">Repartidor</option>
                     </select>
                   </div>
 
@@ -2391,7 +2486,7 @@ const handleEdit = async (user) => {
                         <option value="">-- Selecciona tienda --</option>
                         {(tiendas || []).map((t) => (
                           <option key={t._id} value={t._id}>
-                            🏪 {t.nombre}
+                            {t.nombre}
                           </option>
                         ))}
                       </select>
@@ -2641,8 +2736,8 @@ const handleEdit = async (user) => {
             <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-                    📝 Editar Historial Laboral
+                  <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: '#23334e' }}>
+                    {Icons.note()} Editar Historial Laboral
                   </h2>
                   <button
                     onClick={() => {
@@ -2661,8 +2756,8 @@ const handleEdit = async (user) => {
                 <div className="space-y-6">
                   {/* Datos Personales */}
                   <div>
-                    <h3 className="text-lg font-medium mb-4" style={{ color: '#46546b' }}>
-                      👤 Información Personal
+                    <h3 className="text-lg font-medium mb-4 flex items-center gap-2" style={{ color: '#46546b' }}>
+                      {Icons.user()} Información Personal
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
@@ -2835,7 +2930,7 @@ const handleEdit = async (user) => {
                             style={{ accentColor: '#23334e' }}
                           />
                           <span className="text-sm font-medium" style={{ color: '#46546b' }}>
-                            🏥 Seguro Social
+                            Seguro Social
                           </span>
                         </label>
                       </div>
@@ -2846,7 +2941,7 @@ const handleEdit = async (user) => {
                   {editHistorial.endDate && (
                     <div>
                       <h3 className="text-lg font-medium mb-4" style={{ color: '#46546b' }}>
-                        📋 Información de Baja
+                        Información de Baja
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -2893,7 +2988,7 @@ const handleEdit = async (user) => {
                   {/* Notas */}
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{ color: '#46546b' }}>
-                      📝 Notas Adicionales
+                      Notas Adicionales
                     </label>
                     <textarea 
                       value={editHistorial.notes} 
@@ -2919,7 +3014,7 @@ const handleEdit = async (user) => {
                     className="flex-1 px-4 py-3 border border-gray-300 rounded-lg font-medium transition-colors hover:bg-gray-50"
                     disabled={cargando}
                   >
-                    ❌ Cancelar
+                    Cancelar
                   </button>
                   <button 
                     onClick={() => handleUpdateHistory(editHistorial.id)} 
@@ -2927,7 +3022,7 @@ const handleEdit = async (user) => {
                     style={{ backgroundColor: '#23334e' }}
                     disabled={cargando}
                   >
-                    {cargando ? "💾 Guardando..." : "💾 Guardar Cambios"}
+                    {cargando ? "Guardando..." : "Guardar Cambios"}
                   </button>
                 </div>
               </div>
@@ -3198,7 +3293,7 @@ const handleEdit = async (user) => {
                           
                           {!scheduleData.schedule?.[dayIndex]?.isWorkday && (
                             <div className="text-center py-4 text-gray-500">
-                              <span className="text-2xl">😴</span>
+                              <div className="text-4xl">{Icons.sleep()}</div>
                               <div className="text-sm mt-2">Día de descanso</div>
                             </div>
                           )}
@@ -3209,7 +3304,7 @@ const handleEdit = async (user) => {
 
                   {/* Resumen del horario */}
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-medium text-blue-800 mb-3">📊 Resumen del Horario</h4>
+                    <h4 className="font-medium text-blue-800 mb-3 flex items-center gap-2">{Icons.chart()} Resumen del Horario</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <span className="font-medium text-blue-700">Días laborales:</span>
@@ -3295,7 +3390,7 @@ const handleEdit = async (user) => {
           <div className="overflow-x-auto">
             {(historyData || []).length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-6xl mb-4">📋</div>
+                <div className="text-6xl mb-4 text-gray-400">{Icons.clipboard()}</div>
                 <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                   No hay registros laborales
                 </h3>
@@ -3360,7 +3455,7 @@ const handleEdit = async (user) => {
                       {/* COLUMNA SUELDO */}
                       <td className="p-4" style={{ color: '#697487' }}>
                         <div className="flex items-center gap-1">
-                          <span className="text-lg">💰</span>
+                          <span>{Icons.money()}</span>
                           <span className="font-semibold" style={{ color: '#23334e' }}>
                             ${(h.sueldoDiario || h.salary || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                           </span>
@@ -3374,14 +3469,14 @@ const handleEdit = async (user) => {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {h.seguroSocial === 'Sí' || h.seguroSocial === true ? "✅ Sí" : "❌ No"}
+                          {h.seguroSocial === 'Sí' || h.seguroSocial === true ? "Sí" : "No"}
                         </span>
                       </td>
                       
                       {/* COLUMNA FECHA INGRESO */}
                       <td className="p-4" style={{ color: '#697487' }}>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm">📅</span>
+                          <span>{Icons.calendar()}</span>
                           <span className="text-sm">
                             {new Date(h.startDate).toLocaleDateString('es-MX', {
                               year: 'numeric',
@@ -3768,7 +3863,7 @@ const handleEdit = async (user) => {
               </div>
             ) : (scheduleData.templates || []).length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-6xl mb-4">📋</div>
+                <div className="text-6xl mb-4 text-gray-400">{Icons.clipboard()}</div>
                 <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                   No hay plantillas disponibles
                 </h3>
@@ -3997,7 +4092,7 @@ const handleEdit = async (user) => {
                               className="flex-1 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg transition-colors duration-200 hover:bg-gray-100"
                               style={{ border: '1px solid #e5e7eb' }}
                             >
-                              ❌ Cancelar
+                              Cancelar
                             </button>
                           </div>
                         </>

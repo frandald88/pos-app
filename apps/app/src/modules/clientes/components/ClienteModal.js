@@ -1,5 +1,18 @@
 import React from 'react';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  edit: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>,
+  plus: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>,
+  lightbulb: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+  </svg>
+};
+
 const ClienteModal = ({
   isOpen,
   onClose,
@@ -35,8 +48,8 @@ const ClienteModal = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-              {isEditing ? '✏️ Editar Cliente' : '➕ Agregar Nuevo Cliente'}
+            <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: '#23334e' }}>
+              {isEditing ? <>{Icons.edit()} Editar Cliente</> : <>{Icons.plus()} Agregar Nuevo Cliente</>}
             </h2>
             <button
               onClick={onClose}
@@ -217,8 +230,8 @@ const ClienteModal = ({
               <p className="text-sm" style={{ color: '#46546b' }}>
                 <span className="font-semibold">* Campos requeridos:</span> Nombre(s) y Teléfono
               </p>
-              <p className="text-xs mt-1" style={{ color: '#697487' }}>
-                💡 Los apellidos son opcionales pero ayudan a evitar duplicados
+              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: '#697487' }}>
+                {Icons.lightbulb()} Los apellidos son opcionales pero ayudan a evitar duplicados
               </p>
             </div>
 

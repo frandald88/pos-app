@@ -4,6 +4,64 @@ import { useProductActions } from '../hooks/useProductActions';
 import { productService } from '../services/productService';
 import { usePrintProductLabel } from '../../../shared/components/PrintProductLabel';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  package: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>,
+  plus: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>,
+  close: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>,
+  check: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>,
+  warning: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>,
+  xmark: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>,
+  reload: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>,
+  money: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  edit: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+  </svg>,
+  lightbulb: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+  </svg>,
+  barcode: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>,
+  folder: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+  </svg>,
+  sparkles: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+  </svg>,
+  scale: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+  </svg>,
+  tag: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+  </svg>,
+  trash: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>,
+  search: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>,
+  store: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>
+};
+
 export default function ProductsPage() {
   const state = useProductState();
   const [modalError, setModalError] = useState("");
@@ -88,7 +146,7 @@ export default function ProductsPage() {
     // Only add tiendaId filter if a specific store is selected
     if (filtroTienda && filtroTienda !== "") {
       filters.tiendaId = filtroTienda;
-      console.log('🏪 Filtrando productos por tienda:', filtroTienda);
+      console.log('Filtrando productos por tienda:', filtroTienda);
     }
 
     // Refetch products with the filter
@@ -102,12 +160,12 @@ const handleSubmit = (e) => {
   setModalError("");
 
   if (!form.name || !form.category) {
-    setModalError("Por favor completa todos los campos requeridos ❌");
+    setModalError("Por favor completa todos los campos requeridos");
     return;
   }
 
   if (userRole === "admin" && !tiendaSeleccionada) {
-    setModalError("Selecciona una tienda ❌");
+    setModalError("Selecciona una tienda");
     return;
   }
 
@@ -136,7 +194,7 @@ const handleSubmit = (e) => {
         ...(userRole === "admin" && { tienda: tiendaSeleccionada }),
       };
 
-  console.log('🔍 Payload enviado:', payload);
+  console.log('Payload enviado:', payload);
 
   const apiCall = editingId 
     ? productService.updateProduct(token, editingId, payload)
@@ -144,7 +202,7 @@ const handleSubmit = (e) => {
 
   apiCall
     .then((response) => {
-      setMsg(editingId ? "Producto actualizado exitosamente ✅" : "Producto creado exitosamente ✅");
+      setMsg(editingId ? "Producto actualizado exitosamente" : "Producto creado exitosamente");
       setModalError(""); // Limpiar error del modal en caso de éxito
       limpiarFormularioCompleto();
       fetchProducts();
@@ -152,7 +210,7 @@ const handleSubmit = (e) => {
       setTimeout(() => setMsg(""), 3000);
     })
     .catch((err) => {
-      console.error('❌ Error al guardar producto:', err);
+      console.error('Error al guardar producto:', err);
       
       // Manejar errores específicos del backend
       if (err.response && err.response.data) {
@@ -160,7 +218,7 @@ const handleSubmit = (e) => {
         
         // Error de SKU duplicado o otros errores de validación
         if (err.response.status === 400 && errorData.message) {
-          let errorMessage = `❌ ${errorData.message}`;
+          let errorMessage = `${errorData.message}`;
           
           // Si hay un SKU sugerido, mostrarlo también
           if (errorData.data && errorData.data.suggestedSKU) {
@@ -169,12 +227,12 @@ const handleSubmit = (e) => {
           
           setModalError(errorMessage);
         } else if (errorData.message) {
-          setModalError(`❌ ${errorData.message}`);
+          setModalError(`${errorData.message}`);
         } else {
-          setModalError("Error al guardar producto ❌");
+          setModalError("Error al guardar producto");
         }
       } else {
-        setModalError("Error al guardar producto ❌");
+        setModalError("Error al guardar producto");
       }
       
       setCargando(false);
@@ -204,19 +262,19 @@ const handleSubmit = (e) => {
     setCargando(true);
     productService.deleteProduct(token, id)
       .then(() => {
-        setMsg("Producto eliminado exitosamente ✅");
+        setMsg("Producto eliminado exitosamente");
         fetchProducts();
         fetchCategorias();
         setTimeout(() => setMsg(""), 3000);
       })
       .catch(() => {
-        setMsg("Error al eliminar producto ❌");
+        setMsg("Error al eliminar producto");
         setCargando(false);
       });
   };
 
   const handleCancelar = () => {
-  console.log('❌ Cancelando formulario...');
+  console.log('Cancelando formulario...');
   setModalError(""); // Limpiar error del modal
   limpiarFormularioCompleto();
 };
@@ -299,8 +357,8 @@ const handleSubmit = (e) => {
                   style={{ backgroundColor: '#10b981' }}
                   disabled={cargando}
                 >
-                  <span className="hidden sm:inline">📦 Reabastecer</span>
-                  <span className="sm:hidden">📦</span>
+                  <span className="hidden sm:inline">{Icons.package()} Reabastecer</span>
+                  <span className="sm:hidden">{Icons.package()}</span>
                 </button>
               
               <button
@@ -319,7 +377,7 @@ const handleSubmit = (e) => {
                   disabled={cargando}
                 >
                   <span className="hidden sm:inline">{mostrarFormulario ? "Cancelar" : "Nuevo Producto"}</span>
-                  <span className="sm:hidden">{mostrarFormulario ? "✖" : "➕"}</span>
+                  <span className="sm:hidden">{mostrarFormulario ? Icons.close() : Icons.plus()}</span>
                 </button>
             </div>
           </div>
@@ -328,8 +386,8 @@ const handleSubmit = (e) => {
         {/* Mensaje de estado */}
         {msg && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+            msg.includes('exitosamente')
+              ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
             <p className="font-medium">{msg}</p>
@@ -342,7 +400,7 @@ const handleSubmit = (e) => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                  ⚠️
+                  {Icons.warning()}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-orange-800">
@@ -368,7 +426,7 @@ const handleSubmit = (e) => {
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-gray-800 truncate">{producto.name}</h4>
                       <span className="text-orange-600 font-bold">
-                        {producto.stock} {producto.stock === 0 ? '❌' : '⚠️'}
+                        {producto.stock}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">SKU: {producto.sku}</p>
@@ -379,7 +437,7 @@ const handleSubmit = (e) => {
                       }}
                       className="w-full px-3 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700 transition-colors"
                     >
-                      🔄 Reabastecer
+                      {Icons.reload()} Reabastecer
                     </button>
                   </div>
                 ))}
@@ -392,8 +450,8 @@ const handleSubmit = (e) => {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-2xl" style={{ backgroundColor: '#23334e' }}>
-                📦
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: '#23334e' }}>
+                {Icons.package()}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-lg sm:text-2xl font-bold truncate" style={{ color: '#23334e' }}>
@@ -410,7 +468,7 @@ const handleSubmit = (e) => {
           <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-2xl bg-red-100">
-                ❌
+                {Icons.xmark()}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-lg sm:text-2xl font-bold text-red-600 truncate">
@@ -427,7 +485,7 @@ const handleSubmit = (e) => {
           <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-2xl bg-yellow-100">
-                ⚠️
+                {Icons.warning()}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-lg sm:text-2xl font-bold text-yellow-600 truncate">
@@ -444,7 +502,7 @@ const handleSubmit = (e) => {
           <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6">
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-lg sm:text-2xl" style={{ backgroundColor: '#10b981', color: 'white' }}>
-                💰
+                {Icons.money()}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm sm:text-lg font-bold truncate" style={{ color: '#23334e' }}>
@@ -471,7 +529,7 @@ const handleSubmit = (e) => {
               <div className="sticky top-0 bg-white border-b px-4 sm:px-6 py-4 rounded-t-lg sm:rounded-t-xl">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg sm:text-xl font-semibold text-green-800 flex items-center gap-2">
-                    📦 Reabastecer Producto Existente
+                    {Icons.package()} Reabastecer Producto Existente
                   </h2>
                   <button
                     onClick={handleCancelarReabastecimiento}
@@ -508,7 +566,7 @@ const handleSubmit = (e) => {
                       }}
                     />
                     <div className="absolute left-3 top-3.5">
-                      🔍
+                      {Icons.search()}
                     </div>
                   </div>
                   
@@ -569,7 +627,7 @@ const handleSubmit = (e) => {
                         }}
                         className="text-red-600 hover:text-red-800"
                       >
-                        ❌
+                        {Icons.xmark()}
                       </button>
                     </div>
                   </div>
@@ -609,7 +667,7 @@ const handleSubmit = (e) => {
                   style={{ backgroundColor: '#10b981' }}
                   disabled={cargando || !productoSeleccionado || !cantidadRestock || parseInt(cantidadRestock) <= 0}
                 >
-                  {cargando ? "Reabasteciendo..." : "📦 Confirmar Reabastecimiento"}
+                  {cargando ? "Reabasteciendo..." : <>{Icons.package()} Confirmar Reabastecimiento</>}
                 </button>
                 <button
                   type="button"
@@ -640,7 +698,7 @@ const handleSubmit = (e) => {
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-                    ✏️ Editar Producto
+                    {Icons.edit()} Editar Producto
                   </h2>
                   <button
                     onClick={handleCancelar}
@@ -736,7 +794,7 @@ const handleSubmit = (e) => {
                             color: 'white'
                           }}
                         >
-                          {usarSkuManual ? "🔄 Usar Automático" : "✏️ Personalizar"}
+                          {usarSkuManual ? <>{Icons.reload()} Usar Automático</> : <>{Icons.edit()} Personalizar</>}
                         </button>
                       </div>
                     </div>
@@ -759,7 +817,7 @@ const handleSubmit = (e) => {
                   
                   {!editingId && usarSkuManual && (
                     <p className="text-xs text-gray-600 mt-1">
-                      💡 Deja vacío para usar SKU automático ({skuAutogenerado})
+                      {Icons.lightbulb()} Deja vacío para usar SKU automático ({skuAutogenerado})
                     </p>
                   )}
                 </div>
@@ -781,7 +839,7 @@ const handleSubmit = (e) => {
                     }}
                   />
                   <p className="text-xs text-gray-600 mt-1">
-                    📊 Para escanear con lector de códigos de barras
+                    {Icons.barcode()} Para escanear con lector de códigos de barras
                   </p>
                 </div>
 
@@ -827,7 +885,7 @@ const handleSubmit = (e) => {
                     <div className="mt-2 border rounded-lg shadow-lg bg-white max-h-60 overflow-y-auto z-10 relative">
                       <div className="p-2 bg-gray-50 border-b">
                         <span className="text-xs font-medium text-gray-600">
-                          📂 Categorías encontradas ({categoriasFiltradas.length})
+                          {Icons.folder()} Categorías encontradas ({categoriasFiltradas.length})
                         </span>
                       </div>
                       {categoriasFiltradas.map((cat) => (
@@ -840,7 +898,7 @@ const handleSubmit = (e) => {
                           }}
                           className="w-full text-left p-3 hover:bg-blue-50 border-b border-gray-100 transition-colors flex items-center gap-2"
                         >
-                          <span>📂</span>
+                          {Icons.folder()}
                           <span className="font-medium">{cat}</span>
                           <span className="ml-auto text-xs text-gray-500">clic para seleccionar</span>
                         </button>
@@ -878,7 +936,7 @@ const handleSubmit = (e) => {
                                 : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 hover:border-gray-400'
                             }`}
                           >
-                            📂 {cat}
+                            {Icons.folder()} {cat}
                           </button>
                         ))}
                         
@@ -899,7 +957,7 @@ const handleSubmit = (e) => {
                   {categorias.length > 10 && !mostrarTodasCategorias && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2 text-blue-800">
-                        <span>📊</span>
+                        {Icons.barcode()}
                         <span className="text-sm">
                           Tienes <strong>{categorias.length} categorías</strong> registradas. 
                           Usa la búsqueda para encontrar rápidamente la que necesitas.
@@ -912,13 +970,13 @@ const handleSubmit = (e) => {
                   {form.category && !categorias.includes(form.category) && form.category.trim() !== '' && (
                     <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 text-green-800">
-                        <span>✨</span>
+                        {Icons.sparkles()}
                         <span className="text-sm font-medium">
                           Nueva categoría: "{form.category}"
                         </span>
                       </div>
                       <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <span>💡</span>
+                        {Icons.lightbulb()}
                         <span>Esta categoría se creará automáticamente y estará disponible para futuros productos</span>
                       </div>
                     </div>
@@ -928,7 +986,7 @@ const handleSubmit = (e) => {
                   {form.category && categorias.includes(form.category) && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2 text-blue-800">
-                        <span>✅</span>
+                        {Icons.check()}
                         <span className="text-sm font-medium">Categoría existente: "{form.category}"</span>
                       </div>
                     </div>
@@ -965,7 +1023,7 @@ const handleSubmit = (e) => {
                     style={{ accentColor: '#23334e' }}
                   />
                   <label htmlFor={editingId ? "soldByWeightEdit" : "soldByWeight"} className="text-sm font-medium cursor-pointer" style={{ color: '#46546b' }}>
-                    ⚖️ Este producto se vende por peso
+                    {Icons.scale()} Este producto se vende por peso
                   </label>
                 </div>
 
@@ -990,7 +1048,7 @@ const handleSubmit = (e) => {
                       <option value="lb">Libras (lb)</option>
                     </select>
                     <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-                      💡 <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
+                      {Icons.lightbulb()} <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
                     </p>
                   </div>
                 )}
@@ -1014,7 +1072,7 @@ const handleSubmit = (e) => {
                         }}
                       />
                       <p className="text-xs mt-1" style={{ color: '#697487' }}>
-                        💡 Para modificar stock después de crear el producto, usa la función "Reabastecer"
+                        {Icons.lightbulb()} Para modificar stock después de crear el producto, usa la función "Reabastecer"
                       </p>
                     </div>
                   )}
@@ -1036,7 +1094,7 @@ const handleSubmit = (e) => {
                             <div>
                               <div className="text-xl font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
                                 {form.stock} unidades
-                                {stockActualizado && <span className="text-green-600">✨</span>}
+                                {stockActualizado && <span className="text-green-600">{Icons.sparkles()}</span>}
                               </div>
                               <div className="text-sm" style={{ color: '#697487' }}>
                                 {stockActualizado ? '¡Stock actualizado exitosamente!' : 'Stock disponible'}
@@ -1044,7 +1102,7 @@ const handleSubmit = (e) => {
                               {/* ✅ MANTENER: Mostrar si el stock cambió recientemente */}
                               {msg.includes('Stock actualizado') && !stockActualizado && (
                                 <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                                  <span>✨</span>
+                                  {Icons.sparkles()}
                                   <span>Actualizado recientemente</span>
                                 </div>
                               )}
@@ -1069,7 +1127,7 @@ const handleSubmit = (e) => {
                                 className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
                                 style={{ backgroundColor: '#10b981' }}
                               >
-                                📦 Reabastecer Stock
+                                {Icons.package()} Reabastecer Stock
                               </button>
                               <div className="text-xs text-gray-500">
                                 Se actualizará automáticamente
@@ -1101,7 +1159,7 @@ const handleSubmit = (e) => {
                       <option value="">-- Selecciona tienda --</option>
                       {tiendas.map((t) => (
                         <option key={t._id} value={t._id}>
-                          🏪 {t.nombre}
+                          {Icons.store()} {t.nombre}
                         </option>
                       ))}
                     </select>
@@ -1147,7 +1205,7 @@ const handleSubmit = (e) => {
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-                    ➕ Agregar Nuevo Producto
+                    {Icons.plus()} Agregar Nuevo Producto
                   </h2>
                   <button
                     onClick={handleCancelar}
@@ -1263,7 +1321,7 @@ const handleSubmit = (e) => {
                   
                   {usarSkuManual && (
                     <p className="text-xs text-gray-600 mt-1">
-                      💡 Deja vacío para usar SKU automático ({skuAutogenerado})
+                      {Icons.lightbulb()} Deja vacío para usar SKU automático ({skuAutogenerado})
                     </p>
                   )}
                 </div>
@@ -1285,7 +1343,7 @@ const handleSubmit = (e) => {
                     }}
                   />
                   <p className="text-xs text-gray-600 mt-1">
-                    📊 Para escanear con lector de códigos de barras
+                    {Icons.barcode()} Para escanear con lector de códigos de barras
                   </p>
                 </div>
 
@@ -1331,7 +1389,7 @@ const handleSubmit = (e) => {
                     <div className="mt-2 border rounded-lg shadow-lg bg-white max-h-60 overflow-y-auto z-10 relative">
                       <div className="p-2 bg-gray-50 border-b">
                         <span className="text-xs font-medium text-gray-600">
-                          📂 Categorías encontradas ({categoriasFiltradas.length})
+                          {Icons.folder()} Categorías encontradas ({categoriasFiltradas.length})
                         </span>
                       </div>
                       {categoriasFiltradas.map((cat) => (
@@ -1344,7 +1402,7 @@ const handleSubmit = (e) => {
                           }}
                           className="w-full text-left p-3 hover:bg-blue-50 border-b border-gray-100 transition-colors flex items-center gap-2"
                         >
-                          <span>📂</span>
+                          {Icons.folder()}
                           <span className="font-medium">{cat}</span>
                           <span className="ml-auto text-xs text-gray-500">clic para seleccionar</span>
                         </button>
@@ -1382,7 +1440,7 @@ const handleSubmit = (e) => {
                                 : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 hover:border-gray-400'
                             }`}
                           >
-                            📂 {cat}
+                            {Icons.folder()} {cat}
                           </button>
                         ))}
                         
@@ -1403,7 +1461,7 @@ const handleSubmit = (e) => {
                   {categorias.length > 10 && !mostrarTodasCategorias && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2 text-blue-800">
-                        <span>📊</span>
+                        {Icons.barcode()}
                         <span className="text-sm">
                           Tienes <strong>{categorias.length} categorías</strong> registradas. 
                           Usa la búsqueda para encontrar rápidamente la que necesitas.
@@ -1416,13 +1474,13 @@ const handleSubmit = (e) => {
                   {form.category && !categorias.includes(form.category) && form.category.trim() !== '' && (
                     <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 text-green-800">
-                        <span>✨</span>
+                        {Icons.sparkles()}
                         <span className="text-sm font-medium">
                           Nueva categoría: "{form.category}"
                         </span>
                       </div>
                       <div className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <span>💡</span>
+                        {Icons.lightbulb()}
                         <span>Esta categoría se creará automáticamente y estará disponible para futuros productos</span>
                       </div>
                     </div>
@@ -1432,7 +1490,7 @@ const handleSubmit = (e) => {
                   {form.category && categorias.includes(form.category) && (
                     <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="flex items-center gap-2 text-blue-800">
-                        <span>✅</span>
+                        {Icons.check()}
                         <span className="text-sm font-medium">Categoría existente: "{form.category}"</span>
                       </div>
                     </div>
@@ -1469,7 +1527,7 @@ const handleSubmit = (e) => {
                     style={{ accentColor: '#23334e' }}
                   />
                   <label htmlFor={editingId ? "soldByWeightEdit" : "soldByWeight"} className="text-sm font-medium cursor-pointer" style={{ color: '#46546b' }}>
-                    ⚖️ Este producto se vende por peso
+                    {Icons.scale()} Este producto se vende por peso
                   </label>
                 </div>
 
@@ -1494,7 +1552,7 @@ const handleSubmit = (e) => {
                       <option value="lb">Libras (lb)</option>
                     </select>
                     <p className="text-xs mt-2 p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-                      💡 <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
+                      {Icons.lightbulb()} <strong>Tip:</strong> Este producto puede pesarse manualmente en caja o usar códigos de barras con peso integrado (formato EAN-13 que empieza con "2").
                     </p>
                   </div>
                 )}
@@ -1539,7 +1597,7 @@ const handleSubmit = (e) => {
                       <option value="">-- Selecciona tienda --</option>
                       {tiendas.map((t) => (
                         <option key={t._id} value={t._id}>
-                          🏪 {t.nombre}
+                          {Icons.store()} {t.nombre}
                         </option>
                       ))}
                     </select>
@@ -1594,7 +1652,7 @@ const handleSubmit = (e) => {
                   <option value="">Todas las categorías</option>
                   {categorias.map((cat) => (
                     <option key={cat} value={cat}>
-                      📂 {cat}
+                      {Icons.folder()} {cat}
                     </option>
                   ))}
                 </select>
@@ -1671,7 +1729,7 @@ const handleSubmit = (e) => {
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-6xl mb-4">📦</div>
+              <div className="mb-4 text-gray-400">{Icons.package()}</div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                 No hay productos
               </h3>
@@ -1697,8 +1755,8 @@ const handleSubmit = (e) => {
                       {/* Información del producto */}
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#23334e' }}>
-                            📦
+                          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: '#23334e' }}>
+                            {Icons.package()}
                           </div>
                           <div>
                             <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
@@ -1737,7 +1795,7 @@ const handleSubmit = (e) => {
                               Categoría
                             </div>
                             <div className="font-bold" style={{ color: '#23334e' }}>
-                              📂 {product.category}
+                              {Icons.folder()} {product.category}
                             </div>
                           </div>
                           
@@ -1746,7 +1804,7 @@ const handleSubmit = (e) => {
                               Tienda
                             </div>
                             <div className="font-bold" style={{ color: '#23334e' }}>
-                              🏪 {product.tienda?.nombre || "Sin asignar"}
+                              {Icons.store()} {product.tienda?.nombre || "Sin asignar"}
                             </div>
                           </div>
                         </div>
@@ -1754,7 +1812,7 @@ const handleSubmit = (e) => {
                         {/* Valor total del inventario */}
                         <div className="mt-3 p-3 rounded-lg border-l-4 border-blue-400 bg-blue-50">
                           <div className="text-sm text-blue-800">
-                            💰 Valor total en stock: <span className="font-bold">{formatCurrency(product.price * product.stock)}</span>
+                            {Icons.money()} Valor total en stock: <span className="font-bold">{formatCurrency(product.price * product.stock)}</span>
                           </div>
                         </div>
                       </div>
@@ -1770,7 +1828,7 @@ const handleSubmit = (e) => {
                             style={{ backgroundColor: '#10b981' }}
                             disabled={cargando}
                           >
-                            📦 Reabastecer
+                            {Icons.package()} Reabastecer
                           </button>
                         
                           {product.barcode && (
@@ -1781,7 +1839,7 @@ const handleSubmit = (e) => {
                               disabled={cargando}
                               title="Imprimir etiqueta con código de barras"
                             >
-                              🏷️ Etiqueta
+                              {Icons.tag()} Etiqueta
                             </button>
                           )}
 
@@ -1791,7 +1849,7 @@ const handleSubmit = (e) => {
                             style={{ backgroundColor: '#46546b' }}
                             disabled={cargando}
                           >
-                            ✏️ Editar
+                            {Icons.edit()} Editar
                           </button>
 
                         <button
@@ -1799,7 +1857,7 @@ const handleSubmit = (e) => {
                           className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
                           disabled={cargando}
                         >
-                          🗑️ Eliminar
+                          {Icons.trash()} Eliminar
                         </button>
                       </div>
                     </div>

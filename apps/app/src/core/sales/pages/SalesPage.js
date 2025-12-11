@@ -18,6 +18,40 @@ import { parseWeightBarcode } from '../../../shared/utils/barcodeParser';
 import ClienteModal from '../../../modules/clientes/components/ClienteModal';
 import clientesService from '../../../modules/clientes/services/clientesService';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  store: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>,
+  package: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>,
+  search: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>,
+  cart: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  creditCard: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+  </svg>,
+  user: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>,
+  tag: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+  </svg>,
+  truck: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+  </svg>,
+  warning: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>,
+  document: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+};
+
 export default function SalesPage() {
   // Estados locales
   const [search, setSearch] = useState('');
@@ -145,7 +179,7 @@ export default function SalesPage() {
 
         if (weightBarcodeData.isWeightBarcode) {
           // Es un código con peso integrado (Escenario 1)
-          console.log('📦 Código con peso detectado:', weightBarcodeData);
+          console.log('Código con peso detectado:', weightBarcodeData);
 
           // Buscar producto por el código del producto (5 dígitos)
           const product = products.find(p =>
@@ -163,10 +197,10 @@ export default function SalesPage() {
               originalPrice: product.price,
               total: weightBarcodeData.weight * product.price
             });
-            setMsg(`✅ ${product.name} - ${weightBarcodeData.weight} ${product.weightUnit || 'kg'} agregado`);
+            setMsg(`${product.name} - ${weightBarcodeData.weight} ${product.weightUnit || 'kg'} agregado`);
             setTimeout(() => setMsg(''), 2500);
           } else {
-            setMsg(`❌ Producto no encontrado. Código: ${weightBarcodeData.searchCode}`);
+            setMsg(`Producto no encontrado. Código: ${weightBarcodeData.searchCode}`);
             setTimeout(() => setMsg(''), 3000);
           }
         } else {
@@ -182,11 +216,11 @@ export default function SalesPage() {
             } else {
               // Producto normal
               addToCart(product);
-              setMsg(`✅ Producto "${product.name}" agregado al carrito`);
+              setMsg(`Producto "${product.name}" agregado al carrito`);
               setTimeout(() => setMsg(''), 2000);
             }
           } else {
-            setMsg(`❌ No se encontró producto con código de barras: ${barcode}`);
+            setMsg(`No se encontró producto con código de barras: ${barcode}`);
             setTimeout(() => setMsg(''), 3000);
           }
         }
@@ -211,11 +245,11 @@ export default function SalesPage() {
 
     if (product) {
       addToCart(product);
-      setMsg(`✅ Producto "${product.name}" agregado al carrito`);
+      setMsg(`Producto "${product.name}" agregado al carrito`);
       setTimeout(() => setMsg(''), 2000);
       setManualBarcode(''); // Limpiar campo
     } else {
-      setMsg(`❌ No se encontró producto con código de barras: ${manualBarcode}`);
+      setMsg(`No se encontró producto con código de barras: ${manualBarcode}`);
       setTimeout(() => setMsg(''), 3000);
     }
   };
@@ -283,7 +317,7 @@ export default function SalesPage() {
 
         // ⭐ Construir nombre completo para mostrar
         const nombreCompleto = `${clienteCreado.nombre} ${clienteCreado.primerApellido || ''} ${clienteCreado.segundoApellido || ''}`.trim();
-        setMsg(`✅ Cliente "${nombreCompleto}" creado y seleccionado exitosamente`);
+        setMsg(`Cliente "${nombreCompleto}" creado y seleccionado exitosamente`);
         setTimeout(() => setMsg(''), 3000);
       }
     } catch (error) {
@@ -324,19 +358,19 @@ export default function SalesPage() {
     // ⭐ VALIDACIÓN: Venta a domicilio requiere cliente con dirección
     if (saleType === 'domicilio') {
       if (!clienteSeleccionado || !selectedClienteInfo) {
-        setMsg('⚠️ Las ventas a domicilio requieren seleccionar un cliente');
+        setMsg('Las ventas a domicilio requieren seleccionar un cliente');
         return;
       }
       if (!selectedClienteInfo.direccion || selectedClienteInfo.direccion.trim() === '') {
-        setMsg('⚠️ El cliente seleccionado no tiene dirección registrada. Por favor actualiza los datos del cliente.');
+        setMsg('El cliente seleccionado no tiene dirección registrada. Por favor actualiza los datos del cliente.');
         return;
       }
     }
 
-    // 🐛 DEBUG: Verificar datos del cliente
-    console.log('🔍 selectedClienteInfo completo:', selectedClienteInfo);
-    console.log('🔍 Cliente tiene dirección?:', selectedClienteInfo?.direccion);
-    console.log('🔍 Tipo de venta:', saleType);
+    // DEBUG: Verificar datos del cliente
+    console.log('selectedClienteInfo completo:', selectedClienteInfo);
+    console.log('Cliente tiene dirección?:', selectedClienteInfo?.direccion);
+    console.log('Tipo de venta:', saleType);
 
     const saleData = {
       items,
@@ -462,7 +496,7 @@ export default function SalesPage() {
   // Handler para confirmar peso del modal
   const handleWeightConfirm = (productWithWeight) => {
     addToCart(productWithWeight);
-    setMsg(`✅ ${productWithWeight.name} - ${productWithWeight.qty} ${productWithWeight.weightUnit} agregado`);
+    setMsg(`${productWithWeight.name} - ${productWithWeight.qty} ${productWithWeight.weightUnit} agregado`);
     setTimeout(() => setMsg(''), 2500);
   };
 
@@ -476,8 +510,8 @@ export default function SalesPage() {
             {/* Tienda (si es admin) */}
             {userRole === 'admin' && (
               <div className="flex-1">
-                <label className="block text-sm font-semibold mb-1.5" style={{ color: '#23334e' }}>
-                  🏪 Tienda
+                <label className="flex items-center gap-2 text-sm font-semibold mb-1.5" style={{ color: '#23334e' }}>
+                  {Icons.store()} Tienda
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {/* Mostrar primeras 3 tiendas */}
@@ -519,8 +553,8 @@ export default function SalesPage() {
 
             {/* Búsqueda por código de barras */}
             <div className="flex-1">
-              <label className="block text-sm font-semibold mb-1.5" style={{ color: '#23334e' }}>
-                📦 Código de Barras
+              <label className="flex items-center gap-2 text-sm font-semibold mb-1.5" style={{ color: '#23334e' }}>
+                {Icons.package()} Código de Barras
               </label>
               <form onSubmit={handleManualBarcodeSearch} className="flex gap-2">
                 <input
@@ -538,10 +572,10 @@ export default function SalesPage() {
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2.5 rounded-lg font-semibold text-white text-sm shadow-md transition-all hover:shadow-lg active:scale-95"
+                  className="px-4 py-2.5 rounded-lg font-semibold text-white text-sm shadow-md transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
                   style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
                 >
-                  🔍 Buscar
+                  {Icons.search()} Buscar
                 </button>
               </form>
             </div>
@@ -566,7 +600,7 @@ export default function SalesPage() {
         {/* Header del carrito - compacto */}
         <div className="px-3 py-2 text-white" style={{ background: 'linear-gradient(135deg, #697487 0%, #46546b 100%)' }}>
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold">🛒 Carrito</h2>
+            <h2 className="text-base font-bold flex items-center gap-2">{Icons.cart()} Carrito</h2>
             <span className="bg-white text-gray-800 px-2 py-0.5 rounded-full text-xs font-bold">{selected.length}</span>
           </div>
         </div>
@@ -633,14 +667,14 @@ export default function SalesPage() {
         <div className="w-80 border-l border-gray-200 flex flex-col h-screen overflow-y-auto" style={{ backgroundColor: '#f4f6fa' }}>
           {/* Header */}
           <div className="px-3 py-2 text-white" style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}>
-            <h2 className="text-base font-bold">💳 Pago</h2>
+            <h2 className="text-base font-bold flex items-center gap-2">{Icons.creditCard()} Pago</h2>
           </div>
 
           <div className="p-3 space-y-2.5">
             {/* Cliente */}
             <div className="relative">
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium" style={{ color: '#23334e' }}>👤 Cliente</label>
+                <label className="flex items-center gap-1.5 text-xs font-medium" style={{ color: '#23334e' }}>{Icons.user()} Cliente</label>
                 <button
                   onClick={openClienteModal}
                   className="px-2 py-1 text-xs font-semibold rounded transition-all hover:shadow-md active:scale-95"
@@ -701,11 +735,11 @@ export default function SalesPage() {
 
             {/* Tipo de venta */}
             <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>🏷️ Tipo de venta</label>
+              <label className="flex items-center gap-2 text-sm font-medium mb-2" style={{ color: '#23334e' }}>{Icons.tag()} Tipo de venta</label>
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setSaleType('mostrador')}
-                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 ${
                     saleType === 'mostrador' ? 'text-white' : ''
                   }`}
                   style={
@@ -714,11 +748,11 @@ export default function SalesPage() {
                       : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                   }
                 >
-                  🏪 Mostrador
+                  {Icons.store()} Mostrador
                 </button>
                 <button
                   onClick={() => setSaleType('recoger')}
-                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 ${
                     saleType === 'recoger' ? 'text-white' : ''
                   }`}
                   style={
@@ -727,11 +761,11 @@ export default function SalesPage() {
                       : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                   }
                 >
-                  📦 A recoger
+                  {Icons.package()} A recoger
                 </button>
                 <button
                   onClick={() => setSaleType('domicilio')}
-                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                  className={`px-4 py-3 rounded-lg border-2 text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 ${
                     saleType === 'domicilio' ? 'text-white' : ''
                   }`}
                   style={
@@ -740,7 +774,7 @@ export default function SalesPage() {
                       : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                   }
                 >
-                  🚚 A domicilio
+                  {Icons.truck()} A domicilio
                 </button>
               </div>
 
@@ -748,17 +782,17 @@ export default function SalesPage() {
               {saleType === 'domicilio' && (
                 <div className="mt-3 p-3 rounded-lg border-l-4" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
                   <div className="flex items-start gap-2">
-                    <span className="text-lg">⚠️</span>
+                    <div className="flex-shrink-0">{Icons.warning()}</div>
                     <div className="text-xs" style={{ color: '#92400e' }}>
                       <strong>Requerido:</strong> Debes seleccionar un cliente con dirección registrada.
                       {(!clienteSeleccionado || !selectedClienteInfo?.direccion) && (
                         <div className="mt-1 font-semibold" style={{ color: '#dc2626' }}>
-                          {!clienteSeleccionado ? '❌ No hay cliente seleccionado' : '❌ El cliente no tiene dirección'}
+                          {!clienteSeleccionado ? 'No hay cliente seleccionado' : 'El cliente no tiene dirección'}
                         </div>
                       )}
                       {clienteSeleccionado && selectedClienteInfo?.direccion && (
                         <div className="mt-1 font-semibold" style={{ color: '#059669' }}>
-                          ✅ Cliente: {getNombreCompleto(selectedClienteInfo)}
+                          Cliente: {getNombreCompleto(selectedClienteInfo)}
                         </div>
                       )}
                     </div>
@@ -803,16 +837,16 @@ export default function SalesPage() {
               <button
                 onClick={onHandleQuote}
                 disabled={!selected.length || !tiendaSeleccionada || saleLoading}
-                className="w-full text-white py-2 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full text-white py-2 rounded-lg font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 style={{ background: (!selected.length || !tiendaSeleccionada || saleLoading) ? '#8c95a4' : 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
               >
-                📄 Cotización
+                {Icons.document()} Cotización
               </button>
             </div>
 
             {/* Mensaje */}
             {msg && (
-              <div className={`p-2 rounded-lg text-xs font-medium text-center ${msg.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <div className={`p-2 rounded-lg text-xs font-medium text-center ${msg.includes('agregado') || msg.includes('exitosamente') || msg.includes('creado') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                 {msg}
               </div>
             )}
@@ -873,8 +907,8 @@ export default function SalesPage() {
           <div className="relative bg-white rounded-2xl shadow-2xl p-6 m-4 max-w-2xl w-full transform transition-all max-h-[80vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex justify-between items-center mb-4 pb-4 border-b-2" style={{ borderBottomColor: '#e2e8f0' }}>
-              <h3 className="text-2xl font-bold" style={{ color: '#23334e' }}>
-                🏪 Seleccionar Tienda
+              <h3 className="text-2xl font-bold flex items-center gap-3" style={{ color: '#23334e' }}>
+                {Icons.store()} Seleccionar Tienda
               </h3>
               <button
                 onClick={() => setShowTiendasModal(false)}
@@ -909,19 +943,19 @@ export default function SalesPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+                        className="w-12 h-12 rounded-full flex items-center justify-center"
                         style={
                           tiendaSeleccionada === t._id
                             ? { backgroundColor: 'rgba(255, 255, 255, 0.2)' }
                             : { backgroundColor: '#f1f5f9' }
                         }
                       >
-                        🏪
+                        {Icons.store()}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-bold text-base">{t.nombre}</h4>
                         {tiendaSeleccionada === t._id && (
-                          <p className="text-xs mt-1 opacity-90">✓ Seleccionada</p>
+                          <p className="text-xs mt-1 opacity-90">Seleccionada</p>
                         )}
                       </div>
                     </div>

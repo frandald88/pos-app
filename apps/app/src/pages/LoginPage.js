@@ -4,6 +4,19 @@ import axios from "axios";
 import apiBaseUrl from "../config/api";
 import logo from "../assets/astrodishlogo1.png"; // Logo de AstroDish
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  calendar: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>,
+  clock: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  globe: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+};
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +44,7 @@ export default function LoginPage() {
       if (now > expirationDate) {
         // Token expirado - limpiar localStorage
         localStorage.clear();
-        console.log("🕐 Sesión expirada");
+        console.log("Sesión expirada");
         return; // No redirigir, mantener en login
       }
     }
@@ -67,7 +80,7 @@ export default function LoginPage() {
 
     const tenantToUse = tenantIdOverride || selectedTenantId;
 
-    console.log("🔑 Intentando login con:", {
+    console.log("Intentando login con:", {
       email,
       tenantId: tenantToUse,
       endpoint: `${apiBaseUrl}/api/auth/login`
@@ -80,7 +93,7 @@ export default function LoginPage() {
         tenantId: tenantToUse
       });
 
-      console.log("✅ Login response:", response.data);
+      console.log("Login response:", response.data);
 
       // Verificar si requiere selección de tenant
       if (response.data.success && response.data.data.requiresTenantSelection) {
@@ -111,7 +124,7 @@ export default function LoginPage() {
           sessionStorage.setItem("tempSession", "true");
         }
 
-        console.log("💾 Datos guardados en localStorage");
+        console.log("Datos guardados en localStorage");
 
         // Verificar si debe cambiar contraseña
         if (response.data.data.user.mustChangePassword) {
@@ -124,7 +137,7 @@ export default function LoginPage() {
       }
 
     } catch (err) {
-      console.error("❌ Error de login:", err);
+      console.error("Error de login:", err);
 
       let errorMessage = "Error de autenticación";
 
@@ -232,15 +245,15 @@ export default function LoginPage() {
             <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)' }}>
               <div className="text-sm space-y-2">
                 <div className="flex justify-between items-center">
-                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>📅 Fecha:</span>
+                  <span className="flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>{Icons.calendar()} Fecha:</span>
                   <span className="font-medium text-white">{date}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>🕐 Hora:</span>
+                  <span className="flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>{Icons.clock()} Hora:</span>
                   <span className="font-medium text-white">{time}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>🌐 Estado:</span>
+                  <span className="flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>{Icons.globe()} Estado:</span>
                   <span className="flex items-center text-white">
                     <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
                     En línea

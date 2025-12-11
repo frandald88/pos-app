@@ -5,6 +5,13 @@ import { useClientesFilters } from "../hooks/useClientesFilters";
 import { useClientesUtils } from "../hooks/useClientesUtils";
 import ClienteModal from "../components/ClienteModal";
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  users: () => <svg className="w-16 h-16 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+};
+
 export default function ClientesPage() {
   const [modalError, setModalError] = useState("");
 
@@ -53,12 +60,12 @@ export default function ClientesPage() {
     const clienteData = editandoId ? editCliente : nuevoCliente;
 
     if (!clienteData.nombre || !clienteData.telefono) {
-      setModalError("Por favor completa los campos requeridos ❌");
+      setModalError("Por favor completa los campos requeridos");
       return;
     }
 
     if (clienteData.email && !isValidEmail(clienteData.email)) {
-      setModalError("Por favor ingresa un email válido ❌");
+      setModalError("Por favor ingresa un email válido");
       return;
     }
 
@@ -75,7 +82,7 @@ export default function ClientesPage() {
       setModalError("");
     } catch (error) {
       console.error('Error al guardar cliente:', error);
-      const errorMessage = error.response?.data?.message || "Error al guardar cliente ❌";
+      const errorMessage = error.response?.data?.message || "Error al guardar cliente";
       setModalError(errorMessage);
     }
   };
@@ -147,8 +154,8 @@ export default function ClientesPage() {
         {/* Mensaje de estado */}
         {msg && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+            msg.includes('exitosamente') || msg.includes('creado') || msg.includes('actualizado') || msg.includes('eliminado')
+              ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
             <p className="font-medium">{msg}</p>
@@ -210,7 +217,7 @@ export default function ClientesPage() {
             </div>
           ) : clientesFiltrados.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-6xl mb-4">👥</div>
+              <div className="mb-4" style={{ color: '#8c95a4' }}>{Icons.users()}</div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                 No hay clientes
               </h3>

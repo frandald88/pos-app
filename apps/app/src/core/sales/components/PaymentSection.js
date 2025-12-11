@@ -1,5 +1,21 @@
 import React from 'react';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  creditCard: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+  </svg>,
+  shuffle: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+  </svg>,
+  cash: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  bank: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+  </svg>
+};
+
 const PaymentSection = ({
   paymentType,
   setPaymentType,
@@ -38,7 +54,9 @@ const PaymentSection = ({
               : { color: '#697487', backgroundColor: 'white' }
             }
           >
-            💳 Un solo método
+            <span className="flex items-center justify-center gap-2">
+              {Icons.creditCard()} Un solo método
+            </span>
           </button>
           <button
             onClick={() => setPaymentType('mixed')}
@@ -52,7 +70,9 @@ const PaymentSection = ({
               : { color: '#697487', backgroundColor: 'white' }
             }
           >
-            🔀 Pago mixto
+            <span className="flex items-center justify-center gap-2">
+              {Icons.shuffle()} Pago mixto
+            </span>
           </button>
         </div>
       </div>
@@ -74,7 +94,9 @@ const PaymentSection = ({
                     : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                 }
               >
-                💵 Efectivo
+                <span className="flex items-center justify-center gap-2">
+                  {Icons.cash()} Efectivo
+                </span>
               </button>
               <button
                 onClick={() => setPaymentMethod('transferencia')}
@@ -87,7 +109,9 @@ const PaymentSection = ({
                     : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                 }
               >
-                🏦 Transferencia
+                <span className="flex items-center justify-center gap-2">
+                  {Icons.bank()} Transferencia
+                </span>
               </button>
               <button
                 onClick={() => setPaymentMethod('tarjeta')}
@@ -100,7 +124,9 @@ const PaymentSection = ({
                     : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                 }
               >
-                💳 Tarjeta
+                <span className="flex items-center justify-center gap-2">
+                  {Icons.creditCard()} Tarjeta
+                </span>
               </button>
             </div>
           </div>
@@ -195,7 +221,7 @@ const PaymentSection = ({
                               : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                           }
                         >
-                          💵
+                          {Icons.cash()}
                         </button>
                         <button
                           onClick={() => onUpdateMixedPayment(payment.id, 'method', 'transferencia')}
@@ -208,7 +234,7 @@ const PaymentSection = ({
                               : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                           }
                         >
-                          🏦
+                          {Icons.bank()}
                         </button>
                         <button
                           onClick={() => onUpdateMixedPayment(payment.id, 'method', 'tarjeta')}
@@ -221,7 +247,7 @@ const PaymentSection = ({
                               : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
                           }
                         >
-                          💳
+                          {Icons.creditCard()}
                         </button>
                       </div>
                     </div>

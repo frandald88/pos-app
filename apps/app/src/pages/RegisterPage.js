@@ -4,6 +4,19 @@ import axios from "axios";
 import apiBaseUrl from "../config/api";
 import logo from "../assets/astrodishlogo1.png";
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  check: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>,
+  circle: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" strokeWidth={2} />
+  </svg>,
+  sparkles: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+  </svg>
+};
+
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -77,7 +90,7 @@ export default function RegisterPage() {
         setSubdomainStatus({
           checking: false,
           available: true,
-          message: '✓ Subdomain disponible'
+          message: 'Subdomain disponible'
         });
       } else {
         setSubdomainStatus({
@@ -196,7 +209,7 @@ export default function RegisterPage() {
         plan: selectedPlan
       });
 
-      console.log('✅ Registro exitoso:', response.data);
+      console.log('Registro exitoso:', response.data);
 
       if (response.data.success && response.data.data) {
         // Guardar token y datos del usuario
@@ -217,7 +230,7 @@ export default function RegisterPage() {
         }, 1500);
       }
     } catch (error) {
-      console.error('❌ Error en registro:', error);
+      console.error('Error en registro:', error);
 
       let errorMessage = 'Error al completar el registro';
 
@@ -299,8 +312,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-12 p-4 backdrop-blur-sm rounded-lg border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'rgba(255, 255, 255, 0.2)' }}>
-              <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                ✨ <strong>
+              <p className="text-sm flex items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                {Icons.sparkles()} <strong>
                   {selectedPlan === 'pro' ? 'Plan Pro incluye:' :
                    selectedPlan === 'basic' ? 'Plan Basic incluye:' :
                    'Plan Lanzamiento incluye:'}
@@ -487,20 +500,20 @@ export default function RegisterPage() {
                     <div className="mt-2 text-xs">
                       <p className="font-medium mb-1" style={{ color: '#7a9de8' }}>La contraseña debe tener:</p>
                       <ul className="space-y-0.5">
-                        <li style={{ color: passwordValidation.minLength ? '#22c55e' : '#7a9de8' }}>
-                          {passwordValidation.minLength ? '✓' : '○'} Mínimo 8 caracteres
+                        <li className="flex items-center gap-1" style={{ color: passwordValidation.minLength ? '#22c55e' : '#7a9de8' }}>
+                          {passwordValidation.minLength ? Icons.check() : Icons.circle()} Mínimo 8 caracteres
                         </li>
-                        <li style={{ color: passwordValidation.hasUppercase ? '#22c55e' : '#7a9de8' }}>
-                          {passwordValidation.hasUppercase ? '✓' : '○'} Una letra mayúscula (A-Z)
+                        <li className="flex items-center gap-1" style={{ color: passwordValidation.hasUppercase ? '#22c55e' : '#7a9de8' }}>
+                          {passwordValidation.hasUppercase ? Icons.check() : Icons.circle()} Una letra mayúscula (A-Z)
                         </li>
-                        <li style={{ color: passwordValidation.hasLowercase ? '#22c55e' : '#7a9de8' }}>
-                          {passwordValidation.hasLowercase ? '✓' : '○'} Una letra minúscula (a-z)
+                        <li className="flex items-center gap-1" style={{ color: passwordValidation.hasLowercase ? '#22c55e' : '#7a9de8' }}>
+                          {passwordValidation.hasLowercase ? Icons.check() : Icons.circle()} Una letra minúscula (a-z)
                         </li>
-                        <li style={{ color: passwordValidation.hasNumber ? '#22c55e' : '#7a9de8' }}>
-                          {passwordValidation.hasNumber ? '✓' : '○'} Un número (0-9)
+                        <li className="flex items-center gap-1" style={{ color: passwordValidation.hasNumber ? '#22c55e' : '#7a9de8' }}>
+                          {passwordValidation.hasNumber ? Icons.check() : Icons.circle()} Un número (0-9)
                         </li>
-                        <li style={{ color: passwordValidation.hasSpecial ? '#22c55e' : '#7a9de8' }}>
-                          {passwordValidation.hasSpecial ? '✓' : '○'} Un carácter especial (!@#$%^&*)
+                        <li className="flex items-center gap-1" style={{ color: passwordValidation.hasSpecial ? '#22c55e' : '#7a9de8' }}>
+                          {passwordValidation.hasSpecial ? Icons.check() : Icons.circle()} Un carácter especial (!@#$%^&*)
                         </li>
                       </ul>
                     </div>

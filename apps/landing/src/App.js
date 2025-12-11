@@ -6,6 +6,7 @@ import APP_URL from './config';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function App() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -58,14 +59,46 @@ function App() {
             <div className="logo">
               <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
             </div>
+
+            {/* Desktop Navigation */}
             <div className="nav-links">
-              <a href="#features">Características</a>
+              <a href="#/features">Características</a>
               <a href="#pricing">Precios</a>
               <a href="#contact">Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
               <a href={`${APP_URL}/register?plan=launch`} className="btn-primary">Comenzar</a>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{display: 'none'}}
+              aria-label="Toggle menu"
+            >
+              <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
+              <span style={{opacity: mobileMenuOpen ? 0 : 1}}></span>
+              <span style={{transform: mobileMenuOpen ? 'rotate(-45deg) translateY(-6px)' : 'none'}}></span>
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              padding: '1.5rem 0',
+              borderTop: '1px solid var(--gray-200)',
+              marginTop: '1rem'
+            }}>
+              <a href="#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
+              <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
+              <a href="#contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)} style={{marginTop: '0.5rem'}}>Iniciar Sesión</a>
+              <a href={`${APP_URL}/register?plan=launch`} className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Comenzar</a>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -97,6 +130,7 @@ function App() {
         <div className="container">
           <h2 className="section-title">Todo lo que necesitas para vender más</h2>
           <div className="features-grid">
+            {/* 1. Reportes */}
             <div className="feature-card">
               <div className="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,9 +141,87 @@ function App() {
                 </svg>
               </div>
               <h3>Reportes en Tiempo Real</h3>
-              <p>Visualiza tus ventas, gastos y ganancias al instante con dashboards intuitivos.</p>
+              <p>Visualiza tus ventas, gastos y ganancias al instante con dashboards intuitivos y análisis detallados.</p>
             </div>
 
+            {/* 2. Punto de Venta Intuitivo */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+              </div>
+              <h3>Punto de Venta Intuitivo</h3>
+              <p>Interfaz moderna y rápida diseñada para agilizar cada transacción con múltiples métodos de pago.</p>
+            </div>
+
+            {/* 3. Gestión de Mesas, Cuentas y Comandas */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <h3>Gestión de Restaurante</h3>
+              <p>Administra mesas, divide cuentas y envía comandas a cocina. Control total de tu operación.</p>
+            </div>
+
+            {/* 4. Gestión Multi-tienda */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <path d="M9 22V12h6v10" />
+                </svg>
+              </div>
+              <h3>Operación Multi-tienda</h3>
+              <p>Administra múltiples sucursales desde un solo lugar con reportes consolidados.</p>
+            </div>
+
+            {/* 5. Seguimiento de Entregas */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="3" width="15" height="13" />
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                  <circle cx="5.5" cy="18.5" r="2.5" />
+                  <circle cx="18.5" cy="18.5" r="2.5" />
+                </svg>
+              </div>
+              <h3>Seguimiento de Entregas</h3>
+              <p>Asigna repartidores, monitorea estados y optimiza tus rutas de entrega en tiempo real.</p>
+            </div>
+
+            {/* 6. Corte de Caja Automático */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                  <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+                </svg>
+              </div>
+              <h3>Corte de Caja Automático</h3>
+              <p>Cierra tu día en segundos. Concilia ventas, pagos y efectivo con precisión absoluta.</p>
+            </div>
+
+            {/* 7. Gestión de Personal */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <h3>Administración de Personal</h3>
+              <p>Controla asistencia, horarios, vacaciones y nómina. Gestión completa de tu equipo.</p>
+            </div>
+
+            {/* 8. Gestión de Compras */}
             <div className="feature-card">
               <div className="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -118,53 +230,22 @@ function App() {
                   <line x1="12" y1="22.08" x2="12" y2="12" />
                 </svg>
               </div>
-              <h3>Control de Inventario</h3>
-              <p>Gestiona tus productos, stock y alertas de forma automática.</p>
+              <h3>Control de Inventario y Compras</h3>
+              <p>Gestiona productos, stock, proveedores y órdenes de compra. Alertas automáticas de inventario bajo.</p>
             </div>
+          </div>
 
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              </div>
-              <h3>Multi-tienda</h3>
-              <p>Administra múltiples sucursales desde un solo lugar.</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="M9 12l2 2 4-4" />
-                </svg>
-              </div>
-              <h3>Seguro y Confiable</h3>
-              <p>Tus datos protegidos con encriptación de nivel empresarial.</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                  <line x1="1" y1="10" x2="23" y2="10" />
-                </svg>
-              </div>
-              <h3>Múltiples Métodos de Pago</h3>
-              <p>Acepta efectivo, tarjeta, transferencias y pagos mixtos.</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                  <line x1="12" y1="18" x2="12.01" y2="18" />
-                </svg>
-              </div>
-              <h3>Acceso desde Cualquier Lugar</h3>
-              <p>Usa AstroDish POS desde cualquier dispositivo con conexión a internet.</p>
-            </div>
+          {/* CTA Button - Solicitar Demo */}
+          <div style={{textAlign: 'center', marginTop: '3rem'}}>
+            <a href="#contact" className="btn-primary btn-large">
+              Solicitar Demo
+            </a>
+            <p style={{marginTop: '1rem', color: 'var(--gray-500)', fontSize: '0.95rem'}}>
+              Descubre todas las características en detalle →{' '}
+              <a href="#/features" style={{color: 'var(--primary)', fontWeight: '600', textDecoration: 'underline'}}>
+                Ver características completas
+              </a>
+            </p>
           </div>
         </div>
       </section>
@@ -383,7 +464,7 @@ function App() {
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
-              <a href="#features">Características</a>
+              <a href="#/features">Características</a>
               <a href="#pricing">Precios</a>
               <a href="#contact">Contacto</a>
             </div>

@@ -8,6 +8,92 @@ import { useTurno } from "../../../core/turnos/hooks/useTurno";
 import IniciarTurnoModal from "../../../core/turnos/components/IniciarTurnoModal";
 import CerrarTurnoModal from "../../../core/turnos/components/CerrarTurnoModal";
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  // Status icons
+  lock: () => <svg className="w-16 h-16 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+  </svg>,
+  warning: () => <svg className="w-16 h-16 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>,
+  circleGreen: () => <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+  </svg>,
+  circleRed: () => <svg className="w-3 h-3 inline" fill="currentColor" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10" />
+  </svg>,
+  // Navigation category icons
+  money: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  cart: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  user: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>,
+  return: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+  </svg>,
+  location: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>,
+  clipboard: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>,
+  restaurant: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  chef: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>,
+  cooking: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+  </svg>,
+  chair: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+  </svg>,
+  settings: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>,
+  store: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>,
+  package: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>,
+  cash: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>,
+  creditCard: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+  </svg>,
+  users: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>,
+  worker: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+  </svg>,
+  document: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>,
+  vacation: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+  </svg>,
+  chart: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>,
+  calendar: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>,
+  clock: () => <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+};
+
 export default function AdminLayout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -186,11 +272,11 @@ export default function AdminLayout({ children }) {
 
         // Si el onboarding no está completado, redirigir
         if (!completed) {
-          console.log('⚠️ Onboarding no completado, redirigiendo...');
+          console.log('Onboarding no completado, redirigiendo...');
           navigate('/onboarding', { replace: true });
         }
       } catch (error) {
-        console.error('❌ Error verificando estado de onboarding:', error);
+        console.error('Error verificando estado de onboarding:', error);
         // Si falla la verificación, permitir continuar (evitar bloqueos)
       }
     };
@@ -200,13 +286,13 @@ export default function AdminLayout({ children }) {
 
   const verifyAuth = async () => {
     try {
-      console.log('🔍 Verificando autenticación en AdminLayout...');
+      console.log('Verificando autenticación en AdminLayout...');
       setLoading(true);
       setAuthError(null);
 
       const token = localStorage.getItem("token");
       if (!token) {
-        console.log('❌ No hay token');
+        console.log('No hay token');
         handleAuthError('No hay sesión activa');
         return;
       }
@@ -215,14 +301,14 @@ export default function AdminLayout({ children }) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const currentTime = Date.now() / 1000;
-        
+
         if (payload.exp < currentTime) {
-          console.log('❌ Token expirado');
+          console.log('Token expirado');
           handleAuthError('Sesión expirada');
           return;
         }
       } catch (e) {
-        console.log('❌ Token malformado');
+        console.log('Token malformado');
         handleAuthError('Token inválido');
         return;
       }
@@ -231,11 +317,11 @@ export default function AdminLayout({ children }) {
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        console.log('✅ Usuario desde localStorage:', user);
+        console.log('Usuario desde localStorage:', user);
 
-        // 🔒 SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
+        // SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
         if (user.mustChangePassword && location.pathname !== '/change-password') {
-          console.log('⚠️ Usuario debe cambiar contraseña, redirigiendo...');
+          console.log('Usuario debe cambiar contraseña, redirigiendo...');
           navigate('/change-password', { replace: true });
           setLoading(false);
           return;
@@ -255,17 +341,17 @@ export default function AdminLayout({ children }) {
       }
 
       // Si no hay usuario en localStorage, obtener desde el servidor
-      console.log('📡 Obteniendo usuario desde servidor...');
+      console.log('Obteniendo usuario desde servidor...');
       const response = await axios.get(`${apiBaseUrl}${API_ENDPOINTS.auth.profile}`, {
         headers: getAuthHeaders()
       });
 
-      console.log('✅ Usuario obtenido del servidor:', response.data);
+      console.log('Usuario obtenido del servidor:', response.data);
       const userData = response.data.user || response.data;
 
-      // 🔒 SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
+      // SEGURIDAD: Verificar si el usuario debe cambiar su contraseña
       if (userData.mustChangePassword && location.pathname !== '/change-password') {
-        console.log('⚠️ Usuario debe cambiar contraseña, redirigiendo...');
+        console.log('Usuario debe cambiar contraseña, redirigiendo...');
         localStorage.setItem("user", JSON.stringify(userData));
         navigate('/change-password', { replace: true });
         setLoading(false);
@@ -283,8 +369,8 @@ export default function AdminLayout({ children }) {
       }
 
     } catch (error) {
-      console.error('❌ Error verificando auth:', error);
-      
+      console.error('Error verificando auth:', error);
+
       if (error.response?.status === 401) {
         handleAuthError('Sesión expirada');
       } else if (error.response?.status === 403) {
@@ -302,7 +388,7 @@ export default function AdminLayout({ children }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userRole");
-    localStorage.removeItem("tenantConfig"); // ✨ NUEVO: Limpiar config de tenant
+    localStorage.removeItem("tenantConfig");
 
     // Redirigir al login después de un breve delay
     setTimeout(() => {
@@ -311,11 +397,11 @@ export default function AdminLayout({ children }) {
   };
 
   const handleLogout = () => {
-    console.log('🚪 Cerrando sesión...');
+    console.log('Cerrando sesión...');
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userRole");
-    localStorage.removeItem("tenantConfig"); // ✨ NUEVO: Limpiar config de tenant
+    localStorage.removeItem("tenantConfig");
     window.location.href = "/";
   };
 
@@ -352,49 +438,49 @@ export default function AdminLayout({ children }) {
   const navigationCategories = {
     ventas: {
       title: "Ventas y Clientes",
-      icon: "💰",
+      icon: Icons.money,
       items: [
-        { path: "/admin/ventas", title: "Punto de Venta", icon: "🛒", roles: ["all"], module: null },
-        { path: "/admin/clientes", title: "Clientes", icon: "👤", roles: ["all"], module: "clientes" },
-        { path: "/admin/devoluciones", title: "Devoluciones", icon: "↩️", roles: ["all"], module: null },
-        { path: "/admin/seguimiento-pedidos", title: "Seguimiento", icon: "📍", roles: ["all"], module: null, hideForBusinessTypes: ["supermarket"] }, // ✨ Ocultar para supermarket
-        { path: "/admin/ordenes", title: "Órdenes de Compra", icon: "📋", roles: ["all"], module: null } // Visible para todos los tipos de negocio
+        { path: "/admin/ventas", title: "Punto de Venta", icon: Icons.cart, roles: ["all"], module: null },
+        { path: "/admin/clientes", title: "Clientes", icon: Icons.user, roles: ["all"], module: "clientes" },
+        { path: "/admin/devoluciones", title: "Devoluciones", icon: Icons.return, roles: ["all"], module: null },
+        { path: "/admin/seguimiento-pedidos", title: "Seguimiento", icon: Icons.location, roles: ["all"], module: null, hideForBusinessTypes: ["supermarket"] },
+        { path: "/admin/ordenes", title: "Órdenes de Compra", icon: Icons.clipboard, roles: ["all"], module: null }
       ]
     },
     restaurant: {
       title: "Restaurant",
-      icon: "🍽️",
+      icon: Icons.restaurant,
       items: [
-        { path: "/restaurant/waiter", title: "Dashboard Mesero", icon: "👨‍🍳", roles: ["all"], module: null },
-        { path: "/restaurant/kitchen", title: "Cocina", icon: "🍳", roles: ["all"], module: null },
-        { path: "/restaurant/tables", title: "Gestión de Mesas", icon: "🪑", roles: ["admin"], module: null }
+        { path: "/restaurant/waiter", title: "Dashboard Mesero", icon: Icons.chef, roles: ["all"], module: null },
+        { path: "/restaurant/kitchen", title: "Cocina", icon: Icons.cooking, roles: ["all"], module: null },
+        { path: "/restaurant/tables", title: "Gestión de Mesas", icon: Icons.chair, roles: ["admin"], module: null }
       ]
     },
     gestion: {
       title: "Gestión del Negocio",
-      icon: "⚙️",
+      icon: Icons.settings,
       items: [
-        { path: "/admin/tiendas", title: "Tiendas", icon: "🏪", roles: ["admin"], module: "tiendas" },
-        { path: "/admin/productos", title: "Productos", icon: "📦", roles: ["admin"], module: null },
-        { path: "/admin/gastos", title: "Gastos", icon: "💸", roles: ["all"], module: null },
-        { path: "/admin/caja", title: "Corte de Caja", icon: "💳", roles: ["admin", "vendedor"], module: null }
+        { path: "/admin/tiendas", title: "Tiendas", icon: Icons.store, roles: ["admin"], module: "tiendas" },
+        { path: "/admin/productos", title: "Productos", icon: Icons.package, roles: ["admin"], module: null },
+        { path: "/admin/gastos", title: "Gastos", icon: Icons.cash, roles: ["all"], module: null },
+        { path: "/admin/caja", title: "Corte de Caja", icon: Icons.creditCard, roles: ["admin", "vendedor"], module: null }
       ]
     },
     rrhh: {
       title: "Recursos Humanos",
-      icon: "👥",
+      icon: Icons.users,
       items: [
-        { path: "/admin/usuarios", title: "Usuarios", icon: "👥", roles: ["admin"], module: null },
-        { path: "/admin/empleados", title: "Empleados", icon: "👷", roles: ["all"], module: "empleados" },
-        { path: "/admin/historial-empleados", title: "Historial Laboral", icon: "📜", roles: ["admin"], module: "empleados" },
-        { path: "/admin/vacaciones", title: "Vacaciones", icon: "🏖️", roles: ["admin"], module: "vacaciones" }
+        { path: "/admin/usuarios", title: "Usuarios", icon: Icons.users, roles: ["admin"], module: null },
+        { path: "/admin/empleados", title: "Empleados", icon: Icons.worker, roles: ["all"], module: "empleados" },
+        { path: "/admin/historial-empleados", title: "Historial Laboral", icon: Icons.document, roles: ["admin"], module: "empleados" },
+        { path: "/admin/vacaciones", title: "Vacaciones", icon: Icons.vacation, roles: ["admin"], module: "vacaciones" }
       ]
     },
     reportes: {
       title: "Reportes y Análisis",
-      icon: "📊",
+      icon: Icons.chart,
       items: [
-        { path: "/admin/reportes", title: "Reportes", icon: "📊", roles: ["admin"], module: "reportes" }
+        { path: "/admin/reportes", title: "Reportes", icon: Icons.chart, roles: ["admin"], module: "reportes" }
       ]
     }
   };
@@ -464,7 +550,7 @@ export default function AdminLayout({ children }) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="text-6xl mb-4" style={{ color: '#2b354f' }}>🔒</div>
+          <div className="mb-4" style={{ color: '#2b354f' }}>{Icons.lock()}</div>
           <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Error de Autenticación</h2>
           <p className="mb-4" style={{ color: '#697487' }}>{authError}</p>
           <div className="animate-pulse text-sm" style={{ color: '#8c95a4' }}>Redirigiendo al login...</div>
@@ -478,7 +564,7 @@ export default function AdminLayout({ children }) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
-          <div className="text-6xl mb-4" style={{ color: '#2b354f' }}>⚠️</div>
+          <div className="mb-4" style={{ color: '#2b354f' }}>{Icons.warning()}</div>
           <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Usuario no encontrado</h2>
           <p style={{ color: '#697487' }}>No se pudieron cargar los datos del usuario</p>
         </div>
@@ -554,11 +640,11 @@ export default function AdminLayout({ children }) {
         {!sidebarCollapsed && (
           <div className="p-4 border-b flex-shrink-0" style={{ borderBottomColor: '#5e85e0' }}>
             <div className="text-xs space-y-1" style={{ color: '#8c95a4' }}>
-              <div className="flex justify-between">
-                <span>📅 {date}</span>
+              <div className="flex items-center gap-2">
+                {Icons.calendar()} <span>{date}</span>
               </div>
-              <div className="flex justify-between">
-                <span>🕐 {time}</span>
+              <div className="flex items-center gap-2">
+                {Icons.clock()} <span>{time}</span>
               </div>
             </div>
           </div>
@@ -584,8 +670,8 @@ export default function AdminLayout({ children }) {
             return (
               <div key={key} className="mb-6">
                 {!sidebarCollapsed && (
-                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 px-2 scroll-smooth-transition" style={{ color: '#8c95a4' }}>
-                    <span className="mr-2">{category.icon}</span>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 px-2 scroll-smooth-transition flex items-center gap-2" style={{ color: '#8c95a4' }}>
+                    {category.icon()}
                     {category.title}
                   </h3>
                 )}
@@ -595,8 +681,8 @@ export default function AdminLayout({ children }) {
                       key={item.path}
                       to={item.path}
                       className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg scroll-smooth-transition ${
-                        location.pathname === item.path 
-                          ? "shadow-lg border-l-4" 
+                        location.pathname === item.path
+                          ? "shadow-lg border-l-4"
                           : ""
                       }`}
                       style={location.pathname === item.path
@@ -624,7 +710,7 @@ export default function AdminLayout({ children }) {
                       }}
                       title={sidebarCollapsed ? item.title : undefined}
                     >
-                      <span className="text-lg mr-3">{item.icon}</span>
+                      <span className="mr-3">{item.icon()}</span>
                       {!sidebarCollapsed && (
                         <span className="flex-1">{item.title}</span>
                       )}
@@ -708,14 +794,14 @@ export default function AdminLayout({ children }) {
               {/* Botón de Control de Turno */}
               <button
                 onClick={() => turnoActivo ? setShowCerrarTurnoModal(true) : setShowIniciarTurnoModal(true)}
-                className="px-4 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg active:scale-95"
+                className="px-4 py-2.5 rounded-lg font-semibold text-sm transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center gap-2"
                 style={turnoActivo
                   ? { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }
                   : { background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white' }
                 }
                 title={turnoActivo && turnoActivo.usuario?.username ? `Turno abierto por ${turnoActivo.usuario.username}` : ''}
               >
-                {turnoActivo ? '🟢 Turno: Abierto' : '🔴 Turno: Cerrado'}
+                {turnoActivo ? <><span style={{ color: '#22c55e' }}>{Icons.circleGreen()}</span> Turno: Abierto</> : <><span style={{ color: '#ef4444' }}>{Icons.circleRed()}</span> Turno: Cerrado</>}
               </button>
 
               {/* Avatar del usuario */}
