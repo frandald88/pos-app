@@ -97,11 +97,20 @@ const Icons = {
   </svg>,
   upload: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>,
+  undo: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+  </svg>,
+  warning: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+  </svg>,
+  timer: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 };
 
 function UsersPage() {
-  // ✅ Estados usando hooks personalizados
+  //Estados usando hooks personalizados
   const {
     users, setUsers,
     tiendas, setTiendas,
@@ -123,7 +132,7 @@ function UsersPage() {
     token, setToken
   } = useUserState();
 
-  // ✅ Datos de horarios usando hook personalizado
+  //Datos de horarios usando hook personalizado
   const {
     dayNames,
     loadingSchedules, setLoadingSchedules,
@@ -133,10 +142,10 @@ function UsersPage() {
     templateData, setTemplateData
   } = useScheduleData();
 
-  // ✅ Formateo de teléfonos usando hook personalizado
+  //Formateo de teléfonos usando hook personalizado
   const { formatPhoneNumber, getPhoneNumbers } = usePhoneFormatter();
   
-  // ✅ Referencias para elementos del DOM
+  //Referencias para elementos del DOM
   const deletedUsersRef = useRef(null);
 
   // Inicializar token y escuchar cambios
@@ -154,7 +163,7 @@ function UsersPage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [setToken]);
 
-  // ✅ Handlers optimizados para mejorar rendimiento del formulario
+  //Handlers optimizados para mejorar rendimiento del formulario
   const handleUsernameChange = useCallback((e) => {
     setForm(prev => ({ ...prev, username: e.target.value }));
   }, [setForm]);
@@ -178,36 +187,36 @@ function UsersPage() {
     });
   }, [setForm, formatPhoneNumber]);
 
-  // ✅ Handlers optimizados para datos personales
+  //Handlers optimizados para datos personales
   const handlePersonalDataChange = useCallback((field) => (e) => {
     setPersonalData(prev => ({ ...prev, [field]: e.target.value }));
   }, []);
 
-  // ✅ Handlers optimizados para historial laboral
+  //Handlers optimizados para historial laboral
   const handleHistorialLaboralChange = useCallback((field) => (e) => {
     const value = field === 'seguroSocial' ? e.target.checked : e.target.value;
     setHistorialLaboral(prev => ({ ...prev, [field]: value }));
   }, [setHistorialLaboral]);
 
-  // ✅ Handlers optimizados para UI state
+  //Handlers optimizados para UI state
   const handleUIStateChange = useCallback((field, value) => {
     setUiState(prev => ({ ...prev, [field]: value }));
   }, [setUiState]);
 
-  // ✅ Handlers optimizados para edición de historial
+  //Handlers optimizados para edición de historial
   const handleEditHistorialChange = useCallback((field) => (e) => {
     const value = field === 'seguro' ? e.target.checked : e.target.value;
     setEditHistorial(prev => ({ ...prev, [field]: value }));
   }, [setEditHistorial]);
 
-  // ✅ Handlers optimizados para edición de datos personales
+  //Handlers optimizados para edición de datos personales
   const handleEditPersonalDataChange = useCallback((field) => (e) => {
     setEditPersonalData(prev => ({ ...prev, [field]: e.target.value }));
   }, []);
 
-  // ✅ Handlers optimizados para datos de horarios y plantillas
+  //Handlers optimizados para datos de horarios y plantillas
   const handleScheduleDataChange = useCallback((field, value) => {
-    console.log(`🔄 Actualizando scheduleData.${field}:`, value);
+    console.log(`Actualizando scheduleData.${field}:`, value);
     setScheduleData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -223,7 +232,7 @@ function UsersPage() {
         setCargando(false);
       })
       .catch(() => {
-        setMsg("Error al cargar usuarios ❌");
+        setMsg("[ERROR] Error al cargar usuarios");
         setCargando(false);
       });
   };
@@ -237,7 +246,7 @@ const handleNewUser = () => {
     setEditingId(null); // Asegurar que no esté en modo edición
     clearAllForms(); // Limpiar el formulario
     setMostrarFormulario(true);
-    // ✅ REMOVIDO: Ya no necesitamos scroll porque usamos modal
+    //REMOVIDO: Ya no necesitamos scroll porque usamos modal
   }
 };
 
@@ -271,18 +280,18 @@ const handleNewUser = () => {
 
   const loadScheduleTemplates = useCallback(async (retryCount = 0) => {
     if (!token) {
-      console.log("🔍 No token disponible para cargar plantillas");
+      console.log("No token disponible para cargar plantillas");
       return;
     }
 
-    console.log("🔄 Cargando plantillas de horarios...");
+    console.log("Cargando plantillas de horarios...");
     setLoadingSchedules(true);
     
     try {
       const res = await axios.get(`${apiBaseUrl}/api/schedules/templates`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log("✅ Plantillas cargadas:", res.data);
+      console.log("Plantillas cargadas:", res.data);
       // Manejar respuesta con formato { success, data } o array directo
       const responseData = res.data?.data || res.data;
       // Filtrar templates válidos antes de almacenar
@@ -293,11 +302,11 @@ const handleNewUser = () => {
       );
       handleScheduleDataChange('templates', validTemplates);
     } catch (err) {
-      console.error("❌ Error cargando plantillas:", err);
+      console.error("Error cargando plantillas:", err);
 
       // Retry hasta 2 veces en caso de error de red
       if (retryCount < 2 && (err.code === 'NETWORK_ERROR' || err.response?.status >= 500)) {
-        console.log(`🔄 Reintentando cargar plantillas (intento ${retryCount + 1}/2)...`);
+        console.log(`Reintentando cargar plantillas (intento ${retryCount + 1}/2)...`);
         setTimeout(() => loadScheduleTemplates(retryCount + 1), 1000);
       }
     } finally {
@@ -307,17 +316,17 @@ const handleNewUser = () => {
 
   const loadEmployeeSchedules = useCallback(async (retryCount = 0) => {
     if (!token) {
-      console.log("🔍 No token disponible para cargar horarios de empleados");
+      console.log("No token disponible para cargar horarios de empleados");
       return;
     }
 
-    console.log("🔄 Cargando horarios de empleados...");
+    console.log("Cargando horarios de empleados...");
     
     try {
       const res = await axios.get(`${apiBaseUrl}/api/schedules?type=assignments`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      console.log("✅ Horarios de empleados cargados:", res.data);
+      console.log("Horarios de empleados cargados:", res.data);
       // Filtrar schedules válidos antes de almacenar
       const validSchedules = (res.data || []).filter(schedule => 
         schedule && 
@@ -326,19 +335,19 @@ const handleNewUser = () => {
       );
       handleScheduleDataChange('employeeSchedules', validSchedules);
     } catch (err) {
-      console.error("❌ Error cargando horarios de empleados:", err);
+      console.error("Error cargando horarios de empleados:", err);
       
       // Retry hasta 2 veces en caso de error de red
       if (retryCount < 2 && (err.code === 'NETWORK_ERROR' || err.response?.status >= 500)) {
-        console.log(`🔄 Reintentando cargar horarios de empleados (intento ${retryCount + 1}/2)...`);
+        console.log(`Reintentando cargar horarios de empleados (intento ${retryCount + 1}/2)...`);
         setTimeout(() => loadEmployeeSchedules(retryCount + 1), 1000);
       }
     }
   }, [token, handleScheduleDataChange]);
 
-  // ✅ Función helper para recargar horarios con loading
+  //Función helper para recargar horarios con loading
   const reloadScheduleData = useCallback(async () => {
-    console.log("🔄 Recargando datos de horarios...");
+    console.log("Recargando datos de horarios...");
     setLoadingSchedules(true);
     
     try {
@@ -348,7 +357,7 @@ const handleNewUser = () => {
         const res = await axios.get(`${apiBaseUrl}/api/schedules/templates`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
-        console.log("✅ Plantillas cargadas:", res.data);
+        console.log("Plantillas cargadas:", res.data);
         // Filtrar templates válidos antes de almacenar
         const validTemplates = (res.data || []).filter(template => 
           template && 
@@ -363,7 +372,7 @@ const handleNewUser = () => {
         const res = await axios.get(`${apiBaseUrl}/api/schedules?type=assignments`, { 
           headers: { Authorization: `Bearer ${token}` } 
         });
-        console.log("✅ Horarios de empleados cargados:", res.data);
+        console.log("Horarios de empleados cargados:", res.data);
         // Filtrar schedules válidos antes de almacenar
         const validSchedules = (res.data || []).filter(schedule => 
           schedule && 
@@ -379,13 +388,13 @@ const handleNewUser = () => {
       ]);
     } finally {
       setLoadingSchedules(false);
-      console.log("🏁 Recarga de horarios completada");
+      console.log("Recarga de horarios completada");
     }
   }, [token, apiBaseUrl, handleScheduleDataChange]);
 
   useEffect(() => {
-    console.log("🚀 Iniciando carga de datos en UsersPage");
-    console.log("🔑 Token disponible:", !!token);
+    console.log("Iniciando carga de datos en UsersPage");
+    console.log("Token disponible:", !!token);
     
     if (token) {
       fetchUsers();
@@ -398,15 +407,15 @@ const handleNewUser = () => {
         loadEmployeeSchedules()
       ]).finally(() => {
         setLoadingSchedules(false);
-        console.log("🏁 Carga de horarios completada");
+        console.log("Carga de horarios completada");
       });
     } else {
-      console.log("⏳ Esperando token para cargar datos...");
+      console.log("Esperando token para cargar datos...");
       setLoadingSchedules(false);
     }
-  }, [token]); // ✅ Ahora depende del token
+  }, [token]); //Ahora depende del token
 
-  // ✅ NUEVO: Cerrar modales con tecla Escape
+  //NUEVO: Cerrar modales con tecla Escape
   useEffect(() => {
     const handleEscapeKey = (event) => {
       if (event.key === 'Escape') {
@@ -440,7 +449,7 @@ const handleNewUser = () => {
 
   const handleCreateTemplate = async () => {
     if (!templateData.name.trim()) {
-      setMsg("El nombre de la plantilla es requerido ❌");
+      setMsg("[ERROR] El nombre de la plantilla es requerido");
       return;
     }
 
@@ -451,13 +460,13 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Plantilla de horario creada exitosamente ✅");
+      setMsg("[SUCCESS] Plantilla de horario creada exitosamente");
       handleUIStateChange('showTemplateForm', false);
       clearTemplateForm();
       loadScheduleTemplates();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al crear plantilla: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al crear plantilla: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
@@ -484,7 +493,7 @@ const handleNewUser = () => {
   };
 
   const clearScheduleForm = () => {
-    // ✅ CORREGIDO: Solo limpiar campos del formulario, conservar templates y employeeSchedules
+    //CORREGIDO: Solo limpiar campos del formulario, conservar templates y employeeSchedules
     handleScheduleDataChange('defaultTolerance', 15);
     handleScheduleDataChange('notes', "");
     handleScheduleDataChange('schedule', {
@@ -533,8 +542,8 @@ const handleNewUser = () => {
     handleUIStateChange('editingTemplateId', null);
     handleScheduleDataChange('editingTemplateData', {});
     
-    // ✅ NUEVO: Recargar horarios después de cancelar edición
-    console.log("🔄 Recargando horarios después de cancelar edición de plantilla...");
+    //NUEVO: Recargar horarios después de cancelar edición
+    console.log("Recargando horarios después de cancelar edición de plantilla...");
     reloadScheduleData();
   };
 
@@ -547,13 +556,13 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Plantilla actualizada exitosamente ✅");
+      setMsg("[SUCCESS] Plantilla actualizada exitosamente");
       handleUIStateChange('editingTemplateId', null);
       handleScheduleDataChange('editingTemplateData', {});
       loadScheduleTemplates();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al actualizar plantilla: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al actualizar plantilla: ${error.response?.data?.message || error.message}`);
       setTimeout(() => setMsg(""), 5000);
     } finally {
       setCargando(false);
@@ -585,7 +594,7 @@ const handleNewUser = () => {
       setDeletedUsers(response.data);
     } catch (error) {
       console.error('Error obteniendo usuarios eliminados:', error);
-      setMsg("Error al cargar usuarios eliminados ❌");
+      setMsg("[ERROR] Error al cargar usuarios eliminados");
     }
   };
 
@@ -598,16 +607,16 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setMsg("Usuario restaurado exitosamente ✅");
+      setMsg("[SUCCESS] Usuario restaurado exitosamente");
       fetchUsers();
       fetchDeletedUsers();
       
-      // ✅ NUEVO: Recargar también los datos de horarios
+      //NUEVO: Recargar también los datos de horarios
       await reloadScheduleData();
       
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al restaurar usuario: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al restaurar usuario: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
@@ -622,15 +631,15 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setMsg("Usuario eliminado exitosamente ✅");
+      setMsg("[SUCCESS] Usuario eliminado exitosamente");
       fetchUsers();
       loadHistory();
       
-      // ✅ Usar función helper para recargar horarios
+      //Usar función helper para recargar horarios
       await reloadScheduleData();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
@@ -641,12 +650,12 @@ const handleNewUser = () => {
     clearAllForms();
     setMostrarFormulario(false);
     
-    // ✅ NUEVO: Recargar horarios después de cancelar creación/edición de usuario
-    console.log("🔄 Recargando horarios después de cancelar usuario...");
+    //NUEVO: Recargar horarios después de cancelar creación/edición de usuario
+    console.log("Recargando horarios después de cancelar usuario...");
     reloadScheduleData();
   };
 
-  // ✅ Optimizado: Función de limpieza consolidada
+  //Optimizado: Función de limpieza consolidada
   const clearAllForms = useCallback(() => {
     setForm({
       username: "",
@@ -675,7 +684,7 @@ const handleNewUser = () => {
     clearTemplateForm();
   }, []);
 
-  // ✅ Optimizado: Filtrar usuarios con useMemo para evitar recálculos innecesarios
+  //Optimizado: Filtrar usuarios con useMemo para evitar recálculos innecesarios
   const filteredUsers = useMemo(() => {
     return (users || []).filter(user => {
       const matchesSearch = 
@@ -691,7 +700,7 @@ const handleNewUser = () => {
     });
   }, [users, searchTerm, filtroRole, filtroTienda]);
 
-  // ✅ Optimizado: Estadísticas de usuarios con useMemo
+  //Optimizado: Estadísticas de usuarios con useMemo
   const userStats = useMemo(() => {
     const safeUsers = users || [];
     return {
@@ -713,10 +722,10 @@ const handleNewUser = () => {
     return configs[role] || { icon: Icons.user, color: '#6b7280', bgColor: 'bg-gray-100', textColor: 'text-gray-800', label: role };
   };
   
-  // ✅ Función para crear horario personalizado
+  //Función para crear horario personalizado
   const handleCreateSchedule = async (employeeId, tiendaId) => {
     if (!employeeId || !tiendaId) {
-      setMsg("Se requiere empleado y tienda para crear horario ❌");
+      setMsg("[ERROR] Se requiere empleado y tienda para crear horario");
       return;
     }
 
@@ -735,21 +744,21 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Horario creado exitosamente ✅");
+      setMsg("[SUCCESS] Horario creado exitosamente");
       clearScheduleForm();
       loadEmployeeSchedules();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al crear horario: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al crear horario: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
   };
 
-  // ✅ Asignar horario a empleado (usando plantilla o personalizado)
+  //Asignar horario a empleado (usando plantilla o personalizado)
   const handleAssignSchedule = async (employeeId, tiendaId) => {
     if (!employeeId || !tiendaId) {
-      setMsg("Se requiere empleado y tienda para asignar horario ❌");
+      setMsg("[ERROR] Se requiere empleado y tienda para asignar horario");
       return;
     }
 
@@ -765,7 +774,7 @@ const handleNewUser = () => {
       } else if (scheduleFormType === 'custom') {
         payload.customSchedule = scheduleData;
       } else {
-        setMsg("Selecciona una plantilla o configura un horario personalizado ❌");
+        setMsg("[ERROR] Selecciona una plantilla o configura un horario personalizado");
         setCargando(false);
         return;
       }
@@ -774,18 +783,18 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Horario asignado exitosamente ✅");
+      setMsg("[SUCCESS] Horario asignado exitosamente");
       clearScheduleForm();
       loadEmployeeSchedules();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al asignar horario: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al asignar horario: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
   };
 
-  // ✅ Actualizar horario existente
+  //Actualizar horario existente
   const handleUpdateSchedule = async (scheduleId) => {
     setCargando(true);
 
@@ -794,20 +803,20 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Horario actualizado exitosamente ✅");
+      setMsg("[SUCCESS] Horario actualizado exitosamente");
       handleUIStateChange('editingScheduleId', null);
       clearScheduleForm();
       loadEmployeeSchedules();
       loadScheduleTemplates();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al actualizar horario: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al actualizar horario: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
   };
 
-  // ✅ Eliminar horario o plantilla
+  //Eliminar horario o plantilla
   const handleDeleteSchedule = (scheduleId, isTemplate = false) => {
     const scheduleToDelete = isTemplate 
       ? (scheduleData.templates || []).find(t => t._id === scheduleId)
@@ -833,7 +842,7 @@ const handleNewUser = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const successText = uiState.deleteCandidate.isTemplate ? "Plantilla eliminada exitosamente ✅" : "Horario eliminado exitosamente ✅";
+      const successText = uiState.deleteCandidate.isTemplate ? "[SUCCESS] Plantilla eliminada exitosamente" : "[SUCCESS] Horario eliminado exitosamente";
       setMsg(successText);
       
       if (uiState.deleteCandidate.isTemplate) {
@@ -860,7 +869,7 @@ const handleNewUser = () => {
     handleUIStateChange('deleteError', null);
   };
 
-  // ✅ Función para actualizar día específico del horario
+  //Función para actualizar día específico del horario
   const updateScheduleDay = (day, field, value, isTemplate = false) => {
     if (isTemplate) {
       setTemplateData(prev => ({
@@ -887,7 +896,7 @@ const handleNewUser = () => {
     }
   };
 
-  // ✅ Función para ver detalles de un horario
+  //Función para ver detalles de un horario
   const handleViewScheduleDetails = (schedule) => {
     alert(`Detalles del horario de ${schedule.employee?.username}:\n\n` +
       Object.entries(schedule.schedule || {})
@@ -904,15 +913,15 @@ const handleNewUser = () => {
     );
   };
 
-  // ✅ Función helper para verificar si un usuario tiene horario asignado activo
+  //Función helper para verificar si un usuario tiene horario asignado activo
   const userHasActiveSchedule = (userId) => {
     return (scheduleData.employeeSchedules || []).some(schedule => 
       schedule.employee?._id === userId && schedule.isActive === true
     );
   };
 
-  // ✅ Cargar datos para edición
-// ✅ Cargar datos para edición CON SCROLL AUTOMÁTICO
+  //Cargar datos para edición
+//Cargar datos para edición CON SCROLL AUTOMÁTICO
 const loadScheduleForEdit = (schedule, isTemplate = false) => {
   if (isTemplate) {
     // Usar edición inline para plantillas
@@ -929,10 +938,10 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
   }
 };
 
-  // ✅ Función para actualizar plantilla
+  //Función para actualizar plantilla
   const handleUpdateTemplate = async (templateId) => {
     if (!templateData.name.trim()) {
-      setMsg("El nombre de la plantilla es requerido ❌");
+      setMsg("[ERROR] El nombre de la plantilla es requerido");
       return;
     }
 
@@ -943,14 +952,14 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setMsg("Plantilla actualizada exitosamente ✅");
+      setMsg("[SUCCESS] Plantilla actualizada exitosamente");
       handleUIStateChange('editingScheduleId', null);
       handleUIStateChange('showTemplateForm', false);
       clearTemplateForm();
       loadScheduleTemplates();
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
-      setMsg(`Error al actualizar plantilla: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al actualizar plantilla: ${error.response?.data?.message || error.message}`);
     } finally {
       setCargando(false);
     }
@@ -961,35 +970,35 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
     e.preventDefault();
 
    if (!form.username || !form.email || (!editingId && !form.password)) {
-    setMsg("Por favor completa todos los campos requeridos ❌");
+    setMsg("[ERROR] Por favor completa todos los campos requeridos");
     return;
   }
 
   // Validar formato de email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(form.email)) {
-    setMsg("El formato del email es inválido ❌");
+    setMsg("[ERROR] El formato del email es inválido");
     return;
   }
 
   const phoneNumbers = getPhoneNumbers(form.telefono);
   if (form.telefono && phoneNumbers.length !== 10) {
-    setMsg("El teléfono debe tener exactamente 10 dígitos ❌");
+    setMsg("[ERROR] El teléfono debe tener exactamente 10 dígitos");
     return;
   }
   if (form.telefono && phoneNumbers.startsWith('0')) {
-    setMsg("El teléfono no puede empezar con 0 ❌");
+    setMsg("[ERROR] El teléfono no puede empezar con 0");
     return;
   }
 
     if (!editingId) {
       if (!historialLaboral.sueldoDiario || !historialLaboral.startDate || !personalData.nombre || !personalData.apellidoPaterno || !personalData.apellidoMaterno) {
-        setMsg("Se requieren todos los campos obligatorios: sueldo, fecha de ingreso, nombre y apellidos ❌");
+        setMsg("[ERROR] Se requieren todos los campos obligatorios: sueldo, fecha de ingreso, nombre y apellidos");
         return;
       }
       
       if (parseFloat(historialLaboral.sueldoDiario) <= 0) {
-        setMsg("El sueldo diario debe ser mayor a 0 ❌");
+        setMsg("[ERROR] El sueldo diario debe ser mayor a 0");
         return;
       }
     }
@@ -1105,19 +1114,19 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
         }
       }
 
-      setMsg(editingId ? "Usuario actualizado exitosamente ✅" : "Usuario y registro laboral creados exitosamente ✅");
+      setMsg(editingId ? "[SUCCESS] Usuario actualizado exitosamente" : "[SUCCESS] Usuario y registro laboral creados exitosamente");
       clearAllForms();
       setMostrarFormulario(false);
       fetchUsers();
       loadHistory();
       
-      // ✅ NUEVO: Recargar también los datos de horarios
+      //NUEVO: Recargar también los datos de horarios
       await reloadScheduleData();
       
       setTimeout(() => setMsg(""), 3000);
     } catch (error) {
       console.error("Error detallado:", error.response?.data || error);
-      setMsg(`Error al ${editingId ? "actualizar" : "crear"} usuario: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al ${editingId ? "actualizar" : "crear"} usuario: ${error.response?.data?.message || error.message}`);
       setCargando(false);
     }
   };
@@ -1135,7 +1144,7 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       position: editHistorial.position,
       notes: editHistorial.notes,
 
-      // ✅ CAMPOS PERSONALES QUE FALTABAN
+      //CAMPOS PERSONALES QUE FALTABAN
       nombre: editPersonalData.nombre?.trim() || null,
       apellidoPaterno: editPersonalData.apellidoPaterno?.trim() || null,
       apellidoMaterno: editPersonalData.apellidoMaterno?.trim() || null,
@@ -1148,24 +1157,24 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       await axios.put(`${apiBaseUrl}/api/employees/history/${id}`, payload, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
-      setMsg("Historial actualizado exitosamente ✅");
+      setMsg("[SUCCESS] Historial actualizado exitosamente");
       setEditHistorial(prev => ({...prev, id: null}));
       loadHistory();
       
-      // ✅ NUEVO: Recargar también los datos de horarios
+      //NUEVO: Recargar también los datos de horarios
       await reloadScheduleData();
       
       setTimeout(() => setMsg(""), 3000);
     } catch (err) {
       console.error("Error al actualizar historial:", err);
-      setMsg(`Error al actualizar historial: ${err.response?.data?.message || err.message} ❌`);
+      setMsg(`[ERROR] Error al actualizar historial: ${err.response?.data?.message || err.message}`);
     } finally {
       setCargando(false);
     }
   };
 
-  // ✅ FUNCIÓN AUXILIAR para limpiar estados de edición
-  // ✅ Función optimizada para limpiar estados de edición
+  //FUNCIÓN AUXILIAR para limpiar estados de edición
+  //Función optimizada para limpiar estados de edición
   const clearEditStates = useCallback(() => {
     setEditHistorial({
       id: null,
@@ -1188,8 +1197,8 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       numeroSeguroSocial: ""
     });
     
-    // ✅ NUEVO: Recargar horarios después de limpiar estados
-    console.log("🔄 Recargando horarios después de cancelar edición...");
+    //NUEVO: Recargar horarios después de limpiar estados
+    console.log("Recargando horarios después de cancelar edición...");
     reloadScheduleData();
   }, [reloadScheduleData]);
 
@@ -1201,11 +1210,11 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       await axios.delete(`${apiBaseUrl}/api/employees/history/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMsg("Historial eliminado exitosamente ✅");
+      setMsg("[SUCCESS] Historial eliminado exitosamente");
       loadHistory();
       setTimeout(() => setMsg(""), 3000);
     } catch (err) {
-      setMsg(`Error al eliminar historial: ${err.response?.data?.message || err.message} ❌`);
+      setMsg(`[ERROR] Error al eliminar historial: ${err.response?.data?.message || err.message}`);
     } finally {
       setCargando(false);
     }
@@ -1368,12 +1377,23 @@ const handleEdit = async (user) => {
 
         {/* Mensaje de estado */}
         {msg && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+          <div className={`mb-6 p-4 rounded-lg border-l-4 flex items-center gap-3 ${
+            msg.includes('[SUCCESS]')
+              ? 'bg-green-50 border-green-400 text-green-800'
+              : msg.includes('[WARNING]')
+              ? 'bg-yellow-50 border-yellow-400 text-yellow-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
-            <p className="font-medium">{msg}</p>
+            <div className="flex-shrink-0">
+              {msg.includes('[SUCCESS]') ? (
+                <div className="text-green-600"><Icons.check /></div>
+              ) : msg.includes('[WARNING]') ? (
+                <div className="text-yellow-600"><Icons.warning /></div>
+              ) : (
+                <div className="text-red-600"><Icons.xmark /></div>
+              )}
+            </div>
+            <p className="font-medium">{msg.replace('[SUCCESS]', '').replace('[ERROR]', '').replace('[WARNING]', '').trim()}</p>
           </div>
         )}
 
@@ -1777,7 +1797,11 @@ const handleEdit = async (user) => {
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-6xl mb-4">👥</div>
+              <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+                <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                 No hay usuarios
               </h3>
@@ -1874,7 +1898,7 @@ const handleEdit = async (user) => {
                           </div>
                         </div>
                         
-                        {/* ✅ Indicador de horario asignado para no-admins */}
+                        {/*Indicador de horario asignado para no-admins */}
                         {user.role !== 'admin' && (
                           <div className="flex items-center gap-2 mt-3">
                             <div className="w-6 h-6 rounded-lg flex items-center justify-center"
@@ -1898,7 +1922,7 @@ const handleEdit = async (user) => {
 
                      {/* Acciones del usuario */}
                       <div className="flex gap-3">
-                        {/* ✅ Solo mostrar botón de horario para vendedores/repartidores SIN horario asignado */}
+                        {/*Solo mostrar botón de horario para vendedores/repartidores SIN horario asignado */}
                         {user.role !== 'admin' && !userHasActiveSchedule(user._id) && (
                           <button
                             onClick={() => handleOpenScheduleForm(user)}
@@ -2864,8 +2888,8 @@ const handleEdit = async (user) => {
 
                   {/* Información Laboral */}
                   <div>
-                    <h3 className="text-lg font-medium mb-4" style={{ color: '#46546b' }}>
-                      💼 Información Laboral
+                    <h3 className="text-lg font-medium mb-4 flex items-center gap-2" style={{ color: '#46546b' }}>
+                      <Icons.briefcase /> Información Laboral
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -3030,7 +3054,7 @@ const handleEdit = async (user) => {
           </div>
         )}
 		
-		{/* ✅ Modal de asignación/edición de horarios */}
+		{/*Modal de asignación/edición de horarios */}
         {uiState.showScheduleModal && uiState.selectedEmployeeForSchedule && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -3437,7 +3461,7 @@ const handleEdit = async (user) => {
                       <td className="p-4" style={{ color: '#697487' }}>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                            🏪
+                            <Icons.store />
                           </div>
                           <span className="font-medium" style={{ color: '#23334e' }}>
                             {h.tienda?.nombre || 'Sin asignar'}
@@ -3491,7 +3515,7 @@ const handleEdit = async (user) => {
                       <td className="p-4" style={{ color: '#697487' }}>
                         {h.endDate ? (
                           <div className="flex items-center gap-2">
-                            <span className="text-sm">📤</span>
+                            <Icons.upload />
                             <span className="text-sm">
                               {new Date(h.endDate).toLocaleDateString('es-MX', {
                                 year: 'numeric',
@@ -3507,10 +3531,14 @@ const handleEdit = async (user) => {
                       
                       {/* COLUMNA ESTADO */}
                       <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
                           h.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {h.isActive ? "🟢 Activo" : "⚪ Inactivo"}
+                          {h.isActive ? (
+                            <><Icons.circleGreen /> Activo</>
+                          ) : (
+                            <><Icons.circleWhite /> Inactivo</>
+                          )}
                         </span>
                       </td>
                       
@@ -3523,8 +3551,8 @@ const handleEdit = async (user) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                 </div>
-                                <p className="text-blue-700 font-medium text-sm">
-                                  📝 Editando en modal
+                                <p className="text-blue-700 font-medium text-sm flex items-center justify-center gap-2">
+                                  <Icons.note /> Editando en modal
                                 </p>
                                 <p className="text-blue-600 text-xs mt-1">
                                   El formulario se abrió en una ventana separada
@@ -3534,9 +3562,9 @@ const handleEdit = async (user) => {
                                     setEditHistorial(prev => ({...prev, id: null}));
                                     clearEditStates();
                                   }} 
-                                  className="mt-3 px-3 py-1 bg-gray-500 text-white rounded text-xs font-medium hover:bg-gray-600 transition-colors"
+                                  className="mt-3 px-3 py-1 bg-gray-500 text-white rounded text-xs font-medium hover:bg-gray-600 transition-colors flex items-center justify-center gap-1"
                                 >
-                                  ❌ Cerrar
+                                  <Icons.xmark /> Cerrar
                                 </button>
                               </div>
                             
@@ -3564,16 +3592,16 @@ const handleEdit = async (user) => {
                                   numeroSeguroSocial: h.numeroSeguroSocial || ""
                                 });
                               }}
-                              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50 border border-blue-200"
+                              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-blue-50 border border-blue-200 flex items-center gap-1"
                               style={{ color: '#23334e' }}
                             >
-                              ✏️ Editar
+                              <Icons.edit /> Editar
                             </button>
-                            <button 
-                              onClick={() => handleDeleteHistory(h._id)} 
-                              className="px-4 py-2 text-sm font-medium text-red-600 rounded-lg transition-colors duration-200 hover:bg-red-50 border border-red-200"
+                            <button
+                              onClick={() => handleDeleteHistory(h._id)}
+                              className="px-4 py-2 text-sm font-medium text-red-600 rounded-lg transition-colors duration-200 hover:bg-red-50 border border-red-200 flex items-center gap-1"
                             >
-                              🗑️ Eliminar
+                              <Icons.trash /> Eliminar
                             </button>
                           </div>
                         )}
@@ -3600,7 +3628,11 @@ const handleEdit = async (user) => {
           <div className="overflow-x-auto">
             {loadingSchedules ? (
               <div className="p-8 text-center">
-                <div className="text-6xl mb-4">⏳</div>
+                <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+                  <svg className="w-24 h-24 animate-spin" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
                 <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                   Cargando horarios...
                 </h3>
@@ -3610,7 +3642,11 @@ const handleEdit = async (user) => {
               </div>
             ) : (scheduleData.employeeSchedules || []).length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-6xl mb-4">⏰</div>
+                <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+                  <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
                 <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                   No hay horarios configurados
                 </h3>
@@ -3674,26 +3710,26 @@ const handleEdit = async (user) => {
                         </td>
                         <td className="p-4">
                           <div className="flex gap-2">
-                            <button 
+                            <button
                               onClick={() => loadScheduleForEdit(schedule, false)}
-                              className="px-3 py-1 text-sm font-medium rounded transition-colors duration-200 hover:bg-purple-50"
+                              className="px-3 py-1 text-sm font-medium rounded transition-colors duration-200 hover:bg-purple-50 flex items-center gap-1"
                               style={{ color: '#8b5cf6', border: '1px solid #e5e7eb' }}
                             >
-                              ✏️ Editar
+                              <Icons.edit /> Editar
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleViewScheduleDetails(schedule)}
-                              className="px-3 py-1 text-sm font-medium rounded transition-colors duration-200 hover:bg-blue-50"
+                              className="px-3 py-1 text-sm font-medium rounded transition-colors duration-200 hover:bg-blue-50 flex items-center gap-1"
                               style={{ color: '#3b82f6', border: '1px solid #e5e7eb' }}
                             >
-                              👁️ Ver
+                              <Icons.eye /> Ver
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteSchedule(schedule._id, false)}
-                              className="px-3 py-1 text-sm font-medium text-red-600 rounded transition-colors duration-200 hover:bg-red-50"
+                              className="px-3 py-1 text-sm font-medium text-red-600 rounded transition-colors duration-200 hover:bg-red-50 flex items-center gap-1"
                               style={{ border: '1px solid #fee2e2' }}
                             >
-                              🗑️ Eliminar
+                              <Icons.trash /> Eliminar
                             </button>
                           </div>
                         </td>
@@ -3712,8 +3748,8 @@ const handleEdit = async (user) => {
             <div className="p-6 border-b bg-red-50">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-semibold text-red-800">
-                    🗑️ Usuarios Eliminados (Soft Delete)
+                  <h2 className="text-xl font-semibold text-red-800 flex items-center gap-2">
+                    <Icons.trash /> Usuarios Eliminados (Soft Delete)
                   </h2>
                   <p className="text-sm mt-1 text-red-600">
                     Usuarios que fueron eliminados pero se pueden restaurar
@@ -3728,7 +3764,11 @@ const handleEdit = async (user) => {
             <div className="overflow-x-auto">
               {deletedUsers.length === 0 ? (
                 <div className="p-8 text-center">
-                  <div className="text-6xl mb-4">✨</div>
+                  <div className="mb-4 flex justify-center" style={{ color: '#22c55e' }}>
+                    <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                     No hay usuarios eliminados
                   </h3>
@@ -3765,7 +3805,7 @@ const handleEdit = async (user) => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-red-100 text-red-600">
-                                  🏷️
+                                  <Icons.tag />
                                 </div>
                                 <div>
                                   <div className="text-sm font-medium text-red-700">
@@ -3779,7 +3819,7 @@ const handleEdit = async (user) => {
                               
                               <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-red-100 text-red-600">
-                                  📅
+                                  <Icons.calendar />
                                 </div>
                                 <div>
                                   <div className="text-sm font-medium text-red-700">
@@ -3799,7 +3839,7 @@ const handleEdit = async (user) => {
                               
                               <div className="flex items-start gap-3">
                                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm bg-red-100 text-red-600">
-                                  👤
+                                  <Icons.user />
                                 </div>
                                 <div>
                                   <div className="text-sm font-medium text-red-700">
@@ -3816,10 +3856,10 @@ const handleEdit = async (user) => {
                           <div className="flex gap-3">
                             <button
                               onClick={() => handleRestore(user._id, user.username)}
-                              className="px-6 py-3 rounded-lg font-medium text-white bg-green-600 transition-all duration-200 hover:shadow-md hover:bg-green-700"
+                              className="px-6 py-3 rounded-lg font-medium text-white bg-green-600 transition-all duration-200 hover:shadow-md hover:bg-green-700 flex items-center gap-2"
                               disabled={cargando}
                             >
-                              ↩️ Restaurar
+                              <Icons.undo /> Restaurar
                             </button>
                           </div>
                         </div>
@@ -3853,7 +3893,11 @@ const handleEdit = async (user) => {
           <div className="overflow-x-auto">
             {loadingSchedules ? (
               <div className="p-8 text-center">
-                <div className="text-6xl mb-4">⏳</div>
+                <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+                  <svg className="w-24 h-24 animate-spin" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
                 <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                   Cargando plantillas...
                 </h3>
@@ -3895,8 +3939,8 @@ const handleEdit = async (user) => {
                         <>
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: '#8b5cf6' }}>
-                                📋
+                              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: '#8b5cf6' }}>
+                                <Icons.clipboard />
                               </div>
                               <div className="flex-1">
                                 <input
@@ -3928,7 +3972,7 @@ const handleEdit = async (user) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                  ⏱️
+                                  <Icons.timer />
                                 </div>
                                 <div className="flex-1">
                                   <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -3948,7 +3992,7 @@ const handleEdit = async (user) => {
                               
                               <div className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                  📝
+                                  <Icons.note />
                                 </div>
                                 <div className="flex-1">
                                   <div className="text-sm font-medium mb-1" style={{ color: '#46546b' }}>
@@ -3968,8 +4012,8 @@ const handleEdit = async (user) => {
 
                             {/* Configuración de horarios por día */}
                             <div>
-                              <div className="text-sm font-medium mb-3" style={{ color: '#46546b' }}>
-                                📅 Configuración de horarios por día
+                              <div className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: '#46546b' }}>
+                                <Icons.calendar /> Configuración de horarios por día
                               </div>
                               <div className="grid grid-cols-1 gap-3">
                                 {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((dayName, dayIndex) => (
@@ -4085,7 +4129,11 @@ const handleEdit = async (user) => {
                               style={{ backgroundColor: '#8b5cf6' }}
                               disabled={cargando || !scheduleData.editingTemplateData.name?.trim()}
                             >
-                              {cargando ? "Guardando..." : "💾 Guardar"}
+                              {cargando ? "Guardando..." : (
+                                <span className="flex items-center gap-2">
+                                  <Icons.save /> Guardar
+                                </span>
+                              )}
                             </button>
                             <button 
                               onClick={handleCancelEditTemplate}
@@ -4101,8 +4149,8 @@ const handleEdit = async (user) => {
                         <>
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: '#8b5cf6' }}>
-                                📋
+                              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ backgroundColor: '#8b5cf6' }}>
+                                <Icons.clipboard />
                               </div>
                               <div>
                                 <h3 className="text-lg font-bold" style={{ color: '#23334e' }}>
@@ -4122,7 +4170,7 @@ const handleEdit = async (user) => {
                           <div className="space-y-3 mb-4">
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                📅
+                                <Icons.calendar />
                               </div>
                               <div>
                                 <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -4136,7 +4184,7 @@ const handleEdit = async (user) => {
                             
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                ⏰
+                                <Icons.clock />
                               </div>
                               <div>
                                 <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -4150,7 +4198,7 @@ const handleEdit = async (user) => {
                             
                             <div className="flex items-center gap-2">
                               <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                ⏱️
+                                <Icons.timer />
                               </div>
                               <div>
                                 <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -4165,7 +4213,7 @@ const handleEdit = async (user) => {
                             {template.notes && (
                               <div className="flex items-start gap-2">
                                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style={{ backgroundColor: '#f4f6fa', color: '#46546b' }}>
-                                  📝
+                                  <Icons.note />
                                 </div>
                                 <div className="flex-1">
                                   <div className="text-sm font-medium" style={{ color: '#46546b' }}>
@@ -4226,19 +4274,19 @@ const handleEdit = async (user) => {
                           </div>
                           
                           <div className="flex gap-2 mt-4 pt-4 border-t" style={{ borderColor: '#e5e7eb' }}>
-                            <button 
+                            <button
                               onClick={() => handleEditTemplateInline(template)}
-                              className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-purple-50"
+                              className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 hover:bg-purple-50 flex items-center justify-center gap-1"
                               style={{ color: '#8b5cf6', border: '1px solid #e5e7eb' }}
                             >
-                              ✏️ Editar
+                              <Icons.edit /> Editar
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteSchedule(template._id, true)}
-                              className="flex-1 px-3 py-2 text-sm font-medium text-red-600 rounded-lg transition-colors duration-200 hover:bg-red-50"
+                              className="flex-1 px-3 py-2 text-sm font-medium text-red-600 rounded-lg transition-colors duration-200 hover:bg-red-50 flex items-center justify-center gap-1"
                               style={{ border: '1px solid #fee2e2' }}
                             >
-                              🗑️ Eliminar
+                              <Icons.trash /> Eliminar
                             </button>
                           </div>
                         </>
@@ -4260,8 +4308,8 @@ const handleEdit = async (user) => {
             <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-red-600">
-                    🗑️ Confirmar Eliminación
+                  <h2 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+                    <Icons.trash /> Confirmar Eliminación
                   </h2>
                   <button
                     onClick={cancelDeleteSchedule}
@@ -4278,9 +4326,9 @@ const handleEdit = async (user) => {
                   
                   <div className="p-4 bg-gray-50 rounded-lg border">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" 
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
                            style={{ backgroundColor: uiState.deleteCandidate.isTemplate ? '#8b5cf6' : '#3b82f6', color: 'white' }}>
-                        {uiState.deleteCandidate.isTemplate ? '📋' : '👤'}
+                        {uiState.deleteCandidate.isTemplate ? <Icons.clipboard /> : <Icons.user />}
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">
@@ -4298,15 +4346,18 @@ const handleEdit = async (user) => {
 
                   {uiState.deleteError ? (
                     <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-                      <p className="text-sm text-red-800">
-                        ❌ <strong>Error:</strong> {uiState.deleteError}
+                      <p className="text-sm text-red-800 flex items-start gap-2">
+                        <span className="flex-shrink-0 mt-0.5"><Icons.xmark /></span>
+                        <span><strong>Error:</strong> {uiState.deleteError}</span>
                       </p>
                     </div>
                   ) : (
                     <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-700">
-                        ⚠️ <strong>Esta acción no se puede deshacer.</strong>
+                      <p className="text-sm text-red-700 flex items-start gap-2">
+                        <span className="flex-shrink-0 mt-0.5"><Icons.warning /></span>
+                        <span><strong>Esta acción no se puede deshacer.</strong>
                         {uiState.deleteCandidate.isTemplate && " Si esta plantilla está siendo usada por empleados, no podrá ser eliminada."}
+                        </span>
                       </p>
                     </div>
                   )}
@@ -4348,6 +4399,6 @@ const handleEdit = async (user) => {
   );
 }
 
-// ✅ Exportar con React.memo para optimizar re-renders
+//Exportar con React.memo para optimizar re-renders
 export default React.memo(UsersPage);
 

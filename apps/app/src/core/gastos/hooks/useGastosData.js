@@ -22,7 +22,7 @@ export const useGastosData = () => {
       console.log('Current user loaded:', userData);
     } catch (error) {
       console.error('Error loading user:', error);
-      setMsg('Error al cargar usuario ❌');
+      setMsg('[ERROR] Error al cargar usuario');
     } finally {
       setUserLoaded(true);
       setLoading(false);
@@ -55,7 +55,7 @@ export const useGastosData = () => {
       console.log('Proveedores loaded:', proveedoresData);
     } catch (error) {
       console.error('Error loading initial data:', error);
-      setMsg('Error al cargar datos iniciales ❌');
+      setMsg('[ERROR] Error al cargar datos iniciales');
       setAvailableStores([]);
       setProveedores([]);
       setCanSelectMultipleStores(false);
@@ -105,7 +105,7 @@ export const useGastosData = () => {
         }
 
         setReportData(expenses);
-        setMsg(`Reporte cargado exitosamente ✅ - ${expenses.length} gastos encontrados`);
+        setMsg(`[SUCCESS] Reporte cargado exitosamente - ${expenses.length} gastos encontrados`);
       } else {
         setReportData([]);
         setMsg('No se encontraron gastos');
@@ -115,7 +115,7 @@ export const useGastosData = () => {
     } catch (error) {
       console.error('Error loading expenses:', error);
       setReportData([]);
-      setMsg('Error al cargar reporte ❌');
+      setMsg('[ERROR] Error al cargar reporte');
     } finally {
       setLoading(false);
     }
@@ -127,20 +127,20 @@ export const useGastosData = () => {
       setLoading(true);
       const response = await gastosService.createExpense(expenseData);
       console.log('Expense saved:', response);
-      setMsg('Gasto guardado exitosamente ✅');
-      
+      setMsg('[SUCCESS] Gasto guardado exitosamente');
+
       // Actualizar lista de proveedores y reporte (para todos los roles)
       await fetchProveedores();
       await loadExpenses();
-      
+
       setTimeout(() => setMsg(''), 3000);
       return response;
     } catch (error) {
       console.error('Error saving expense:', error);
       if (error.response?.data?.message) {
-        setMsg(`Error: ${error.response.data.message} ❌`);
+        setMsg(`[ERROR] ${error.response.data.message}`);
       } else {
-        setMsg('Error al guardar gasto ❌');
+        setMsg('[ERROR] Error al guardar gasto');
       }
       throw error;
     } finally {
@@ -156,14 +156,14 @@ export const useGastosData = () => {
       
       const response = await gastosService.updateStatus(gastoId, status, nota);
       console.log('Status updated:', response);
-      setEditingMsg('Estado actualizado exitosamente ✅');
-      
+      setEditingMsg('[SUCCESS] Estado actualizado exitosamente');
+
       await loadExpenses();
       setTimeout(() => setEditingMsg(''), 3000);
       return response;
     } catch (error) {
       console.error('Error updating status:', error);
-      setEditingMsg('Error al actualizar estado ❌');
+      setEditingMsg('[ERROR] Error al actualizar estado');
       setTimeout(() => setEditingMsg(''), 3000);
       throw error;
     } finally {
@@ -177,14 +177,14 @@ export const useGastosData = () => {
       setLoading(true);
       const response = await gastosService.deleteExpense(gastoId);
       console.log('Expense deleted:', response);
-      setMsg('Gasto eliminado exitosamente ✅');
-      
+      setMsg('[SUCCESS] Gasto eliminado exitosamente');
+
       await loadExpenses();
       setTimeout(() => setMsg(''), 3000);
       return response;
     } catch (error) {
       console.error('Error deleting expense:', error);
-      setMsg('Error al eliminar gasto ❌');
+      setMsg('[ERROR] Error al eliminar gasto');
       throw error;
     } finally {
       setLoading(false);
@@ -285,22 +285,22 @@ export const useGastosData = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        setMsg('Archivo descargado ✅');
+        setMsg('[SUCCESS] Archivo descargado');
       }
-      
+
       setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-      
+
       if (contentType.startsWith('image/') || contentType === 'application/pdf') {
-        setMsg('Evidencia abierta exitosamente ✅');
+        setMsg('[SUCCESS] Evidencia abierta exitosamente');
       }
     } catch (error) {
       console.error('Error viewing evidencia:', error);
       if (error.response?.status === 401) {
-        setMsg('Error de autenticación ❌');
+        setMsg('[ERROR] Error de autenticación');
       } else if (error.response?.status === 404) {
-        setMsg('Archivo no encontrado ❌');
+        setMsg('[ERROR] Archivo no encontrado');
       } else {
-        setMsg('Error al cargar evidencia ❌');
+        setMsg('[ERROR] Error al cargar evidencia');
       }
     } finally {
       setLoading(false);

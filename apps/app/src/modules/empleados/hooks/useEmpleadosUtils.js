@@ -8,21 +8,21 @@ export const useEmpleadosUtils = () => {
         color: '#10b981',
         bgColor: 'bg-green-100',
         textColor: 'text-green-800',
-        icon: '✅',
+        icon: '',
         label: 'Presente'
       },
       'Late': {
         color: '#f59e0b',
         bgColor: 'bg-yellow-100',
         textColor: 'text-yellow-800',
-        icon: '⏰',
+        icon: '',
         label: 'Tarde'
       },
       'Absent': {
         color: '#ef4444',
         bgColor: 'bg-red-100',
         textColor: 'text-red-800',
-        icon: '❌',
+        icon: '',
         label: 'Ausente'
       }
     };
@@ -30,7 +30,7 @@ export const useEmpleadosUtils = () => {
       color: '#6b7280',
       bgColor: 'bg-gray-100',
       textColor: 'text-gray-800',
-      icon: '📋',
+      icon: '',
       label: status
     };
   }, []);
@@ -64,9 +64,9 @@ export const useEmpleadosUtils = () => {
   // Obtener icono de tipo de entrada
   const getEntryTypeIcon = useCallback((type) => {
     const icons = {
-      'work': '💼 Trabajo',
-      'break': '☕ Descanso',
-      'lunch': '🍽️ Almuerzo'
+      'work': 'Trabajo',
+      'break': 'Descanso',
+      'lunch': 'Almuerzo'
     };
     return icons[type] || 'Entrada';
   }, []);

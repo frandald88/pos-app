@@ -1,5 +1,44 @@
 import React from 'react';
 
+// SVG Icons
+const Icons = {
+  edit: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  plus: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  ),
+  office: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  search: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  lightbulb: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  lock: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  )
+};
+
 const GastoModal = ({
   isOpen,
   onClose,
@@ -47,7 +86,7 @@ const GastoModal = ({
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-              {isEditing ? '✏️ Actualizar Estado de Gasto' : '➕ Registrar Nuevo Gasto'}
+              {isEditing ? <><Icons.edit /> Actualizar Estado de Gasto</> : <><Icons.plus /> Registrar Nuevo Gasto</>}
             </h2>
             <button
               onClick={onClose}
@@ -110,10 +149,10 @@ const GastoModal = ({
                     required
                   >
                     <option value="">-- Seleccionar estado --</option>
-                    <option value="pendiente">⏳ Pendiente</option>
-                    <option value="aprobado">✅ Aprobado</option>
-                    <option value="denegado">❌ Denegado</option>
-                    <option value="en revision">🔍 En revisión</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="aprobado">Aprobado</option>
+                    <option value="denegado">Denegado</option>
+                    <option value="en revision">En revisión</option>
                   </select>
                 </div>
 
@@ -188,10 +227,10 @@ const GastoModal = ({
                       <option value="">-- Selecciona o crea nuevo --</option>
                       {proveedores.map((prov) => (
                         <option key={prov} value={prov}>
-                          🏢 {prov}
+                          {prov}
                         </option>
                       ))}
-                      <option value="nuevo_proveedor">➕ Buscar o crear proveedor</option>
+                      <option value="nuevo_proveedor">Buscar o crear proveedor</option>
                     </select>
                   </div>
 
@@ -215,8 +254,8 @@ const GastoModal = ({
                           }}
                           disabled={cargando}
                         />
-                        <div className="absolute right-3 top-3.5">
-                          🔍
+                        <div className="absolute right-3 top-3.5 text-gray-500">
+                          <Icons.search />
                         </div>
                       </div>
 
@@ -229,14 +268,14 @@ const GastoModal = ({
                               onClick={() => selectProvider(prov)}
                               className="p-3 hover:bg-blue-50 cursor-pointer transition-colors border-b last:border-b-0"
                             >
-                              <div className="font-medium text-gray-800">🏢 {prov}</div>
+                              <div className="font-medium text-gray-800"><Icons.office /> {prov}</div>
                             </div>
                           ))}
                         </div>
                       )}
 
                       <p className="text-xs text-yellow-700 mt-1">
-                        💡 Este proveedor se guardará automáticamente para uso futuro
+                        <Icons.lightbulb /> Este proveedor se guardará automáticamente para uso futuro
                       </p>
                     </div>
                   )}
@@ -245,7 +284,7 @@ const GastoModal = ({
                   {proveedor && !usarProveedorManual && proveedores.includes(proveedor) && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
                       <div className="flex items-center gap-2 text-green-800">
-                        <span>✅</span>
+                        <Icons.check />
                         <span className="text-sm font-medium">Proveedor: {proveedor}</span>
                       </div>
                     </div>
@@ -289,9 +328,9 @@ const GastoModal = ({
                     }}
                     disabled={cargando}
                   >
-                    <option value="efectivo">💵 Efectivo</option>
-                    <option value="transferencia">🏦 Transferencia</option>
-                    <option value="tarjeta">💳 Tarjeta</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
                   </select>
                 </div>
 
@@ -316,7 +355,7 @@ const GastoModal = ({
                       <option value="">-- Selecciona tienda --</option>
                       {availableStores.map((t) => (
                         <option key={t._id} value={t._id}>
-                          🏪 {t.nombre}
+                          {t.nombre}
                         </option>
                       ))}
                     </select>
@@ -334,14 +373,14 @@ const GastoModal = ({
                         readOnly
                       />
                       <div className="absolute right-3 top-3.5 text-gray-500">
-                        🔒
+                        <Icons.lock />
                       </div>
                     </div>
                   )}
 
                   {!canSelectMultipleStores && (
                     <p className="text-xs text-blue-700 mt-1">
-                      🔒 Solo puedes crear gastos para tu tienda asignada
+                      <Icons.lock /> Solo puedes crear gastos para tu tienda asignada
                     </p>
                   )}
                 </div>

@@ -1295,12 +1295,12 @@ const handleSubmit = (e) => {
                           }
                         }}
                         className="px-3 py-1 text-xs font-medium rounded-md transition-colors"
-                        style={{ 
+                        style={{
                           backgroundColor: usarSkuManual ? '#ef4444' : '#10b981',
                           color: 'white'
                         }}
                       >
-                        {usarSkuManual ? "🔄 Usar Automático" : "✏️ Personalizar"}
+                        {usarSkuManual ? <><Icons.reload /> Usar Automático</> : <><Icons.edit /> Personalizar</>}
                       </button>
                     </div>
                   </div>
@@ -1575,7 +1575,7 @@ const handleSubmit = (e) => {
                     }}
                   />
                   <p className="text-xs mt-1" style={{ color: '#697487' }}>
-                    💡 Para modificar stock después de crear el producto, usa la función "Reabastecer"
+                    <Icons.lightbulb /> Para modificar stock después de crear el producto, usa la función "Reabastecer"
                   </p>
                 </div>
 

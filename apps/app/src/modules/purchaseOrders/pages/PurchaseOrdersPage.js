@@ -6,6 +6,31 @@ import {
   usePurchaseOrdersFilters
 } from '../hooks';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  package: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>,
+  clock: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>,
+  check: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>,
+  xmark: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  </svg>,
+  plus: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>,
+  clipboard: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>,
+  store: () => <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>
+};
+
 export default function PurchaseOrdersPage() {
   // Estado local para modal
   const [modalError, setModalError] = useState("");
@@ -259,7 +284,11 @@ export default function PurchaseOrdersPage() {
             {/* Estadísticas */}
             <div className="flex gap-4">
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">📦</div>
+                <div className="text-xl" style={{ color: '#23334e' }}>
+                  <svg className="w-8 h-8 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                </div>
                 <div className="text-lg font-bold" style={{ color: '#23334e' }}>
                   {orderStats.total}
                 </div>
@@ -268,7 +297,11 @@ export default function PurchaseOrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">⏳</div>
+                <div className="text-xl" style={{ color: '#f59e0b' }}>
+                  <svg className="w-8 h-8 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
                 <div className="text-lg font-bold" style={{ color: '#f59e0b' }}>
                   {orderStats.pendientes}
                 </div>
@@ -277,7 +310,11 @@ export default function PurchaseOrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">✅</div>
+                <div className="text-xl" style={{ color: '#10b981' }}>
+                  <svg className="w-8 h-8 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <div className="text-lg font-bold" style={{ color: '#10b981' }}>
                   {orderStats.completadas}
                 </div>
@@ -286,7 +323,11 @@ export default function PurchaseOrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">❌</div>
+                <div className="text-xl" style={{ color: '#ef4444' }}>
+                  <svg className="w-8 h-8 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
                 <div className="text-lg font-bold" style={{ color: '#ef4444' }}>
                   {orderStats.canceladas}
                 </div>
@@ -320,7 +361,15 @@ export default function PurchaseOrdersPage() {
                 style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
                 disabled={cargando}
               >
-                {mostrarFormulario ? '✖️ Cancelar' : '➕ Nueva Orden'}
+                {mostrarFormulario ? (
+                  <span className="flex items-center gap-2">
+                    <Icons.xmark /> Cancelar
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Icons.plus /> Nueva Orden
+                  </span>
+                )}
               </button>
             </div>
 
@@ -337,10 +386,10 @@ export default function PurchaseOrdersPage() {
                   style={{ borderColor: '#e5e7eb' }}
                   disabled={cargando}
                 >
-                  <option value="todos">📋 Todas</option>
-                  <option value="pendiente">⏳ Pendientes</option>
-                  <option value="completada">✅ Completadas</option>
-                  <option value="cancelada">❌ Canceladas</option>
+                  <option value="todos">Todas</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="completada">Completadas</option>
+                  <option value="cancelada">Canceladas</option>
                 </select>
               </div>
 
@@ -356,7 +405,7 @@ export default function PurchaseOrdersPage() {
                     style={{ borderColor: '#e5e7eb' }}
                     disabled={cargando}
                   >
-                    <option value="">🏪 Todas las tiendas</option>
+                    <option value="">Todas las tiendas</option>
                     {tiendas.map((tienda) => (
                       <option key={tienda._id} value={tienda._id}>
                         {tienda.nombre}
@@ -398,7 +447,11 @@ export default function PurchaseOrdersPage() {
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📦</div>
+            <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+              <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
             <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               No hay órdenes
             </h3>
@@ -421,10 +474,10 @@ export default function PurchaseOrdersPage() {
                         <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
                           Orden #{order._id.slice(-8)}
                         </h3>
-                        <span className={`px-3 py-1 text-sm rounded-full font-medium ${getStatusColor(order.status)}`}>
-                          {order.status === 'pendiente' ? '⏳ Pendiente' :
-                           order.status === 'completada' ? '✅ Completada' :
-                           order.status === 'cancelada' ? '❌ Cancelada' : order.status}
+                        <span className={`px-3 py-1 text-sm rounded-full font-medium flex items-center gap-1.5 ${getStatusColor(order.status)}`}>
+                          {order.status === 'pendiente' ? <><Icons.clock /> Pendiente</> :
+                           order.status === 'completada' ? <><Icons.check /> Completada</> :
+                           order.status === 'cancelada' ? <><Icons.xmark /> Cancelada</> : order.status}
                         </span>
                       </div>
                       {order.createdBy && (

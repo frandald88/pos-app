@@ -8,7 +8,7 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
     content: () => ticketRef.current,
     documentTitle: 'Corte-de-Caja',
     onAfterPrint: () => {
-      console.log('✅ Corte impreso');
+      console.log('[SUCCESS] Corte impreso');
     },
   });
 
@@ -63,8 +63,23 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header del Modal */}
         <div className="px-6 py-4 border-b flex justify-between items-center" style={{ backgroundColor: esPreCorte ? '#10b981' : '#23334e' }}>
-          <h2 className="text-xl font-bold text-white">
-            {esPreCorte ? '👁️ Vista Previa - PRE-CORTE' : '🖨️ Vista Previa - Corte de Caja'}
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            {esPreCorte ? (
+              <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Vista Previa - PRE-CORTE
+              </>
+            ) : (
+              <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Vista Previa - Corte de Caja
+              </>
+            )}
           </h2>
           <button
             onClick={onClose}
@@ -141,8 +156,14 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
 
                 {esPreCorte && (
                   <>
-                    <div className="center title" style={{ fontSize: '16px', border: '2px solid #000', padding: '8px', margin: '8px 0' }}>
-                      ⚠️ PRE-CORTE ⚠️
+                    <div className="center title" style={{ fontSize: '16px', border: '2px solid #000', padding: '8px', margin: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <svg style={{ width: '20px', height: '20px', display: 'inline-block' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      PRE-CORTE
+                      <svg style={{ width: '20px', height: '20px', display: 'inline-block' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
                     </div>
                     <div className="center" style={{ fontSize: '10px', marginBottom: '8px' }}>
                       (REPORTE PRELIMINAR - TURNO ACTIVO)
@@ -447,10 +468,13 @@ export default function PrintCorteModal({ isOpen, onClose, resultados, tiendas, 
           </button>
           <button
             onClick={handlePrint}
-            className="px-6 py-2.5 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
+            className="px-6 py-2.5 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md flex items-center gap-2"
             style={{ backgroundColor: '#23334e' }}
           >
-            🖨️ Imprimir
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Imprimir
           </button>
         </div>
       </div>

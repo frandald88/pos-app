@@ -23,7 +23,7 @@ export const useEmployeeHistoryData = () => {
     const { rankStartDate, rankEndDate, selectedTienda } = params;
 
     if (!rankStartDate || !rankEndDate) {
-      setMsg('Selecciona rango de fechas para el ranking ❌');
+      setMsg('[ERROR] Selecciona rango de fechas para el ranking');
       return;
     }
 
@@ -40,10 +40,10 @@ export const useEmployeeHistoryData = () => {
 
       const data = await empleadosService.getRankingFaltas(requestParams);
       setRanking(data);
-      setMsg('Ranking generado exitosamente ✅');
+      setMsg('[SUCCESS] Ranking generado exitosamente');
       setTimeout(() => setMsg(''), 3000);
     } catch (error) {
-      setMsg(`Error al cargar ranking: ${error.response?.data?.message || error.message} ❌`);
+      setMsg(`[ERROR] Error al cargar ranking: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }

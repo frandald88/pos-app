@@ -36,7 +36,7 @@ export const useDevolucionesData = () => {
   // Buscar venta por ID
   const fetchSale = async (saleId) => {
     if (!saleId.trim()) {
-      setMsg("Se requiere ingresar el ID de la venta para procesar la devolución ❌");
+      setMsg("[ERROR] Se requiere ingresar el ID de la venta para procesar la devolución");
       return;
     }
 
@@ -55,7 +55,7 @@ export const useDevolucionesData = () => {
       // Si no existen devoluciones, continuar con el flujo normal
       try {
         const saleData = await devolucionesService.getSale(saleId);
-        console.log('✅ Venta encontrada:', saleData);
+        console.log('Venta encontrada:', saleData);
         
         const sale = saleData.data || saleData;
         setSale(sale);
@@ -81,7 +81,7 @@ export const useDevolucionesData = () => {
         setMsg("");
         setBuscando(false);
       } catch (saleError) {
-        setMsg("Venta no encontrada. Verifica el ID ❌");
+        setMsg("[ERROR] Venta no encontrada. Verifica el ID");
         setBuscando(false);
       }
     }
@@ -100,17 +100,17 @@ export const useDevolucionesData = () => {
     try {
       setLoading(true);
       setProcessingMsg("");
-      
+
       const response = await devolucionesService.createReturn(returnData);
-      console.log('✅ Devolución creada:', response);
-      
+      console.log('Devolución creada:', response);
+
       // Determinar tipo de devolución y mostrar mensaje específico
       const saleUpdated = response.saleUpdated;
       const isPartialReturn = saleUpdated && saleUpdated.remaining > 0;
-      
-      const message = isPartialReturn 
-        ? `✅ Devolución parcial registrada exitosamente. Restante: $${saleUpdated.remaining.toFixed(2)}`
-        : "✅ Devolución total registrada exitosamente";
+
+      const message = isPartialReturn
+        ? `[SUCCESS] Devolución parcial registrada exitosamente. Restante: $${saleUpdated.remaining.toFixed(2)}`
+        : "[SUCCESS] Devolución total registrada exitosamente";
       
       setMsg(message);
       setProcessingMsg("");
@@ -120,11 +120,11 @@ export const useDevolucionesData = () => {
       setTimeout(() => setMsg(""), 5000);
       return response;
     } catch (error) {
-      console.log('❌ Error completo:', error.response?.data);
+      console.log('Error completo:', error.response?.data);
       if (error.response && error.response.data.message) {
-        setProcessingMsg(error.response.data.message + " ❌");
+        setProcessingMsg("[ERROR] " + error.response.data.message);
       } else {
-        setProcessingMsg("Error inesperado al crear devolución ❌");
+        setProcessingMsg("[ERROR] Error inesperado al crear devolución");
       }
       throw error;
     } finally {

@@ -5,6 +5,91 @@ import { useGastosUtils } from '../hooks/useGastosUtils';
 import { useGastosForm } from '../hooks/useGastosForm';
 import GastoModal from '../components/GastoModal';
 
+// SVG Icons
+const Icons = {
+  currencyDollar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  clock: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  cash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  bank: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+    </svg>
+  ),
+  creditCard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  store: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  ),
+  location: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  user: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+  office: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  chat: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  ),
+  paperclip: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+    </svg>
+  ),
+  edit: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  trash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  xmark: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  search: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  )
+};
+
 export default function ExpensesPage() {
   // Estado del modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -204,7 +289,7 @@ export default function ExpensesPage() {
                 Registra y controla los gastos operativos de tu negocio
                 {!canSelectMultipleStores && availableStores && availableStores.length > 0 && (
                   <span className="block text-sm mt-1">
-                    📍 Tienda asignada: <strong>{availableStores[0]?.nombre}</strong>
+                    <Icons.location /> Tienda asignada: <strong>{availableStores[0]?.nombre}</strong>
                   </span>
                 )}
               </p>
@@ -224,8 +309,8 @@ export default function ExpensesPage() {
         {/* Mensaje de estado */}
         {msg && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+            msg.includes('[SUCCESS]')
+              ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
             <p className="font-medium">{msg}</p>
@@ -237,8 +322,10 @@ export default function ExpensesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#23334e' }}>
-                  💰
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#23334e', color: 'white' }}>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-2xl font-bold" style={{ color: '#23334e' }}>
@@ -253,8 +340,10 @@ export default function ExpensesPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-yellow-100">
-                  ⏳
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-yellow-100 text-yellow-600">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-yellow-600">
@@ -269,8 +358,10 @@ export default function ExpensesPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-green-100">
-                  ✅
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100 text-green-600">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
@@ -285,8 +376,10 @@ export default function ExpensesPage() {
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#10b981', color: 'white' }}>
-                  💵
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#10b981', color: 'white' }}>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
                 </div>
                 <div>
                   <div className="text-lg font-bold" style={{ color: '#23334e' }}>
@@ -345,7 +438,7 @@ export default function ExpensesPage() {
                     >
                       <option value="">Todas las tiendas</option>
                       {availableStores.map((t) => (
-                        <option key={t._id} value={t._id}>🏪 {t.nombre}</option>
+                        <option key={t._id} value={t._id}>{t.nombre}</option>
                       ))}
                     </select>
                   </div>
@@ -365,9 +458,9 @@ export default function ExpensesPage() {
                     }}
                   >
                     <option value="">Todos los métodos</option>
-                    <option value="efectivo">💵 Efectivo</option>
-                    <option value="transferencia">🏦 Transferencia</option>
-                    <option value="tarjeta">💳 Tarjeta</option>
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="tarjeta">Tarjeta</option>
                   </select>
                 </div>
 
@@ -385,10 +478,10 @@ export default function ExpensesPage() {
                     }}
                   >
                     <option value="">Todos los estados</option>
-                    <option value="pendiente">⏳ Pendiente</option>
-                    <option value="aprobado">✅ Aprobado</option>
-                    <option value="denegado">❌ Denegado</option>
-                    <option value="en revision">🔍 En revisión</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="aprobado">Aprobado</option>
+                    <option value="denegado">Denegado</option>
+                    <option value="en revision">En revisión</option>
                   </select>
                 </div>
 
@@ -453,7 +546,11 @@ export default function ExpensesPage() {
                 </div>
               ) : safeReportData.length === 0 ? (
                 <div className="p-8 text-center">
-                  <div className="text-6xl mb-4">💰</div>
+                  <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+                    <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                     No hay gastos
                   </h3>
@@ -476,15 +573,17 @@ export default function ExpensesPage() {
                           {/* Información del gasto */}
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
-                              <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#23334e' }}>
-                                💰
+                              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#23334e', color: 'white' }}>
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                               </div>
                               <div>
                                 <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
                                   {gasto.concepto}
                                 </h3>
                                 <p className="text-sm" style={{ color: '#697487' }}>
-                                  {formatDate(gasto.createdAt)} • ID: #{gasto._id.slice(-8)} • 👤 {gasto.createdBy?.username || 'Usuario desconocido'}
+                                  {formatDate(gasto.createdAt)} • ID: #{gasto._id.slice(-8)} • <Icons.user /> {gasto.createdBy?.username || 'Usuario desconocido'}
                                 </p>
                               </div>
                             </div>
@@ -495,10 +594,10 @@ export default function ExpensesPage() {
                                   Proveedor
                                 </div>
                                 <div className="font-bold" style={{ color: '#23334e' }}>
-                                  🏢 {gasto.proveedor}
+                                  <Icons.office /> {gasto.proveedor}
                                 </div>
                               </div>
-                              
+
                               <div className="p-3 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                                 <div className="text-sm font-medium" style={{ color: '#697487' }}>
                                   Monto
@@ -507,7 +606,7 @@ export default function ExpensesPage() {
                                   {formatCurrency(gasto.monto)}
                                 </div>
                               </div>
-                              
+
                               <div className="p-3 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                                 <div className="text-sm font-medium" style={{ color: '#697487' }}>
                                   Método de Pago
@@ -516,13 +615,13 @@ export default function ExpensesPage() {
                                   {getPaymentMethodIcon(gasto.metodoPago)} {gasto.metodoPago}
                                 </div>
                               </div>
-                              
+
                               <div className="p-3 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
                                 <div className="text-sm font-medium" style={{ color: '#697487' }}>
                                   Tienda
                                 </div>
                                 <div className="font-bold" style={{ color: '#23334e' }}>
-                                  🏪 {gasto.tienda?.nombre || "Sin asignar"}
+                                  <Icons.store /> {gasto.tienda?.nombre || "Sin asignar"}
                                 </div>
                               </div>
                             </div>
@@ -538,7 +637,7 @@ export default function ExpensesPage() {
                               {gasto.nota && (
                                 <div className="flex-1 p-3 rounded-lg border-l-4 border-blue-400 bg-blue-50">
                                   <div className="text-sm text-blue-800">
-                                    💬 <strong>Nota del admin:</strong> {gasto.nota}
+                                    <Icons.chat /> <strong>Nota del admin:</strong> {gasto.nota}
                                   </div>
                                 </div>
                               )}
@@ -553,7 +652,7 @@ export default function ExpensesPage() {
                                   style={{ backgroundColor: '#46546b' }}
                                   disabled={loading}
                                 >
-                                  📎 Ver Evidencia
+                                  <Icons.paperclip /> Ver Evidencia
                                 </button>
                               </div>
                             )}
@@ -569,7 +668,7 @@ export default function ExpensesPage() {
                                   style={{ backgroundColor: '#46546b' }}
                                   disabled={loading}
                                 >
-                                  ✏️ Actualizar Estado
+                                  <Icons.edit /> Actualizar Estado
                                 </button>
 
                                 {(gasto.status === "aprobado" || gasto.status === "denegado") && (
@@ -578,7 +677,7 @@ export default function ExpensesPage() {
                                     className="px-6 py-3 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:shadow-md hover:bg-red-600"
                                     disabled={loading}
                                   >
-                                    🗑️ Eliminar
+                                    <Icons.trash /> Eliminar
                                   </button>
                                 )}
                               </div>

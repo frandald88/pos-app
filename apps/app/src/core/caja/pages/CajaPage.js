@@ -4,6 +4,172 @@ import { useCajaData, useCajaFilters, useCajaUtils } from '../hooks';
 import { useTurno } from '../../turnos/hooks/useTurno';
 import PrintCorteModal from '../components/PrintCorteModal';
 
+// SVG Icons
+const Icons = {
+  calendar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  ),
+  eye: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  ),
+  clock: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  calendarCheck: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  info: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  trendingUp: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  ),
+  cashOut: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  printer: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+    </svg>
+  ),
+  refresh: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+  trash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  document: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  wrench: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  building: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  store: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  ),
+  moneyBag: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  trendingDown: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+    </svg>
+  ),
+  clipboard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  ),
+  scale: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+    </svg>
+  ),
+  diamond: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  ),
+  cash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  receipt: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+    </svg>
+  ),
+  shoppingCart: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  creditCard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  bank: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+    </svg>
+  ),
+  shuffle: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+    </svg>
+  ),
+  chartBar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  lockClosed: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  ),
+  user: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+  desktop: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  ),
+  pencil: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    </svg>
+  ),
+  coin: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )
+};
+
 export default function CajaPage() {
   const [searchParams] = useSearchParams();
   const turnoId = searchParams.get('turnoId');
@@ -192,8 +358,8 @@ export default function CajaPage() {
         <div className="max-w-7xl mx-auto p-6">
           {/* Header del Corte de Turno */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: '#23334e' }}>
-              🔒 Corte de Turno
+            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.lockClosed /> Corte de Turno
             </h1>
             <p style={{ color: '#697487' }} className="text-lg">
               Resumen del turno cerrado - {turno.tienda?.nombre}
@@ -202,8 +368,8 @@ export default function CajaPage() {
 
           {/* Información del Turno */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              📋 Información del Turno
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.clipboard /> Información del Turno
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
@@ -237,8 +403,8 @@ export default function CajaPage() {
               <div className="mt-6 space-y-3">
                 {turno.notasApertura && (
                   <div className="p-4 rounded-lg border-l-4" style={{ backgroundColor: '#f0f9ff', borderColor: '#3b82f6' }}>
-                    <p className="text-sm font-semibold mb-1" style={{ color: '#1e40af' }}>
-                      📝 Notas de Apertura
+                    <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: '#1e40af' }}>
+                      <Icons.pencil /> Notas de Apertura
                     </p>
                     <p className="text-sm" style={{ color: '#1e3a8a' }}>
                       {turno.notasApertura}
@@ -247,8 +413,8 @@ export default function CajaPage() {
                 )}
                 {turno.notasCierre && (
                   <div className="p-4 rounded-lg border-l-4" style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b' }}>
-                    <p className="text-sm font-semibold mb-1" style={{ color: '#92400e' }}>
-                      🔒 Notas de Cierre
+                    <p className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: '#92400e' }}>
+                      <Icons.lockClosed /> Notas de Cierre
                     </p>
                     <p className="text-sm" style={{ color: '#78350f' }}>
                       {turno.notasCierre}
@@ -266,8 +432,8 @@ export default function CajaPage() {
 
           {/* Resumen de Efectivo */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              💰 Resumen de Efectivo
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.moneyBag /> Resumen de Efectivo
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between p-4 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
@@ -305,24 +471,24 @@ export default function CajaPage() {
 
           {/* Resumen de Ventas por Método de Pago */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              💳 Resumen de Ventas
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.creditCard /> Resumen de Ventas
             </h2>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f9fafb' }}>
-                <p className="text-sm mb-2" style={{ color: '#697487' }}>💵 Efectivo</p>
+                <p className="text-sm mb-2 flex items-center justify-center gap-2" style={{ color: '#697487' }}><Icons.cash /> Efectivo</p>
                 <p className="text-xl font-bold" style={{ color: '#23334e' }}>
                   {formatCurrency(stats.efectivo)}
                 </p>
               </div>
               <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f9fafb' }}>
-                <p className="text-sm mb-2" style={{ color: '#697487' }}>💳 Tarjeta</p>
+                <p className="text-sm mb-2 flex items-center justify-center gap-2" style={{ color: '#697487' }}><Icons.creditCard /> Tarjeta</p>
                 <p className="text-xl font-bold" style={{ color: '#23334e' }}>
                   {formatCurrency(stats.tarjeta)}
                 </p>
               </div>
               <div className="p-4 rounded-lg text-center" style={{ backgroundColor: '#f9fafb' }}>
-                <p className="text-sm mb-2" style={{ color: '#697487' }}>🏦 Transferencia</p>
+                <p className="text-sm mb-2 flex items-center justify-center gap-2" style={{ color: '#697487' }}><Icons.bank /> Transferencia</p>
                 <p className="text-xl font-bold" style={{ color: '#23334e' }}>
                   {formatCurrency(stats.transferencia)}
                 </p>
@@ -340,8 +506,8 @@ export default function CajaPage() {
 
           {/* Estadísticas Generales */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              📊 Estadísticas del Turno
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.chartBar /> Estadísticas del Turno
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
@@ -373,8 +539,8 @@ export default function CajaPage() {
 
           {/* Ventas por Tipo de Servicio */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-6" style={{ color: '#23334e' }}>
-              🏪 Ventas por Tipo de Servicio
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.store /> Ventas por Tipo de Servicio
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between p-4 rounded-lg" style={{ backgroundColor: '#f9fafb' }}>
@@ -400,16 +566,16 @@ export default function CajaPage() {
 
           {/* Botones de acción */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
-              🔧 Acciones
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: '#23334e' }}>
+              <Icons.wrench /> Acciones
             </h3>
             <div className="flex gap-4">
               <button
                 onClick={() => window.print()}
-                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
+                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md flex items-center gap-2"
                 style={{ backgroundColor: '#46546b' }}
               >
-                🖨️ Imprimir Corte
+                <Icons.printer /> Imprimir Corte
               </button>
               <button
                 onClick={() => window.history.back()}
@@ -459,8 +625,8 @@ export default function CajaPage() {
         {/* Mensaje de estado */}
         {error && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            error.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+            error.includes('[SUCCESS]')
+              ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
             <p className="font-medium">{error}</p>
@@ -493,10 +659,10 @@ export default function CajaPage() {
                 }}
                 disabled={loading}
               >
-                <option value="periodo">📅 Por Período</option>
-                <option value="precorte">👁️ Pre-corte (Turno Activo)</option>
-                <option value="turno">🕐 Por Turno (Rango)</option>
-                <option value="historico">📆 Cortes Históricos</option>
+                <option value="periodo">Por Período</option>
+                <option value="precorte">Pre-corte (Turno Activo)</option>
+                <option value="turno">Por Turno (Rango)</option>
+                <option value="historico">Cortes Históricos</option>
               </select>
             </div>
 
@@ -515,10 +681,10 @@ export default function CajaPage() {
                 }}
                 disabled={loading || tiendasLoading}
               >
-                <option value="">🏢 Todas las tiendas</option>
+                <option value="">Todas las tiendas</option>
                 {tiendas.map((tienda) => (
                   <option key={tienda._id} value={tienda._id}>
-                    🏪 {tienda.nombre}
+                    {tienda.nombre}
                   </option>
                 ))}
               </select>
@@ -543,7 +709,11 @@ export default function CajaPage() {
                   <div className="p-4 rounded-lg border-2" style={{ borderColor: '#10b981', backgroundColor: '#f0fdf4' }}>
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl">🟢</span>
+                        <div className="text-green-500">
+                          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                          </svg>
+                        </div>
                         <div>
                           <p className="font-bold text-green-700">Turno Activo Detectado</p>
                           <p className="text-xs text-green-600">Pre-corte en tiempo real</p>
@@ -555,24 +725,24 @@ export default function CajaPage() {
                     </div>
                     <div className="space-y-1 text-sm mt-3">
                       <div className="flex items-center gap-2">
-                        <span>👤</span>
+                        <Icons.user />
                         <span className="text-green-700">Cajero:</span>
                         <span className="font-medium text-green-900">{turnoActivo.usuario?.username || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span>💻</span>
+                        <Icons.desktop />
                         <span className="text-green-700">Estación:</span>
                         <span className="font-medium text-green-900">{turnoActivo.estacion || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span>🕐</span>
+                        <Icons.clock />
                         <span className="text-green-700">Apertura:</span>
                         <span className="font-medium text-green-900">
                           {new Date(turnoActivo.fechaApertura).toLocaleString('es-MX')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span>💵</span>
+                        <Icons.cash />
                         <span className="text-green-700">Efectivo Inicial:</span>
                         <span className="font-medium text-green-900">
                           ${turnoActivo.efectivoInicial?.toFixed(2) || '0.00'}
@@ -583,7 +753,11 @@ export default function CajaPage() {
                 ) : (
                   <div className="p-4 rounded-lg border-2" style={{ borderColor: '#f59e0b', backgroundColor: '#fffbeb' }}>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">⚠️</span>
+                      <div style={{ color: '#f59e0b' }}>
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
                       <div>
                         <p className="font-bold" style={{ color: '#92400e' }}>No hay turno activo</p>
                         <p className="text-sm" style={{ color: '#b45309' }}>
@@ -618,8 +792,8 @@ export default function CajaPage() {
                   disabled={loading}
                 />
                 {fechaHistorica && (
-                  <div className="text-xs mt-1" style={{ color: '#697487' }}>
-                    📅 {new Date(fechaHistorica + 'T00:00:00').toLocaleDateString('es-MX', {
+                  <div className="text-xs mt-1 flex items-center gap-1" style={{ color: '#697487' }}>
+                    <Icons.calendar /> {new Date(fechaHistorica + 'T00:00:00').toLocaleDateString('es-MX', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -653,11 +827,11 @@ export default function CajaPage() {
                       ? new Date(turno.fechaCierre).toLocaleString('es-MX')
                       : 'Abierto';
                     const cajero = turno.usuario?.username || 'N/A';
-                    const estado = turno.estado === 'abierto' ? '🟢' : '🔴';
+                    const isCerrado = turno.estado === 'cerrado';
 
                     return (
                       <option key={turno._id} value={turno._id}>
-                        {estado} Turno #{idx + 1} - {cajero} - {inicio} → {fin}
+                        Turno #{idx + 1} - {cajero} - {inicio} → {fin}
                       </option>
                     );
                   })}
@@ -693,10 +867,10 @@ export default function CajaPage() {
                     }}
                     disabled={loading}
                   >
-                    <option value="dia">📅 Hoy</option>
-                    <option value="mes">📊 Este mes</option>
-                    <option value="año">📈 Este año</option>
-                    <option value="rango">🗓️ Rango personalizado</option>
+                    <option value="dia">Hoy</option>
+                    <option value="mes">Este mes</option>
+                    <option value="año">Este año</option>
+                    <option value="rango">Rango personalizado</option>
                   </select>
                 </div>
 
@@ -741,8 +915,8 @@ export default function CajaPage() {
           {/* ⭐ NUEVO: Lista visual de turnos del día en modo histórico */}
           {modoReporte === 'historico' && fechaHistorica && (
             <div className="mt-6 border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
-                📋 Turnos del Día Seleccionado
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: '#23334e' }}>
+                <Icons.clipboard /> Turnos del Día Seleccionado
               </h3>
 
               {turnosLoading ? (
@@ -780,7 +954,11 @@ export default function CajaPage() {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl">{isCerrado ? '🔴' : '🟢'}</span>
+                            <div style={{ color: isCerrado ? '#ef4444' : '#10b981' }}>
+                              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                              </svg>
+                            </div>
                             <div>
                               <p className="font-bold" style={{ color: '#23334e' }}>Turno #{idx + 1}</p>
                               <p className="text-xs" style={{ color: '#697487' }}>{isCerrado ? 'Cerrado' : 'Abierto'}</p>
@@ -795,35 +973,35 @@ export default function CajaPage() {
 
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            <span>👤</span>
+                            <Icons.user />
                             <span style={{ color: '#697487' }}>Cajero:</span>
                             <span className="font-medium" style={{ color: '#23334e' }}>{cajero}</span>
                           </div>
 
                           {cerrador && (
                             <div className="flex items-center gap-2">
-                              <span>🔒</span>
+                              <Icons.lockClosed />
                               <span style={{ color: '#697487' }}>Cerró:</span>
                               <span className="font-medium" style={{ color: '#23334e' }}>{cerrador}</span>
                             </div>
                           )}
 
                           <div className="flex items-center gap-2">
-                            <span>💻</span>
+                            <Icons.desktop />
                             <span style={{ color: '#697487' }}>Estación:</span>
                             <span className="font-medium text-xs" style={{ color: '#23334e' }}>{estacion}</span>
                           </div>
 
                           <div className="pt-2 mt-2 border-t" style={{ borderColor: '#e5e7eb' }}>
                             <div className="flex items-center gap-1 mb-1">
-                              <span className="text-xs">🕐</span>
+                              <div className="text-xs"><Icons.clock /></div>
                               <span className="text-xs font-medium" style={{ color: '#697487' }}>
                                 {inicio.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                             {fin && (
                               <div className="flex items-center gap-1">
-                                <span className="text-xs">🔚</span>
+                                <div className="text-xs"><Icons.clock /></div>
                                 <span className="text-xs font-medium" style={{ color: '#697487' }}>
                                   {fin.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
@@ -855,10 +1033,10 @@ export default function CajaPage() {
                 </div>
               ) : (
                 <>
-                  {modoReporte === 'precorte' && '👁️ Generar Pre-corte'}
-                  {modoReporte === 'turno' && '🕐 Generar Corte de Turno'}
-                  {modoReporte === 'historico' && '📆 Generar Corte Histórico'}
-                  {modoReporte === 'periodo' && '🔄 Generar Corte de Caja'}
+                  {modoReporte === 'precorte' && <><Icons.eye /> Generar Pre-corte</>}
+                  {modoReporte === 'turno' && <><Icons.clock /> Generar Corte de Turno</>}
+                  {modoReporte === 'historico' && <><Icons.calendarCheck /> Generar Corte Histórico</>}
+                  {modoReporte === 'periodo' && <><Icons.refresh /> Generar Corte de Caja</>}
                 </>
               )}
             </button>
@@ -874,7 +1052,7 @@ export default function CajaPage() {
             )}
             {modoReporte === 'precorte' && turnoActivo && (
               <div className="text-sm mt-2" style={{ color: '#10b981' }}>
-                ✅ El pre-corte mostrará las ventas actuales sin cerrar el turno
+                <Icons.check /> El pre-corte mostrará las ventas actuales sin cerrar el turno
               </div>
             )}
           </div>
@@ -887,14 +1065,21 @@ export default function CajaPage() {
             {modoReporte === 'precorte' && (
               <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center gap-4">
-                  <div className="text-6xl">👁️</div>
+                  <div className="text-white">
+                    <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold mb-2">PRE-CORTE EN TIEMPO REAL</h2>
                     <p className="text-green-50 text-lg">
                       Este es un reporte preliminar de tu turno activo. El turno sigue abierto y puedes seguir vendiendo.
                     </p>
                     <div className="mt-3 flex items-center gap-2 bg-white bg-opacity-20 rounded-lg p-3 inline-flex">
-                      <span className="text-2xl">ℹ️</span>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                       <span className="font-medium">
                         Los datos mostrados son en tiempo real y se actualizarán al generar un nuevo pre-corte
                       </span>
@@ -903,7 +1088,11 @@ export default function CajaPage() {
                   <div className="text-right">
                     <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
                       <div className="text-sm font-medium text-green-100">Turno Activo</div>
-                      <div className="text-3xl font-bold animate-pulse">🟢</div>
+                      <div className="flex justify-center text-white animate-pulse">
+                        <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -912,8 +1101,8 @@ export default function CajaPage() {
 
             {/* Información del reporte */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: modoReporte === 'precorte' ? '#10b981' : '#23334e' }}>
-                {modoReporte === 'precorte' ? '👁️ PRE-CORTE' : '📋 Información del Reporte'} - {resultados.periodo?.modo === 'turno' ? '🕐 Por Turno' : '📅 Por Período'}
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: modoReporte === 'precorte' ? '#10b981' : '#23334e' }}>
+                {modoReporte === 'precorte' ? <><Icons.eye /> PRE-CORTE</> : <><Icons.clipboard /> Información del Reporte</>} - {resultados.periodo?.modo === 'turno' ? <><Icons.clock /> Por Turno</> : <><Icons.calendar /> Por Período</>}
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -922,8 +1111,8 @@ export default function CajaPage() {
                   <div className="text-sm font-medium" style={{ color: '#697487' }}>
                     Tienda
                   </div>
-                  <div className="font-bold" style={{ color: '#23334e' }}>
-                    🏪 {getTiendaNombre(tiendaSeleccionada || resultados.periodo?.tiendaId, tiendas)}
+                  <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                    <Icons.store /> {getTiendaNombre(tiendaSeleccionada || resultados.periodo?.tiendaId, tiendas)}
                   </div>
                 </div>
 
@@ -934,8 +1123,8 @@ export default function CajaPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Cajero
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        👤 {resultados.turno.cajero}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.user /> {resultados.turno.cajero}
                       </div>
                     </div>
 
@@ -943,8 +1132,8 @@ export default function CajaPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Estación
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        💻 {resultados.turno.estacion}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.desktop /> {resultados.turno.estacion}
                       </div>
                     </div>
 
@@ -952,8 +1141,13 @@ export default function CajaPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Estado del Turno
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        {resultados.turno.estado === 'abierto' ? '🟢 Abierto' : '🔴 Cerrado'}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <div style={{ color: resultados.turno.estado === 'abierto' ? '#10b981' : '#ef4444' }}>
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                          </svg>
+                        </div>
+                        {resultados.turno.estado === 'abierto' ? 'Abierto' : 'Cerrado'}
                       </div>
                     </div>
                   </>
@@ -995,8 +1189,10 @@ export default function CajaPage() {
                 
               <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-400">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-green-100">
-                    💰
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100" style={{ color: '#10b981' }}>
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
                   <div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
@@ -1016,8 +1212,10 @@ export default function CajaPage() {
 
               <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-400">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-red-100">
-                    📉
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-red-100" style={{ color: '#ef4444' }}>
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                    </svg>
                   </div>
                   <div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
@@ -1037,8 +1235,10 @@ export default function CajaPage() {
 
               <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-400">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-yellow-100">
-                    🔄
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-yellow-100" style={{ color: '#eab308' }}>
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                   </div>
                   <div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
@@ -1056,8 +1256,10 @@ export default function CajaPage() {
 
               <div className="bg-white rounded-xl shadow-lg p-6 border-l-4" style={{ borderColor: '#23334e' }}>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: '#23334e', color: 'white' }}>
-                    💎
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#23334e', color: 'white' }}>
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
                   </div>
                   <div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
@@ -1079,7 +1281,7 @@ export default function CajaPage() {
               {/* Ventas por método */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                  📈 Ventas por Método de Pago
+                  <Icons.trendingUp /> Ventas por Método de Pago
                 </h3>
                 
                 <div className="space-y-4">
@@ -1123,7 +1325,7 @@ export default function CajaPage() {
               {/* Gastos por método */}
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                  📉 Gastos por Método de Pago
+                  <Icons.trendingDown /> Gastos por Método de Pago
                 </h3>
                 
                 <div className="space-y-4">
@@ -1168,7 +1370,7 @@ export default function CajaPage() {
             {/* Balance por método */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                ⚖️ Balance Neto por Método de Pago
+                <Icons.scale /> Balance Neto por Método de Pago
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1195,7 +1397,7 @@ export default function CajaPage() {
               {resultados && resultados.pagosMixtos && resultados.pagosMixtos.totalVentas > 0 && (
                 <div className="bg-white rounded-xl shadow-lg p-6">
                   <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                    🔀 Análisis de Pagos Mixtos
+                    <Icons.shuffle /> Análisis de Pagos Mixtos
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -1239,8 +1441,8 @@ export default function CajaPage() {
                   {/* Detalles adicionales de combinaciones si están disponibles */}
                   {mixedPaymentStats && (
                     <div className="border-t pt-6">
-                      <h4 className="text-md font-semibold mb-4" style={{ color: '#23334e' }}>
-                        📊 Combinaciones Más Populares
+                      <h4 className="text-md font-semibold mb-4 flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.chartBar /> Combinaciones Más Populares
                       </h4>
                       
                       {mixedStatsLoading ? (
@@ -1275,12 +1477,16 @@ export default function CajaPage() {
             {resultados.resumen && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                  📊 Estadísticas del Período
+                  <Icons.chartBar /> Estadísticas del Período
                 </h3>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">🛒</div>
+                    <div className="mb-2 flex justify-center" style={{ color: '#23334e' }}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Total Transacciones
                     </div>
@@ -1290,7 +1496,11 @@ export default function CajaPage() {
                   </div>
                   
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">📈</div>
+                    <div className="mb-2 flex justify-center" style={{ color: '#23334e' }}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Promedio por Venta
                     </div>
@@ -1298,9 +1508,13 @@ export default function CajaPage() {
                       {formatCurrency(resultados.resumen.promedioVenta)}
                     </div>
                   </div>
-                  
+
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">✅</div>
+                    <div className="mb-2 flex justify-center text-green-600">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Gastos Aprobados
                     </div>
@@ -1308,9 +1522,13 @@ export default function CajaPage() {
                       {resultados.resumen.totalGastosAprobados || 0}
                     </div>
                   </div>
-                  
+
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">💸</div>
+                    <div className="mb-2 flex justify-center" style={{ color: '#23334e' }}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Promedio por Gasto
                     </div>
@@ -1326,12 +1544,16 @@ export default function CajaPage() {
             {resultados.propinas && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2" style={{ color: '#23334e' }}>
-                  🪙 Propinas Recibidas
+                  <Icons.coin /> Propinas Recibidas
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">💵</div>
+                    <div className="mb-2 flex justify-center" style={{ color: '#10b981' }}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Total Propinas
                     </div>
@@ -1341,7 +1563,11 @@ export default function CajaPage() {
                   </div>
 
                   <div className="text-center p-4 rounded-lg" style={{ backgroundColor: '#f4f6fa' }}>
-                    <div className="text-2xl mb-2">🧾</div>
+                    <div className="mb-2 flex justify-center" style={{ color: '#23334e' }}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                      </svg>
+                    </div>
                     <div className="text-sm font-medium" style={{ color: '#697487' }}>
                       Ventas con Propina
                     </div>
@@ -1355,39 +1581,39 @@ export default function CajaPage() {
 
             {/* Acciones del reporte */}
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold mb-4" style={{ color: '#23334e' }}>
-                🔧 Acciones del Reporte
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: '#23334e' }}>
+                <Icons.wrench /> Acciones del Reporte
               </h3>
               
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => setShowPrintModal(true)}
-                  className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md"
+                  className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-md flex items-center gap-2"
                   style={{ backgroundColor: '#46546b' }}
                 >
-                  🖨️ Imprimir Reporte
+                  <Icons.printer /> Imprimir Reporte
                 </button>
-                
+
                 <button
                   onClick={() => exportPDF(resultados, tiendas)}
-                  className="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md"
-                  style={{ 
+                  className="px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                  style={{
                     backgroundColor: '#8c95a4',
                     color: 'white'
                   }}
                 >
-                  📄 Exportar PDF
+                  <Icons.document /> Exportar PDF
                 </button>
-                
+
                 <button
                   onClick={limpiarResultados}
-                  className="px-6 py-3 rounded-lg font-medium border transition-all duration-200 hover:shadow-md"
-                  style={{ 
+                  className="px-6 py-3 rounded-lg font-medium border transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                  style={{
                     borderColor: '#e5e7eb',
                     color: '#697487'
                   }}
                 >
-                  🗑️ Limpiar Reporte
+                  <Icons.trash /> Limpiar Reporte
                 </button>
               </div>
             </div>

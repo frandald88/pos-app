@@ -5,6 +5,45 @@ import { useTiendasFilters } from "../hooks/useTiendasFilters";
 import TiendaModal from "../components/TiendaModal";
 import TicketConfigModal from "../components/TicketConfigModal";
 
+// SVG Icons
+const Icons = {
+  store: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  ),
+  warning: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  ),
+  trash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  archive: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+    </svg>
+  ),
+  lightbulb: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  ),
+  palette: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  )
+};
+
 export default function TiendasPage() {
   const [modalError, setModalError] = useState("");
   const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
@@ -70,7 +109,7 @@ export default function TiendasPage() {
     const tiendaData = editTienda ? tiendaEditando : nuevaTienda;
 
     if (!tiendaData.nombre || !tiendaData.direccion) {
-      setModalError("Por favor completa los campos requeridos ❌");
+      setModalError("[ERROR] Por favor completa los campos requeridos");
       return;
     }
 
@@ -83,7 +122,7 @@ export default function TiendasPage() {
           dataToUpdate.telefono = e.telefonoCompleto;
         }
 
-        console.log('📤 Enviando al backend (EDITAR):', dataToUpdate);
+        console.log('[INFO] Enviando al backend (EDITAR):', dataToUpdate);
         await updateTienda(editTienda._id, dataToUpdate);
         handleCerrarModal();
       } else {
@@ -94,7 +133,7 @@ export default function TiendasPage() {
           dataToCreate.telefono = e.telefonoCompleto;
         }
 
-        console.log('📤 Enviando al backend (CREAR):', dataToCreate);
+        console.log('[INFO] Enviando al backend (CREAR):', dataToCreate);
         await createTienda(dataToCreate);
         clearNewTiendaForm();
       }
@@ -102,7 +141,7 @@ export default function TiendasPage() {
       setModalError("");
     } catch (error) {
       console.error('Error al guardar tienda:', error);
-      const errorMessage = error.response?.data?.message || "Error al guardar tienda ❌";
+      const errorMessage = error.response?.data?.message || "[ERROR] Error al guardar tienda";
       setModalError(errorMessage);
     }
   };
@@ -135,9 +174,9 @@ export default function TiendasPage() {
     handleDelete(tienda);
     try {
       const relaciones = await checkTiendaRelationships(tienda._id);
-      console.log('🔍 Relaciones recibidas:', relaciones);
+      console.log('[INFO] Relaciones recibidas:', relaciones);
     } catch (error) {
-      setMsg("Error al verificar relaciones ❌");
+      setMsg("[ERROR] Error al verificar relaciones");
       handleCerrarModalEliminar();
     }
   };
@@ -159,7 +198,7 @@ export default function TiendasPage() {
   const handleEliminarPermanente = async () => {
     if (!tiendaEliminar) return;
 
-    if (!window.confirm("⚠️ ADVERTENCIA: Esta acción es IRREVERSIBLE. ¿Confirmas eliminar permanentemente?")) {
+    if (!window.confirm("ADVERTENCIA: Esta acción es IRREVERSIBLE. ¿Confirmas eliminar permanentemente?")) {
       return;
     }
 
@@ -194,13 +233,13 @@ export default function TiendasPage() {
         ...tiendaConfig,
         ticketConfig: config
       });
-      setMsg('Configuración de ticket actualizada ✅');
+      setMsg('[SUCCESS] Configuración de ticket actualizada');
       setMostrarConfigTicket(false);
       setTiendaConfig(null);
       fetchTiendas();
     } catch (error) {
       console.error('Error al guardar configuración:', error);
-      setMsg('Error al guardar configuración ❌');
+      setMsg('[ERROR] Error al guardar configuración');
     }
   };
 
@@ -246,7 +285,7 @@ export default function TiendasPage() {
         {/* Mensaje de estado */}
         {msg && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅')
+            msg.includes('[SUCCESS]')
               ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
@@ -324,7 +363,11 @@ export default function TiendasPage() {
             </div>
           ) : tiendasFiltradas.length === 0 ? (
             <div className="p-8 text-center">
-              <div className="text-6xl mb-4">🏪</div>
+              <div className="mb-4 flex justify-center" style={{ color: '#697487' }}>
+                <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </div>
               <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
                 No hay tiendas
               </h3>
@@ -410,11 +453,11 @@ export default function TiendasPage() {
                             <>
                               <button
                                 onClick={() => handleConfigTicket(tienda)}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
+                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
                                 style={{ backgroundColor: '#10b981' }}
                                 title="Configurar diseño del ticket"
                               >
-                                🎨 Ticket
+                                <Icons.palette /> Ticket
                               </button>
                               <button
                                 onClick={() => handleEditarTienda(tienda)}
@@ -472,8 +515,8 @@ export default function TiendasPage() {
               {/* Header */}
               <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-red-600">
-                    ⚠️ Eliminar Tienda
+                  <h2 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+                    <Icons.warning /> Eliminar Tienda
                   </h2>
                   <button
                     onClick={() => {
@@ -522,18 +565,18 @@ export default function TiendasPage() {
                       </div>
                     ) : (
                       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-sm text-green-800">
-                          ✅ <strong>Sin relaciones:</strong> Esta tienda no tiene usuarios, productos ni ventas asociadas.
-                          Puede eliminarse de forma segura.
+                        <p className="text-sm text-green-800 flex items-start gap-2">
+                          <Icons.check /> <span><strong>Sin relaciones:</strong> Esta tienda no tiene usuarios, productos ni ventas asociadas.
+                          Puede eliminarse de forma segura.</span>
                         </p>
                       </div>
                     )}
 
                     {/* Opciones de eliminación */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800">
-                        💡 <strong>Recomendación:</strong> Archivar la tienda en lugar de eliminarla permanentemente.
-                        Esto mantiene el historial y permite restaurarla más tarde si es necesario.
+                      <p className="text-sm text-blue-800 flex items-start gap-2">
+                        <Icons.lightbulb /> <span><strong>Recomendación:</strong> Archivar la tienda en lugar de eliminarla permanentemente.
+                        Esto mantiene el historial y permite restaurarla más tarde si es necesario.</span>
                       </p>
                     </div>
 
@@ -542,18 +585,18 @@ export default function TiendasPage() {
                       <button
                         onClick={handleArchivarTienda}
                         disabled={cargando}
-                        className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         style={{ backgroundColor: '#f59e0b' }}
                       >
-                        📦 Archivar Tienda (Recomendado)
+                        <Icons.archive /> Archivar Tienda (Recomendado)
                       </button>
 
                       <button
                         onClick={handleEliminarPermanente}
                         disabled={cargando}
-                        className="w-full py-3 px-6 rounded-lg font-semibold text-white bg-red-600 transition-all duration-200 hover:shadow-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 px-6 rounded-lg font-semibold text-white bg-red-600 transition-all duration-200 hover:shadow-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        🗑️ Eliminar Permanentemente
+                        <Icons.trash /> Eliminar Permanentemente
                       </button>
 
                       <button

@@ -24,8 +24,8 @@ export const useCajaData = () => {
         // Después de la restructuración, el controller devuelve { success, data: { tiendas, pagination }, message }
         setTiendas(response.data.data.tiendas);
       } catch (error) {
-        console.error("❌ Error al cargar tiendas:", error);
-        setError("Error al cargar tiendas ❌");
+        console.error("[ERROR] Error al cargar tiendas:", error);
+        setError("[ERROR] Error al cargar tiendas");
         setTimeout(() => setError(""), 3000);
       } finally {
         setCargandoTiendas(false);
@@ -47,7 +47,7 @@ export const useCajaData = () => {
     } else {
       // ⭐ Modo período: necesitamos fechas
       if (!fechaInicio || !fechaFin) {
-        setError("Debes seleccionar fechas válidas ❌");
+        setError("[ERROR] Debes seleccionar fechas válidas");
         return false;
       }
 
@@ -55,7 +55,7 @@ export const useCajaData = () => {
       const endDateObj = new Date(fechaFin);
 
       if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
-        setError("Las fechas proporcionadas no son válidas ❌");
+        setError("[ERROR] Las fechas proporcionadas no son válidas");
         return false;
       }
 
@@ -81,14 +81,14 @@ export const useCajaData = () => {
       
       // Extraer los datos del objeto 'data' si existe
       const reportData = response.data.data || response.data;
-      
+
       setResultados(reportData);
-      setError("Corte generado exitosamente ✅");
+      setError("[SUCCESS] Corte generado exitosamente");
       setTimeout(() => setError(""), 3000);
       return true;
     } catch (error) {
-      console.error('❌ Error al generar corte:', error.response?.data || error.message);
-      setError(`Error al generar corte: ${error.response?.data?.message || error.message} ❌`);
+      console.error('[ERROR] Error al generar corte:', error.response?.data || error.message);
+      setError(`[ERROR] Error al generar corte: ${error.response?.data?.message || error.message}`);
       return false;
     } finally {
       setCargando(false);
@@ -123,7 +123,7 @@ export const useCajaData = () => {
       
       setMixedPaymentStats(mixedStatsData);
     } catch (error) {
-      console.error("❌ Error al obtener estadísticas de pagos mixtos:", error);
+      console.error("[ERROR] Error al obtener estadísticas de pagos mixtos:", error);
     } finally {
       setCargandoMixedStats(false);
     }
@@ -153,8 +153,8 @@ export const useCajaData = () => {
 
       return response.data.data.turnos || [];
     } catch (error) {
-      console.error('❌ Error al obtener turnos:', error);
-      setError('Error al cargar turnos ❌');
+      console.error('[ERROR] Error al obtener turnos:', error);
+      setError('[ERROR] Error al cargar turnos');
       return [];
     }
   };

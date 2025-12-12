@@ -7,6 +7,80 @@ import {
 } from '../hooks';
 import { OrderModal } from '../components';
 
+// SVG Icons
+const Icons = {
+  package: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  ),
+  clock: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  xmark: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  plus: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+  ),
+  clipboard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  ),
+  store: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  office: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  chartBar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  calendar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  ),
+  user: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  ),
+  chat: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  ),
+  pencil: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  trash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  )
+};
+
 export default function OrdersPage() {
   // Estado local para modal
   const [modalError, setModalError] = useState("");
@@ -126,7 +200,7 @@ export default function OrdersPage() {
         const updateData = getEditData();
 
         if (!updateData.status) {
-          setModalError("El estado es requerido ❌");
+          setModalError("El estado es requerido");
           return;
         }
 
@@ -137,7 +211,7 @@ export default function OrdersPage() {
         loadOrders(buildOrderFilters());
       } catch (error) {
         console.error('Error al actualizar orden:', error);
-        const errorMessage = error.response?.data?.message || "Error al actualizar orden ❌";
+        const errorMessage = error.response?.data?.message || "Error al actualizar orden";
         setModalError(errorMessage);
       }
     } else {
@@ -146,7 +220,7 @@ export default function OrdersPage() {
       const validation = validateOrderData(formData);
 
       if (!validation.isValid) {
-        setModalError(validation.errors.join(', ') + ' ❌');
+        setModalError(validation.errors.join(', '));
         return;
       }
 
@@ -160,7 +234,7 @@ export default function OrdersPage() {
         loadOrders(buildOrderFilters());
       } catch (error) {
         console.error('Error al crear orden:', error);
-        const errorMessage = error.response?.data?.message || "Error al crear orden ❌";
+        const errorMessage = error.response?.data?.message || "Error al crear orden";
         setModalError(errorMessage);
       }
     }
@@ -268,7 +342,7 @@ export default function OrdersPage() {
             {/* Estadísticas */}
             <div className="flex gap-4">
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">📦</div>
+                <div className="text-xl"><Icons.package /></div>
                 <div className="text-lg font-bold" style={{ color: '#23334e' }}>
                   {orderStats.total}
                 </div>
@@ -277,7 +351,7 @@ export default function OrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">⏳</div>
+                <div className="text-xl"><Icons.clock /></div>
                 <div className="text-lg font-bold" style={{ color: '#f59e0b' }}>
                   {orderStats.pendientes}
                 </div>
@@ -286,7 +360,7 @@ export default function OrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">✅</div>
+                <div className="text-xl"><Icons.check /></div>
                 <div className="text-lg font-bold" style={{ color: '#10b981' }}>
                   {orderStats.completadas}
                 </div>
@@ -295,7 +369,7 @@ export default function OrdersPage() {
                 </div>
               </div>
               <div className="text-center p-3 bg-white rounded-lg shadow-sm border" style={{ borderColor: '#e5e7eb' }}>
-                <div className="text-xl">❌</div>
+                <div className="text-xl"><Icons.xmark /></div>
                 <div className="text-lg font-bold" style={{ color: '#ef4444' }}>
                   {orderStats.canceladas}
                 </div>
@@ -311,7 +385,7 @@ export default function OrdersPage() {
         {(msg || error) && (
           <div className={`mb-6 p-4 rounded-lg border-l-4 ${
             error ? 'bg-red-50 border-red-400 text-red-800' :
-            msg.includes('❌') ? 'bg-red-50 border-red-400 text-red-800' :
+            msg.includes('[ERROR]') ? 'bg-red-50 border-red-400 text-red-800' :
             'bg-green-50 border-green-400 text-green-800'
           }`}>
             <p className="font-medium">{error || msg}</p>
@@ -325,11 +399,15 @@ export default function OrdersPage() {
             <div>
               <button
                 onClick={() => setMostrarFormulario(!mostrarFormulario)}
-                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 shadow-md hover:shadow-lg"
+                className="px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
                 style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
                 disabled={cargando}
               >
-                {mostrarFormulario ? '✖️ Cancelar' : '➕ Nueva Orden'}
+                {mostrarFormulario ? (
+                  <><Icons.xmark /> Cancelar</>
+                ) : (
+                  <><Icons.plus /> Nueva Orden</>
+                )}
               </button>
             </div>
 
@@ -349,10 +427,10 @@ export default function OrdersPage() {
                   }}
                   disabled={cargando}
                 >
-                  <option value="todos">📋 Todas</option>
-                  <option value="pendiente">⏳ Pendientes</option>
-                  <option value="completada">✅ Completadas</option>
-                  <option value="cancelada">❌ Canceladas</option>
+                  <option value="todos">Todas</option>
+                  <option value="pendiente">Pendientes</option>
+                  <option value="completada">Completadas</option>
+                  <option value="cancelada">Canceladas</option>
                 </select>
               </div>
 
@@ -371,7 +449,7 @@ export default function OrdersPage() {
                     }}
                     disabled={cargando}
                   >
-                    <option value="">🏪 Todas las tiendas</option>
+                    <option value="">Todas las tiendas</option>
                     {tiendas.map((tienda) => (
                       <option key={tienda._id} value={tienda._id}>
                         {tienda.nombre}
@@ -416,7 +494,11 @@ export default function OrdersPage() {
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📦</div>
+            <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+              <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
             <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               No hay órdenes
             </h3>
@@ -439,15 +521,20 @@ export default function OrdersPage() {
                         <h3 className="text-xl font-bold" style={{ color: '#23334e' }}>
                           Orden #{order._id.slice(-8)}
                         </h3>
-                        <span className={`px-3 py-1 text-sm rounded-full font-medium ${getStatusColor(order.status)}`}>
-                          {order.status === 'pendiente' ? '⏳ Pendiente' :
-                           order.status === 'completada' ? '✅ Completada' :
-                           order.status === 'cancelada' ? '❌ Cancelada' : order.status}
+                        <span className={`px-3 py-1 text-sm rounded-full font-medium flex items-center gap-1.5 ${getStatusColor(order.status)}`}>
+                          {order.status === 'pendiente' ? (
+                            <><Icons.clock /> Pendiente</>
+                          ) : order.status === 'completada' ? (
+                            <><Icons.check /> Completada</>
+                          ) : order.status === 'cancelada' ? (
+                            <><Icons.xmark /> Cancelada</>
+                          ) : order.status}
                         </span>
                       </div>
                       {order.createdBy && (
-                        <p className="text-sm" style={{ color: '#697487' }}>
-                          ✍️ Creado por: <span className="font-medium">{order.createdBy.username}</span>
+                        <p className="text-sm flex items-center gap-1.5" style={{ color: '#697487' }}>
+                          <Icons.pencil />
+                          <span>Creado por: <span className="font-medium">{order.createdBy.username}</span></span>
                         </p>
                       )}
                     </div>
@@ -456,18 +543,18 @@ export default function OrdersPage() {
                       {canUpdateOrder(order) && (
                         <button
                           onClick={() => handleEditOrder(order)}
-                          className="px-4 py-2 rounded-lg font-medium text-white transition-all duration-200"
+                          className="px-4 py-2 rounded-lg font-medium text-white transition-all duration-200 flex items-center gap-2"
                           style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
                         >
-                          ✏️ Editar
+                          <Icons.pencil /> Editar
                         </button>
                       )}
                       {userRole === 'admin' && (order.status === 'completada' || order.status === 'cancelada') && (
                         <button
                           onClick={() => handleDelete(order._id)}
-                          className="px-4 py-2 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:bg-red-600"
+                          className="px-4 py-2 rounded-lg font-medium text-white bg-red-500 transition-all duration-200 hover:bg-red-600 flex items-center gap-2"
                         >
-                          🗑️ Eliminar
+                          <Icons.trash /> Eliminar
                         </button>
                       )}
                     </div>
@@ -481,8 +568,8 @@ export default function OrdersPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Proveedor
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        🏢 {order.proveedor}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.office /> {order.proveedor}
                       </div>
                     </div>
 
@@ -490,8 +577,8 @@ export default function OrdersPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Producto
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        📦 {order.producto}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.package /> {order.producto}
                       </div>
                     </div>
 
@@ -499,8 +586,8 @@ export default function OrdersPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Cantidad
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        📊 {order.cantidad} {order.unidad}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.chartBar /> {order.cantidad} {order.unidad}
                       </div>
                     </div>
 
@@ -508,8 +595,8 @@ export default function OrdersPage() {
                       <div className="text-sm font-medium" style={{ color: '#697487' }}>
                         Fecha de Emisión
                       </div>
-                      <div className="font-bold" style={{ color: '#23334e' }}>
-                        📅 {formatDate(order.fechaEmision)}
+                      <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                        <Icons.calendar /> {formatDate(order.fechaEmision)}
                       </div>
                     </div>
 
@@ -518,8 +605,8 @@ export default function OrdersPage() {
                         <div className="text-sm font-medium" style={{ color: '#697487' }}>
                           Tienda
                         </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          🏪 {order.tienda.nombre}
+                        <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                          <Icons.store /> {order.tienda.nombre}
                         </div>
                       </div>
                     )}
@@ -529,8 +616,8 @@ export default function OrdersPage() {
                         <div className="text-sm font-medium" style={{ color: '#697487' }}>
                           Asignado a
                         </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          👤 {order.assignedTo.username} ({order.assignedTo.role})
+                        <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                          <Icons.user /> {order.assignedTo.username} ({order.assignedTo.role})
                         </div>
                       </div>
                     )}
@@ -540,8 +627,8 @@ export default function OrdersPage() {
                         <div className="text-sm font-medium" style={{ color: '#697487' }}>
                           Fecha de Entrega
                         </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          📅 {formatDate(order.fechaEntrega)}
+                        <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                          <Icons.calendar /> {formatDate(order.fechaEntrega)}
                         </div>
                       </div>
                     )}
@@ -551,8 +638,8 @@ export default function OrdersPage() {
                         <div className="text-sm font-medium" style={{ color: '#697487' }}>
                           Nota
                         </div>
-                        <div className="font-bold" style={{ color: '#23334e' }}>
-                          💬 {order.nota}
+                        <div className="font-bold flex items-center gap-2" style={{ color: '#23334e' }}>
+                          <Icons.chat /> {order.nota}
                         </div>
                       </div>
                     )}

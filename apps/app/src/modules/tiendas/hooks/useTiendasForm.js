@@ -106,8 +106,8 @@ export const useTiendasForm = () => {
 
   // Iniciar edición en modal
   const handleEditModal = (tienda) => {
-    console.log('🏪 Editando tienda, objeto recibido:', tienda);
-    console.log('🏪 Teléfono de la tienda:', tienda.telefono);
+    console.log('[INFO] Editando tienda, objeto recibido:', tienda);
+    console.log('[INFO] Teléfono de la tienda:', tienda.telefono);
 
     setTiendaEditando({
       nombre: tienda.nombre || '',

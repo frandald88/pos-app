@@ -126,35 +126,35 @@ export const useTiendasUtils = () => {
   const getStatusMessage = (operation, success, error = null) => {
     const messages = {
       create: {
-        success: 'Tienda creada exitosamente ✅',
-        error: 'Error al crear tienda ❌'
+        success: '[SUCCESS] Tienda creada exitosamente',
+        error: '[ERROR] Error al crear tienda'
       },
       update: {
-        success: 'Tienda actualizada exitosamente ✅',
-        error: 'Error al actualizar tienda ❌'
+        success: '[SUCCESS] Tienda actualizada exitosamente',
+        error: '[ERROR] Error al actualizar tienda'
       },
       delete: {
-        success: 'Tienda eliminada exitosamente ✅',
-        error: 'Error al eliminar tienda ❌'
+        success: '[SUCCESS] Tienda eliminada exitosamente',
+        error: '[ERROR] Error al eliminar tienda'
       },
       archive: {
-        success: 'Tienda archivada exitosamente ✅',
-        error: 'Error al archivar tienda ❌'
+        success: '[SUCCESS] Tienda archivada exitosamente',
+        error: '[ERROR] Error al archivar tienda'
       },
       restore: {
-        success: 'Tienda restaurada exitosamente ✅',
-        error: 'Error al restaurar tienda ❌'
+        success: '[SUCCESS] Tienda restaurada exitosamente',
+        error: '[ERROR] Error al restaurar tienda'
       },
       fetch: {
-        success: 'Tiendas cargadas exitosamente ✅',
-        error: 'Error al cargar tiendas ❌'
+        success: '[SUCCESS] Tiendas cargadas exitosamente',
+        error: '[ERROR] Error al cargar tiendas'
       }
     };
 
     if (success) {
-      return messages[operation]?.success || 'Operación exitosa ✅';
+      return messages[operation]?.success || '[SUCCESS] Operación exitosa';
     } else {
-      return error || messages[operation]?.error || 'Error en la operación ❌';
+      return error || messages[operation]?.error || '[ERROR] Error en la operación';
     }
   };
 

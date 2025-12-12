@@ -3,6 +3,50 @@ import { useDevolucionesData } from '../hooks/useDevolucionesData';
 import { useDevolucionesUtils } from '../hooks/useDevolucionesUtils';
 import { useDevolucionesForm } from '../hooks/useDevolucionesForm';
 
+// SVG Icons - AstroDish Design System
+const Icons = {
+  search: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  refresh: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+  chat: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  ),
+  creditCard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  cash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  warning: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  xmark: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+};
+
 export default function ReturnsPage() {
   // Hooks para manejo de datos
   const {
@@ -74,7 +118,7 @@ export default function ReturnsPage() {
     // Validar formulario
     const validation = validateForm(returnedItems, sale);
     if (!validation.isValid) {
-      setProcessingMsg(validation.errors[0] + " ❌");
+      setProcessingMsg("[ERROR] " + validation.errors[0]);
       return;
     }
 
@@ -202,8 +246,9 @@ export default function ReturnsPage() {
                             </span>
                           </div>
                           {item.reason && (
-                            <div className="text-sm italic p-2 rounded mt-2" style={{ color: '#697487', backgroundColor: '#f4f6fa' }}>
-                              💬 {item.reason}
+                            <div className="text-sm italic p-2 rounded mt-2 flex items-start gap-2" style={{ color: '#697487', backgroundColor: '#f4f6fa' }}>
+                              <Icons.chat />
+                              <span>{item.reason}</span>
                             </div>
                           )}
                         </div>
@@ -231,10 +276,10 @@ export default function ReturnsPage() {
                 setExistingReturns(null);
                 setMsg("");
               }}
-              className="px-8 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
+              className="px-8 py-4 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105 flex items-center gap-2"
               style={{ backgroundColor: '#23334e' }}
             >
-              🔍 Buscar Otra Venta
+              <Icons.search /> Buscar Otra Venta
             </button>
           </div>
         </div>
@@ -260,12 +305,19 @@ export default function ReturnsPage() {
 
         {/* Mensaje de estado */}
         {msg && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            msg.includes('✅') 
-              ? 'bg-green-50 border-green-400 text-green-800' 
+          <div className={`mb-6 p-4 rounded-lg border-l-4 flex items-center gap-3 ${
+            msg.includes('[SUCCESS]')
+              ? 'bg-green-50 border-green-400 text-green-800'
               : 'bg-red-50 border-red-400 text-red-800'
           }`}>
-            <p className="font-medium">{msg}</p>
+            <div className="flex-shrink-0">
+              {msg.includes('[SUCCESS]') ? (
+                <div className="text-green-600"><Icons.check /></div>
+              ) : (
+                <div className="text-red-600"><Icons.xmark /></div>
+              )}
+            </div>
+            <p className="font-medium">{msg.replace('[SUCCESS]', '').replace('[ERROR]', '').trim()}</p>
           </div>
         )}
 
@@ -353,8 +405,8 @@ export default function ReturnsPage() {
 
               {/* Información de pago original */}
               <div className="mt-6 p-4 rounded-lg border-2 border-dashed" style={{ borderColor: '#46546b', backgroundColor: '#f9fafb' }}>
-                <h4 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                  💳 Método de Pago Original
+                <h4 className="font-semibold mb-3 flex items-center gap-2" style={{ color: '#23334e' }}>
+                  <Icons.creditCard /> Método de Pago Original
                 </h4>
                 {sale.paymentType === 'mixed' ? (
                   <div className="space-y-2">
@@ -546,8 +598,9 @@ export default function ReturnsPage() {
                       <p className="text-sm font-medium" style={{ color: '#46546b' }}>
                         Selecciona método(s) para devolución:
                       </p>
-                      <div className="text-xs p-2 rounded" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
-                        ⚠️ El total de los métodos seleccionados debe coincidir exactamente con el monto a reembolsar
+                      <div className="text-xs p-2 rounded flex items-center gap-2" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+                        <Icons.warning />
+                        <span>El total de los métodos seleccionados debe coincidir exactamente con el monto a reembolsar</span>
                       </div>
                       {mixedRefunds.map((payment, index) => (
                         <div key={index} className="flex items-center justify-between p-3 border rounded-lg" style={{ borderColor: '#e5e7eb' }}>
@@ -620,8 +673,8 @@ export default function ReturnsPage() {
                                 className="h-4 w-4"
                                 style={{ accentColor: '#23334e' }}
                               />
-                              <label htmlFor="refund-efectivo" className="text-sm font-medium">
-                                💵 Efectivo
+                              <label htmlFor="refund-efectivo" className="text-sm font-medium flex items-center gap-2">
+                                <Icons.cash /> Efectivo
                               </label>
                             </div>
                           </div>
@@ -657,8 +710,8 @@ export default function ReturnsPage() {
                                   className="h-4 w-4"
                                   style={{ accentColor: '#23334e' }}
                                 />
-                                <label htmlFor="refund-efectivo-alt" className="text-sm font-medium">
-                                  💵 Efectivo
+                                <label htmlFor="refund-efectivo-alt" className="text-sm font-medium flex items-center gap-2">
+                                  <Icons.cash /> Efectivo
                                 </label>
                               </div>
                             </div>
@@ -725,7 +778,11 @@ export default function ReturnsPage() {
         {/* Estado cuando no hay venta cargada */}
         {!sale && !buscando && (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">🔄</div>
+            <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+              <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
             <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               Busca una venta para comenzar
             </h3>

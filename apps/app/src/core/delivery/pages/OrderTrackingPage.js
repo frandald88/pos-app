@@ -18,7 +18,7 @@ export default function OrderTrackingPage() {
     setError
   } = useSalesTracking();
 
-  // ⭐ Hook para verificar turno de la tienda seleccionada
+  //Hook para verificar turno de la tienda seleccionada
   const { turnoActivo, refetch: refetchTurno } = useTurno();
 
   const {
@@ -36,13 +36,13 @@ export default function OrderTrackingPage() {
 
   const { formatCurrency, formatDate } = useSalesActions();
 
-  // ⭐ Recargar turno cuando cambia la tienda seleccionada
+  //Recargar turno cuando cambia la tienda seleccionada
   useEffect(() => {
     if (selectedTienda) {
       // Si hay tienda seleccionada, buscar el turno de esa tienda
       refetchTurno(selectedTienda);
 
-      // ⭐ Disparar evento para que AdminLayout actualice el botón de turno
+      //Disparar evento para que AdminLayout actualice el botón de turno
       const event = new CustomEvent('tiendaChanged', {
         detail: { tiendaId: selectedTienda }
       });
@@ -51,7 +51,7 @@ export default function OrderTrackingPage() {
       // Si no hay tienda seleccionada, buscar el turno del usuario
       refetchTurno();
 
-      // ⭐ Disparar evento sin tienda para que AdminLayout use turno del usuario
+      //Disparar evento sin tienda para que AdminLayout use turno del usuario
       const event = new CustomEvent('tiendaChanged', {
         detail: { tiendaId: null }
       });
@@ -149,7 +149,11 @@ export default function OrderTrackingPage() {
           </div>
         ) : filteredSales.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📦</div>
+            <div className="mb-4 flex justify-center" style={{ color: '#23334e' }}>
+              <svg className="w-24 h-24" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+            </div>
             <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               No hay pedidos
             </h3>
@@ -185,7 +189,7 @@ export default function OrderTrackingPage() {
                   formatDate={formatDate}
                   updatingOrderId={updatingOrderId}
                   updateStatus={handleUpdateStatus}
-                  turnoActivo={turnoActivo} // ⭐ Pasar turno de la tienda seleccionada
+                  turnoActivo={turnoActivo} // Pasar turno de la tienda seleccionada
                 />
               );
             })}

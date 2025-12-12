@@ -1,5 +1,54 @@
+// SVG Icons
+const Icons = {
+  clock: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  xmark: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  search: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  clipboard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  ),
+  cash: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  bank: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+    </svg>
+  ),
+  creditCard: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  currencyDollar: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )
+};
+
 export const useGastosUtils = () => {
-  
+
   // Formatear moneda
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
@@ -33,47 +82,47 @@ export const useGastosUtils = () => {
   // Obtener configuración de estado
   const getStatusConfig = (status) => {
     const configs = {
-      'pendiente': { 
-        color: '#f59e0b', 
-        bgColor: 'bg-yellow-100', 
-        textColor: 'text-yellow-800', 
-        icon: '⏳' 
+      'pendiente': {
+        color: '#f59e0b',
+        bgColor: 'bg-yellow-100',
+        textColor: 'text-yellow-800',
+        icon: <Icons.clock />
       },
-      'aprobado': { 
-        color: '#10b981', 
-        bgColor: 'bg-green-100', 
-        textColor: 'text-green-800', 
-        icon: '✅' 
+      'aprobado': {
+        color: '#10b981',
+        bgColor: 'bg-green-100',
+        textColor: 'text-green-800',
+        icon: <Icons.check />
       },
-      'denegado': { 
-        color: '#ef4444', 
-        bgColor: 'bg-red-100', 
-        textColor: 'text-red-800', 
-        icon: '❌' 
+      'denegado': {
+        color: '#ef4444',
+        bgColor: 'bg-red-100',
+        textColor: 'text-red-800',
+        icon: <Icons.xmark />
       },
-      'en revision': { 
-        color: '#8b5cf6', 
-        bgColor: 'bg-purple-100', 
-        textColor: 'text-purple-800', 
-        icon: '🔍' 
+      'en revision': {
+        color: '#8b5cf6',
+        bgColor: 'bg-purple-100',
+        textColor: 'text-purple-800',
+        icon: <Icons.search />
       }
     };
-    return configs[status] || { 
-      color: '#6b7280', 
-      bgColor: 'bg-gray-100', 
-      textColor: 'text-gray-800', 
-      icon: '📋' 
+    return configs[status] || {
+      color: '#6b7280',
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800',
+      icon: <Icons.clipboard />
     };
   };
 
   // Obtener icono de método de pago
   const getPaymentMethodIcon = (method) => {
     const icons = {
-      'efectivo': '💵',
-      'transferencia': '🏦',
-      'tarjeta': '💳'
+      'efectivo': <Icons.cash />,
+      'transferencia': <Icons.bank />,
+      'tarjeta': <Icons.creditCard />
     };
-    return icons[method] || '💰';
+    return icons[method] || <Icons.currencyDollar />;
   };
 
   // Obtener nombre del método de pago

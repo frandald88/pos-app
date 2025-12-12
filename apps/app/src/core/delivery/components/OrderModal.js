@@ -27,8 +27,22 @@ const OrderModal = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-              {isEditing ? '✏️ Editar Orden' : '➕ Crear Nueva Orden'}
+            <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: '#23334e' }}>
+              {isEditing ? (
+                <>
+                  <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Editar Orden
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Crear Nueva Orden
+                </>
+              )}
             </h2>
             <button
               onClick={onClose}
@@ -92,9 +106,9 @@ const OrderModal = ({
                     }}
                     required
                   >
-                    <option value="pendiente">⏳ Pendiente</option>
-                    <option value="completada">✅ Completada</option>
-                    <option value="cancelada">❌ Cancelada</option>
+                    <option value="pendiente">Pendiente</option>
+                    <option value="completada">Completada</option>
+                    <option value="cancelada">Cancelada</option>
                   </select>
                 </div>
 

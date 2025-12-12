@@ -49,7 +49,7 @@ const TiendaModal = ({
   // Solo actualizar si tienda.telefono cambió REALMENTE (no por re-renders)
   useEffect(() => {
     if (isOpen && tienda.telefono !== lastTiendaTelefonoRef.current) {
-      console.log('📞 Teléfono cambió de', lastTiendaTelefonoRef.current, 'a', tienda.telefono);
+      console.log('[INFO] Teléfono cambió de', lastTiendaTelefonoRef.current, 'a', tienda.telefono);
       lastTiendaTelefonoRef.current = tienda.telefono;
 
       const parsed = parsePhoneNumber(tienda.telefono);
@@ -92,7 +92,7 @@ const TiendaModal = ({
     // Combinar código de país + número si hay número de teléfono
     const fullPhone = phoneNumber.trim() ? `${countryCode} ${phoneNumber.trim()}` : '';
 
-    console.log('📞 Enviando teléfono completo:', fullPhone);
+    console.log('[INFO] Enviando teléfono completo:', fullPhone);
 
     // Crear evento personalizado con el teléfono
     const customEvent = {
@@ -115,7 +115,7 @@ const TiendaModal = ({
         <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-              {isEditing ? '✏️ Editar Tienda' : '➕ Agregar Nueva Tienda'}
+              {isEditing ? 'Editar Tienda' : 'Agregar Nueva Tienda'}
             </h2>
             <button
               onClick={onClose}
@@ -220,7 +220,7 @@ const TiendaModal = ({
                     >
                       <span className="flex items-center gap-2">
                         <span style={{ fontSize: '1.25rem' }}>
-                          {countryCodes.find(c => c.code === countryCode)?.flag || '🏳️'}
+                          {countryCodes.find(c => c.code === countryCode)?.flag || '?'}
                         </span>
                         <span className="font-medium" style={{ color: '#23334e' }}>
                           {countryCode}

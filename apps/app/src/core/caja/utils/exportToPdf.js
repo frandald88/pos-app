@@ -317,7 +317,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
     <body>
       <!-- Header -->
       <div class="header">
-        <h1>📊 REPORTE DE CORTE DE CAJA</h1>
+        <h1>REPORTE DE CORTE DE CAJA</h1>
         <h2>Sistema de Punto de Venta</h2>
       </div>
       
@@ -326,21 +326,21 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
         <div class="info-grid">
           <div>
             <div class="info-item">
-              <span class="info-label">🏪 Tienda:</span>
+              <span class="info-label">Tienda:</span>
               <span>${getTiendaNombre(resultados.periodo?.tiendaId === 'todas' ? '' : resultados.periodo?.tiendaId, tiendas)}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">📅 Período Desde:</span>
+              <span class="info-label">Período Desde:</span>
               <span>${formatDateTime(resultados.periodo?.inicio)}</span>
             </div>
           </div>
           <div>
             <div class="info-item">
-              <span class="info-label">🕐 Generado:</span>
+              <span class="info-label">Generado:</span>
               <span>${new Date().toLocaleString('es-MX')}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">📅 Período Hasta:</span>
+              <span class="info-label">Período Hasta:</span>
               <span>${formatDateTime(resultados.periodo?.fin)}</span>
             </div>
           </div>
@@ -349,7 +349,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       
       <!-- Resumen Principal -->
       <div class="summary-section">
-        <div class="summary-title">💰 RESUMEN FINANCIERO</div>
+        <div class="summary-title">RESUMEN FINANCIERO</div>
         <div class="summary-grid">
           <div class="summary-item">
             <div class="summary-amount positive">${formatCurrency(resultados.ventas?.total || 0)}</div>
@@ -373,7 +373,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       <!-- Desglose por Método -->
       <div class="breakdown-section">
         <div class="breakdown-card">
-          <div class="breakdown-title">📈 VENTAS POR MÉTODO DE PAGO</div>
+          <div class="breakdown-title">VENTAS POR MÉTODO DE PAGO</div>
           ${['efectivo', 'transferencia', 'tarjeta'].map(metodo => `
             <div class="method-row">
               <span class="method-name">${getMethodIcon(metodo)} ${metodo}</span>
@@ -386,7 +386,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
         </div>
         
         <div class="breakdown-card">
-          <div class="breakdown-title">📉 GASTOS POR MÉTODO DE PAGO</div>
+          <div class="breakdown-title">GASTOS POR MÉTODO DE PAGO</div>
           ${['efectivo', 'transferencia', 'tarjeta'].map(metodo => `
             <div class="method-row">
               <span class="method-name">${getMethodIcon(metodo)} ${metodo}</span>
@@ -401,7 +401,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       
       <!-- Balance por Método -->
       <div class="balance-section">
-        <div class="balance-title">⚖️ BALANCE NETO POR MÉTODO DE PAGO</div>
+        <div class="balance-title">BALANCE NETO POR MÉTODO DE PAGO</div>
         <div class="balance-grid">
           ${['efectivo', 'transferencia', 'tarjeta'].map(metodo => `
             <div class="balance-item">
@@ -417,7 +417,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       <!-- Estadísticas del Período -->
       ${resultados.resumen ? `
         <div class="stats-section">
-          <div class="summary-title">📊 ESTADÍSTICAS DEL PERÍODO</div>
+          <div class="summary-title">ESTADÍSTICAS DEL PERÍODO</div>
           <div class="stats-grid">
             <div class="stat-item">
               <div class="stat-value">${resultados.resumen.totalTransacciones || 0}</div>
@@ -442,7 +442,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       <!-- Información de Pagos Mixtos -->
       ${resultados.pagosMixtos && resultados.pagosMixtos.totalVentas > 0 ? `
         <div class="stats-section">
-          <div class="summary-title">🔀 ANÁLISIS DE PAGOS MIXTOS</div>
+          <div class="summary-title">ANÁLISIS DE PAGOS MIXTOS</div>
           <div class="stats-grid">
             <div class="stat-item">
               <div class="stat-value">${resultados.pagosMixtos.totalVentas}</div>
@@ -466,9 +466,9 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       
       <!-- Footer -->
       <div class="footer">
-        <p><strong>📄 Reporte de Corte de Caja</strong></p>
-        <p>🕐 Generado el: ${new Date().toLocaleString('es-MX')}</p>
-        <p>🔒 Documento confidencial - Sistema POS</p>
+        <p><strong>Reporte de Corte de Caja</strong></p>
+        <p>Generado el: ${new Date().toLocaleString('es-MX')}</p>
+        <p>Documento confidencial - Sistema POS</p>
       </div>
     </body>
     </html>
@@ -477,11 +477,11 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
   // Helper function for method icons
   function getMethodIcon(metodo) {
     const icons = {
-      'efectivo': '💵',
-      'transferencia': '🏦',
-      'tarjeta': '💳'
+      'efectivo': '[Efectivo]',
+      'transferencia': '[Transferencia]',
+      'tarjeta': '[Tarjeta]'
     };
-    return icons[metodo] || '💰';
+    return icons[metodo] || '[Pago]';
   }
   
   printWindow.document.write(html);
@@ -497,7 +497,7 @@ export const exportToPDF = (resultados, tiendas, formatCurrency, formatDateTime,
       printWindow.print();
       
       // Mensaje informativo
-      console.log('💡 Para guardar como PDF: En el diálogo de impresión, selecciona "Guardar como PDF" como destino');
+      console.log('[INFO] Para guardar como PDF: En el diálogo de impresión, selecciona "Guardar como PDF" como destino');
     }, 500);
   };
   

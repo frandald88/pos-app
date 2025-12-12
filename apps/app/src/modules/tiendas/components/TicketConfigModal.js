@@ -109,7 +109,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold" style={{ color: '#23334e' }}>
-                🎨 Configurar Ticket - {tienda?.nombre}
+                Configurar Ticket - {tienda?.nombre}
               </h2>
               <p className="text-sm" style={{ color: '#697487' }}>
                 Personaliza el diseño del ticket para esta tienda
@@ -133,7 +133,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Logo */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                📸 Logo de la Tienda
+                Logo de la Tienda
               </h3>
               <div className="space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -167,7 +167,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Información del Negocio */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                🏪 Información del Negocio
+                Información del Negocio
               </h3>
               <div className="space-y-3">
                 <div>
@@ -208,7 +208,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Campos a Mostrar */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                ☑️ Campos a Mostrar
+                Campos a Mostrar
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 {Object.keys(config.camposMostrar).map((campo) => (
@@ -240,7 +240,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Campos Personalizados */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                ➕ Campos Personalizados
+                Campos Personalizados
               </h3>
 
               <div className="space-y-3">
@@ -291,7 +291,9 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
                           onClick={() => handleEliminarCampoPersonalizado(index)}
                           className="text-red-500 hover:text-red-700"
                         >
-                          🗑️
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </div>
                     ))}
@@ -303,7 +305,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Mensajes */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                💬 Mensajes Personalizados
+                Mensajes Personalizados
               </h3>
               <div className="space-y-3">
                 <div>
@@ -344,7 +346,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
             {/* Configuración Visual */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-3" style={{ color: '#23334e' }}>
-                🎨 Configuración Visual
+                Configuración Visual
               </h3>
               <div className="space-y-3">
                 <div>
@@ -379,7 +381,7 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
           <div className="lg:sticky lg:top-24 h-fit">
             <div className="bg-gray-100 p-4 rounded-lg">
               <h3 className="font-semibold mb-3 text-center" style={{ color: '#23334e' }}>
-                👁️ Vista Previa del Ticket
+                Vista Previa del Ticket
               </h3>
 
               {/* Vista previa del ticket */}
@@ -538,10 +540,13 @@ export default function TicketConfigModal({ tienda, onClose, onSave }) {
           </button>
           <button
             onClick={handleGuardar}
-            className="px-6 py-2 rounded-lg text-white transition-colors hover:shadow-lg"
+            className="px-6 py-2 rounded-lg text-white transition-colors hover:shadow-lg flex items-center gap-2"
             style={{ background: 'linear-gradient(135deg, #697487 0%, #46546b 100%)' }}
           >
-            💾 Guardar Configuración
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            Guardar Configuración
           </button>
         </div>
       </div>

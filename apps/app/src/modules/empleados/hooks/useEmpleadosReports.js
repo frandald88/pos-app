@@ -12,14 +12,14 @@ export const useEmpleadosReports = () => {
     const { reportUser, reportStartDate, reportEndDate, tiendaFiltro } = params;
 
     if (!reportStartDate || !reportEndDate) {
-      setReportMsg('Debes seleccionar una fecha de inicio y fin para el reporte ❌');
+      setReportMsg('[ERROR] Debes seleccionar una fecha de inicio y fin para el reporte');
       setTimeout(() => setReportMsg(''), 3000);
       return;
     }
 
     // Validar que la fecha de fin no sea anterior a la fecha de inicio
     if (reportStartDate > reportEndDate) {
-      setReportMsg('La fecha \'hasta\' no puede ser anterior a la fecha \'desde\' ❌');
+      setReportMsg('[ERROR] La fecha \'hasta\' no puede ser anterior a la fecha \'desde\'');
       setTimeout(() => setReportMsg(''), 3000);
       return;
     }
@@ -38,22 +38,22 @@ export const useEmpleadosReports = () => {
       if (response && response.records) {
         setReportData(response.records);
         setReportStats(response.estadisticas);
-        setReportMsg(`Reporte generado exitosamente ✅ - ${response.records.length} registros encontrados`);
+        setReportMsg(`[SUCCESS] Reporte generado exitosamente - ${response.records.length} registros encontrados`);
       } else if (Array.isArray(response)) {
         setReportData(response);
         setReportStats(null);
-        setReportMsg(`Reporte generado exitosamente ✅ - ${response.length} registros encontrados`);
+        setReportMsg(`[SUCCESS] Reporte generado exitosamente - ${response.length} registros encontrados`);
       } else {
         setReportData([]);
         setReportStats(null);
-        setReportMsg('No se encontraron registros para las fechas seleccionadas 📋');
+        setReportMsg('[INFO] No se encontraron registros para las fechas seleccionadas');
       }
       setTimeout(() => setReportMsg(''), 5000);
     } catch (error) {
       console.error('Report error:', error);
       setReportData([]);
       setReportStats(null);
-      setReportMsg('Error al cargar el reporte ❌');
+      setReportMsg('[ERROR] Error al cargar el reporte');
     } finally {
       setLoading(false);
     }
