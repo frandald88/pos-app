@@ -264,15 +264,19 @@ const AccountPage = () => {
       let ticketData = data.data.ticket;
 
       // Si hay subcuenta seleccionada, filtrar items
-      if (subcuentaName) {
-        const filteredItems = ticketData.items.filter(item => item.subcuentaName === subcuentaName);
+      if (subcuentaName !== null) {
+        // subcuentaName puede ser string (nombre de subcuenta) o 'unassigned' (items sin asignar)
+        const filteredItems = subcuentaName === 'unassigned'
+          ? ticketData.items.filter(item => !item.subcuentaName)
+          : ticketData.items.filter(item => item.subcuentaName === subcuentaName);
+
         const subtotal = filteredItems.reduce((sum, item) => sum + (item.quantity * item.price), 0);
         ticketData = {
           ...ticketData,
           items: filteredItems,
           subtotal,
           total: subtotal - (ticketData.discount || 0),
-          subcuentaName
+          subcuentaName: subcuentaName === 'unassigned' ? 'Sin Asignar' : subcuentaName
         };
       }
 
@@ -483,9 +487,17 @@ const AccountPage = () => {
     if (!name) return;
 
     try {
-      await addSubcuenta(accountId, name);
+      const response = await addSubcuenta(accountId, name);
       setNewSubcuentaName('');
-      loadAccount();
+
+      // Actualizar el estado local directamente con la cuenta actualizada del backend
+      if (response.data && response.data.account) {
+        setAccount(response.data.account);
+      } else {
+        // Fallback: recargar la cuenta completa si el backend no devuelve la cuenta
+        await loadAccount();
+      }
+
       setSuccess('Subcuenta agregada');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -498,8 +510,16 @@ const AccountPage = () => {
     if (!window.confirm(`¿Eliminar subcuenta "${name}"?`)) return;
 
     try {
-      await removeSubcuenta(accountId, name);
-      loadAccount();
+      const response = await removeSubcuenta(accountId, name);
+
+      // Actualizar el estado local directamente con la cuenta actualizada del backend
+      if (response.data && response.data.account) {
+        setAccount(response.data.account);
+      } else {
+        // Fallback: recargar la cuenta completa si el backend no devuelve la cuenta
+        await loadAccount();
+      }
+
       setSuccess('Subcuenta eliminada');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -1754,7 +1774,21 @@ const AccountPage = () => {
                   }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg font-medium transition-colors"
                 >
-                  Pagar por Subcuenta ({account.subcuentas.filter(s => !s.isPaid).length} pendientes)
+                  Pagar por Subcuenta ({(() => {
+                    // Contar subcuentas sin pagar
+                    const unpaidSubcuentas = account.subcuentas.filter(s => !s.isPaid).length;
+
+                    // Verificar si hay items sin asignar
+                    const hasUnassignedItems = account.orders?.some(order =>
+                      order.items?.some(item =>
+                        item.status !== 'cancelled' && !item.subcuentaName
+                      )
+                    );
+
+                    // Sumar 1 si hay items sin asignar
+                    const total = unpaidSubcuentas + (hasUnassignedItems ? 1 : 0);
+                    return total;
+                  })()} pendientes)
                 </button>
               )}
 
@@ -2126,6 +2160,28 @@ const AccountPage = () => {
                     {sub.name} {sub.isPaid && '(Pagado)'}
                   </button>
                 ))}
+
+                {/* Botón para items sin asignar */}
+                {(() => {
+                  // Verificar si hay items sin asignar
+                  const hasUnassignedItems = account.orders?.some(order =>
+                    order.items?.some(item =>
+                      item.status !== 'cancelled' && !item.subcuentaName
+                    )
+                  );
+
+                  if (hasUnassignedItems) {
+                    return (
+                      <button
+                        onClick={() => handleGeneratePreliminary('unassigned')}
+                        className="w-full mb-2 px-4 py-2 rounded-lg font-medium transition-colors bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      >
+                        Sin Asignar
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
 

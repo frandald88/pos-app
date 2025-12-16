@@ -310,8 +310,8 @@ export default function CajaPage() {
   const cargarTurnoActivo = async () => {
     setTurnosLoading(true);
     try {
-      // Pasar tiendaSeleccionada si no es 'todas'
-      const tiendaId = tiendaSeleccionada !== 'todas' ? tiendaSeleccionada : null;
+      // Pasar tiendaSeleccionada si no es 'todas' ni string vacío
+      const tiendaId = (tiendaSeleccionada && tiendaSeleccionada !== 'todas') ? tiendaSeleccionada : null;
       const result = await getTurnoActivo(tiendaId);
       if (result.success && result.data.turno) {
         setTurnoActivo(result.data.turno);

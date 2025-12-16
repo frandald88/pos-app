@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import apiBaseUrl from "../config/api";
-import logo from "../assets/astrodishlogo1.png"; // Logo de AstroDish
+import logo from "../assets/Astrodish_logo_2.png"; // Logo de AstroDish
 
 // SVG Icons - AstroDish Design System
 const Icons = {
@@ -181,7 +181,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Panel izquierdo - Información corporativa */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 50%, #7a9de8 100%)' }}>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}>
         {/* Elementos decorativos de fondo */}
         <div className="absolute inset-0">
           <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#2b354f' }}></div>
@@ -402,17 +402,17 @@ export default function LoginPage() {
                   disabled={loading}
                   className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
                   style={{
-                    background: loading ? '#8c95a4' : 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+                    background: loading ? '#8c95a4' : 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)',
                     '--tw-ring-color': '#2b354f'
                   }}
                   onMouseEnter={(e) => {
                     if (!loading) {
-                      e.target.style.background = 'linear-gradient(135deg, #5e85e0 0%, #7a9de8 100%)';
+                      e.target.style.background = 'linear-gradient(135deg, #5e85e0 0%, #5e85e0 50%, #7a9de8 100%)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!loading) {
-                      e.target.style.background = 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)';
+                      e.target.style.background = 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)';
                     }
                   }}
                 >

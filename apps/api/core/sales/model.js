@@ -9,7 +9,7 @@ const saleSchema = new mongoose.Schema({
     index: true
   },
   folio: {
-    type: Number,
+    type: mongoose.Schema.Types.Mixed, // Permite Number o String para subcuentas de restaurante
     required: true
   },
   items: [

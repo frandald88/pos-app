@@ -1,6 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { getKitchenItems, markItemReady, cancelItem } from '../../accounts/services/accountsService';
 
+// SVG Icons
+const Icons = {
+  search: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  ),
+  chef: () => (
+    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+    </svg>
+  ),
+  check: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  x: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  )
+};
+
 const KitchenPage = () => {
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState({ total: 0, preparing: 0, ready: 0 });
@@ -212,7 +236,7 @@ const KitchenPage = () => {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 />
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  🔍
+                  <Icons.search />
                 </span>
               </div>
               <button
@@ -238,7 +262,9 @@ const KitchenPage = () => {
           </div>
         ) : accountGroups.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">🍳</div>
+            <div className="text-gray-400 mb-4 flex justify-center">
+              <Icons.chef />
+            </div>
             <h3 className="text-xl font-semibold mb-2" style={{ color: '#23334e' }}>
               No hay items en cocina
             </h3>
@@ -344,24 +370,24 @@ const KitchenPage = () => {
                                 <button
                                   onClick={() => handleMarkReady(item)}
                                   disabled={isUpdating}
-                                  className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                                  className={`px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center justify-center ${
                                     isUpdating
                                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                       : 'bg-green-500 hover:bg-green-600 text-white'
                                   }`}
                                 >
-                                  {isUpdating ? '...' : '✓'}
+                                  {isUpdating ? '...' : <Icons.check />}
                                 </button>
                                 <button
                                   onClick={() => handleCancelItem(item)}
                                   disabled={isUpdating}
-                                  className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                                  className={`px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center justify-center ${
                                     isUpdating
                                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                       : 'bg-red-500 hover:bg-red-600 text-white'
                                   }`}
                                 >
-                                  ✕
+                                  <Icons.x />
                                 </button>
                               </div>
                             )}

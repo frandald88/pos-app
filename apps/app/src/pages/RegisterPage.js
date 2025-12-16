@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import apiBaseUrl from "../config/api";
-import logo from "../assets/astrodishlogo1.png";
+import logo from "../assets/Astrodish_logo_2.png";
 
 // SVG Icons - AstroDish Design System
 const Icons = {
@@ -250,7 +250,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: '#f4f6fa' }}>
       {/* Panel izquierdo - Información */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 50%, #7a9de8 100%)' }}>
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}>
         <div className="absolute inset-0">
           <div className="absolute top-0 -left-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#2b354f' }}></div>
           <div className="absolute top-0 -right-4 w-72 h-72 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style={{ backgroundColor: '#5e85e0', animationDelay: '2s' }}></div>
@@ -370,7 +370,7 @@ export default function RegisterPage() {
               className="h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${(currentStep / 2) * 100}%`,
-                background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)'
+                background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)'
               }}
             ></div>
           </div>
@@ -593,7 +593,7 @@ export default function RegisterPage() {
                   disabled={loading || (currentStep === 1 && subdomainStatus.available !== true)}
                   className="flex-1 py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100 shadow-lg"
                   style={{
-                    background: loading ? '#7a9de8' : 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+                    background: loading ? '#7a9de8' : 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)',
                     '--tw-ring-color': '#2b354f'
                   }}
                 >

@@ -4,6 +4,50 @@ import axios from "axios";
 import Confetti from "react-confetti";
 import apiBaseUrl from "../config/api";
 
+// SVG Icons
+const Icons = {
+  restaurant: () => (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  darkKitchen: () => (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+    </svg>
+  ),
+  supermarket: () => (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  flag: () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+    </svg>
+  ),
+  party: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    </svg>
+  ),
+  celebration: () => (
+    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  warning: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    </svg>
+  ),
+  checkmark: () => (
+    <svg className="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  )
+};
+
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0); // ✨ Cambiado de 1 a 0
@@ -460,16 +504,18 @@ export default function OnboardingPage() {
                   }}
                 >
                   <div className="text-center">
-                    <div className="text-5xl mb-3">🍽️</div>
+                    <div className="mb-3 flex justify-center" style={{ color: '#a855f7' }}>
+                      <Icons.restaurant />
+                    </div>
                     <h3 className="font-bold text-lg mb-2" style={{ color: '#23334e' }}>Restaurant</h3>
                     <p className="text-sm mb-3" style={{ color: '#697487' }}>
                       Gestión de mesas, meseros, división de cuentas y propinas
                     </p>
                     <div className="text-xs space-y-1" style={{ color: '#697487' }}>
-                      <div>✓ Control de mesas</div>
-                      <div>✓ Cuentas abiertas</div>
-                      <div>✓ División de cuentas</div>
-                      <div>✓ Propinas</div>
+                      <div><Icons.checkmark /> Control de mesas</div>
+                      <div><Icons.checkmark /> Cuentas abiertas</div>
+                      <div><Icons.checkmark /> División de cuentas</div>
+                      <div><Icons.checkmark /> Propinas</div>
                     </div>
                   </div>
                 </div>
@@ -485,16 +531,18 @@ export default function OnboardingPage() {
                   }}
                 >
                   <div className="text-center">
-                    <div className="text-5xl mb-3">🚚</div>
+                    <div className="mb-3 flex justify-center" style={{ color: '#3b82f6' }}>
+                      <Icons.darkKitchen />
+                    </div>
                     <h3 className="font-bold text-lg mb-2" style={{ color: '#23334e' }}>Dark Kitchen</h3>
                     <p className="text-sm mb-3" style={{ color: '#697487' }}>
                       Enfocado en delivery con tracking de órdenes y repartidores
                     </p>
                     <div className="text-xs space-y-1" style={{ color: '#697487' }}>
-                      <div>✓ Tracking de entregas</div>
-                      <div>✓ Gestión de repartidores</div>
-                      <div>✓ Órdenes para llevar</div>
-                      <div>✓ Reportes de delivery</div>
+                      <div><Icons.checkmark /> Tracking de entregas</div>
+                      <div><Icons.checkmark /> Gestión de repartidores</div>
+                      <div><Icons.checkmark /> Órdenes para llevar</div>
+                      <div><Icons.checkmark /> Reportes de delivery</div>
                     </div>
                   </div>
                 </div>
@@ -510,16 +558,18 @@ export default function OnboardingPage() {
                   }}
                 >
                   <div className="text-center">
-                    <div className="text-5xl mb-3">🛒</div>
+                    <div className="mb-3 flex justify-center" style={{ color: '#22c55e' }}>
+                      <Icons.supermarket />
+                    </div>
                     <h3 className="font-bold text-lg mb-2" style={{ color: '#23334e' }}>Supermercado</h3>
                     <p className="text-sm mb-3" style={{ color: '#697487' }}>
                       Ventas rápidas con códigos de barras y balanzas electrónicas
                     </p>
                     <div className="text-xs space-y-1" style={{ color: '#697487' }}>
-                      <div>✓ Códigos de barras</div>
-                      <div>✓ Balanzas electrónicas</div>
-                      <div>✓ Ventas instantáneas</div>
-                      <div>✓ Inventario rápido</div>
+                      <div><Icons.checkmark /> Códigos de barras</div>
+                      <div><Icons.checkmark /> Balanzas electrónicas</div>
+                      <div><Icons.checkmark /> Ventas instantáneas</div>
+                      <div><Icons.checkmark /> Inventario rápido</div>
                     </div>
                   </div>
                 </div>
@@ -618,7 +668,7 @@ export default function OnboardingPage() {
                       >
                         <span className="flex items-center gap-2">
                           <span style={{ fontSize: '1.25rem' }}>
-                            {countryCodes.find(c => c.code === countryCode)?.flag || '🏳️'}
+                            {countryCodes.find(c => c.code === countryCode)?.flag || <Icons.flag />}
                           </span>
                           <span className="font-medium" style={{ color: '#23334e' }}>
                             {countryCode}
@@ -1081,8 +1131,8 @@ export default function OnboardingPage() {
                             <code className="ml-2 px-2 py-0.5 bg-white rounded font-mono text-sm">{createdTeamMember.tempPassword}</code>
                           </p>
                         </div>
-                        <p className="mt-2 text-xs" style={{ color: '#3b82f6' }}>
-                          ⚠️ Guarda esta contraseña y compártela con tu empleado. Deberá cambiarla en su primer inicio de sesión.
+                        <p className="mt-2 text-xs flex items-center gap-1" style={{ color: '#3b82f6' }}>
+                          <Icons.warning /> Guarda esta contraseña y compártela con tu empleado. Deberá cambiarla en su primer inicio de sesión.
                         </p>
                       </div>
                     </div>
@@ -1117,10 +1167,14 @@ export default function OnboardingPage() {
                 <button
                   onClick={handleStep4Submit}
                   disabled={loading}
-                  className="flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 disabled:opacity-50 transform hover:scale-105"
+                  className="flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 disabled:opacity-50 transform hover:scale-105 flex items-center justify-center gap-2"
                   style={{ background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}
                 >
-                  {loading ? 'Finalizando...' : '🎉 Empezar a Vender'}
+                  {loading ? 'Finalizando...' : (
+                    <>
+                      <Icons.party /> Empezar a Vender
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -1134,8 +1188,8 @@ export default function OnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h2 className="text-3xl font-bold mb-4" style={{ color: '#23334e' }}>
-                ¡Felicidades! 🎉
+              <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2" style={{ color: '#23334e' }}>
+                ¡Felicidades! <Icons.celebration />
               </h2>
               <p className="text-lg mb-6" style={{ color: '#697487' }}>
                 Tu tienda está lista para vender

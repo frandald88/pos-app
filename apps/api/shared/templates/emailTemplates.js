@@ -5,6 +5,19 @@
  * - Diseño moderno y limpio
  */
 
+// SVG Icons como strings para usar inline en emails
+const svgIcons = {
+  lock: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+  checkCircle: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`,
+  wave: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M5.5 8.5 9 12l-3.5 3.5L2 12l3.5-3.5z"></path><path d="m12 2 3.5 3.5L12 9 8.5 5.5 12 2z"></path><path d="M18.5 8.5 22 12l-3.5 3.5L15 12l3.5-3.5z"></path><path d="m12 15 3.5 3.5L12 22l-3.5-3.5L12 15z"></path></svg>`,
+  party: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+  clock: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+  check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+  warning: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`,
+  mail: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+  key: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`
+};
+
 /**
  * Template base con estilos comunes
  */
@@ -170,7 +183,7 @@ const getPasswordResetTemplate = ({ username, resetUrl, expiresInMinutes = 60 })
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">🔐 POS App</h1>
+      <h1 class="email-logo">${svgIcons.lock} POS App</h1>
     </div>
 
     <!-- Body -->
@@ -207,7 +220,7 @@ const getPasswordResetTemplate = ({ username, resetUrl, expiresInMinutes = 60 })
       <!-- Warning -->
       <div class="email-warning-box">
         <p class="email-text" style="margin: 0; font-size: 14px; color: #856404;">
-          ⏱️ <strong>Este enlace expira en ${expiresInMinutes} minutos</strong> por razones de seguridad.
+          ${svgIcons.clock} <strong>Este enlace expira en ${expiresInMinutes} minutos</strong> por razones de seguridad.
           Si no restableces tu contraseña en este tiempo, deberás solicitar un nuevo enlace.
         </p>
       </div>
@@ -263,7 +276,7 @@ const getPasswordChangedTemplate = ({ username, changeDate }) => {
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">✅ POS App</h1>
+      <h1 class="email-logo">${svgIcons.checkCircle} POS App</h1>
     </div>
 
     <!-- Body -->
@@ -281,7 +294,7 @@ const getPasswordChangedTemplate = ({ username, changeDate }) => {
       <!-- Success Box -->
       <div class="email-info-box" style="border-left-color: #10b981; background-color: #f0fdf4;">
         <p class="email-text" style="margin: 0; font-size: 14px; color: #065f46;">
-          ✅ <strong>Cambio realizado:</strong> ${formattedDate}
+          ${svgIcons.check} <strong>Cambio realizado:</strong> ${formattedDate}
         </p>
       </div>
 
@@ -294,7 +307,7 @@ const getPasswordChangedTemplate = ({ username, changeDate }) => {
       <!-- Security Warning -->
       <div class="email-warning-box">
         <p class="email-text" style="margin: 0; font-size: 14px; color: #856404;">
-          ⚠️ <strong>¿No fuiste tú?</strong><br>
+          ${svgIcons.warning} <strong>¿No fuiste tú?</strong><br>
           Si no realizaste este cambio, tu cuenta podría estar comprometida.
           Contacta inmediatamente a tu administrador o equipo de soporte.
         </p>
@@ -332,7 +345,7 @@ const getWelcomeTemplate = ({ username, loginUrl }) => {
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">👋 Bienvenido</h1>
+      <h1 class="email-logo">${svgIcons.wave} Bienvenido</h1>
     </div>
 
     <!-- Body -->
@@ -380,7 +393,7 @@ const getNewUserCredentialsTemplate = ({ username, email, tempPassword, loginUrl
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">🎉 Bienvenido al Equipo</h1>
+      <h1 class="email-logo">${svgIcons.party} Bienvenido al Equipo</h1>
     </div>
 
     <!-- Body -->
@@ -399,17 +412,17 @@ const getNewUserCredentialsTemplate = ({ username, email, tempPassword, loginUrl
       <!-- Credentials Box -->
       <div class="email-info-box">
         <p class="email-text" style="margin: 0 0 10px 0;">
-          <strong>📧 Usuario:</strong> ${email}
+          <strong>${svgIcons.mail} Usuario:</strong> ${email}
         </p>
         <p class="email-text" style="margin: 0;">
-          <strong>🔑 Contraseña Temporal:</strong> <code style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 14px;">${tempPassword}</code>
+          <strong>${svgIcons.key} Contraseña Temporal:</strong> <code style="background-color: #e5e7eb; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 14px;">${tempPassword}</code>
         </p>
       </div>
 
       <!-- Warning -->
       <div class="email-warning-box">
         <p class="email-text" style="margin: 0; font-size: 14px; color: #856404;">
-          ⚠️ <strong>Importante:</strong> Esta es una contraseña temporal. Por tu seguridad,
+          ${svgIcons.warning} <strong>Importante:</strong> Esta es una contraseña temporal. Por tu seguridad,
           debes cambiarla en tu primer inicio de sesión.
         </p>
       </div>

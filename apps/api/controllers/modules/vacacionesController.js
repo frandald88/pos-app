@@ -369,7 +369,7 @@ class VacacionesController {
       }
 
       const fechaIngreso = employeeHistory ? employeeHistory.startDate : user.createdAt;
-      const totalDays = this.calcularDiasDisponibles(fechaIngreso);
+      const totalDays = VacacionesController.calcularDiasDisponibles(fechaIngreso);
 
       if (totalDays === 0) {
         return errorResponse(res, 'Aún no tienes días de vacaciones disponibles. Necesitas al menos 1 año de antigüedad desde tu fecha de ingreso.', 400);

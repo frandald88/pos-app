@@ -141,6 +141,7 @@ router.post("/checkin", verifyToken, identifyTenant, requireTenant, async (req, 
     // ✅ NUEVO: Crear o actualizar registro de asistencia
     if (!attendance) {
       attendance = new Attendance({
+        tenantId: req.tenantId,
         userId,
         date: startOfDay,
         tienda: user.tienda,
@@ -496,6 +497,7 @@ router.post("/absence", verifyToken, identifyTenant, requireTenant, requireAdmin
     }
 
     const absence = new Attendance({
+      tenantId: req.tenantId,
       userId,
       date: startOfDay,
       status: "Absent",

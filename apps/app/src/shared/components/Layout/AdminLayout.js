@@ -535,7 +535,7 @@ export default function AdminLayout({ children }) {
   // Loading state
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-transparent mx-auto mb-4" style={{ borderColor: '#f4f6fa', borderTopColor: 'transparent' }}></div>
           <p className="text-lg text-white">Verificando autenticación...</p>
@@ -548,7 +548,7 @@ export default function AdminLayout({ children }) {
   // Error state
   if (authError) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
           <div className="mb-4" style={{ color: '#2b354f' }}>{Icons.lock()}</div>
           <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Error de Autenticación</h2>
@@ -562,7 +562,7 @@ export default function AdminLayout({ children }) {
   // No user data
   if (!currentUser) {
     return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}>
         <div className="text-center p-8 rounded-xl shadow-2xl max-w-md" style={{ backgroundColor: '#f4f6fa' }}>
           <div className="mb-4" style={{ color: '#2b354f' }}>{Icons.warning()}</div>
           <h2 className="text-2xl font-bold mb-2" style={{ color: '#2b354f' }}>Usuario no encontrado</h2>
@@ -687,7 +687,7 @@ export default function AdminLayout({ children }) {
                       }`}
                       style={location.pathname === item.path
                         ? {
-                            background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+                            background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)',
                             color: 'white',
                             borderLeftColor: '#f4f6fa',
                             boxShadow: '0 4px 12px rgba(43, 53, 79, 0.3)'
@@ -807,7 +807,7 @@ export default function AdminLayout({ children }) {
               {/* Avatar del usuario */}
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-lg scroll-smooth-transition"
-                     style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}
+                     style={{ background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)' }}
                      onMouseEnter={(e) => {
                        e.target.style.transform = 'scale(1.1)';
                        e.target.style.boxShadow = '0 6px 20px rgba(43, 53, 79, 0.3)';

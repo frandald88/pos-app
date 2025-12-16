@@ -111,16 +111,40 @@ class TurnoController {
         .populate('tienda', 'nombre')
         .sort({ fechaApertura: -1 });
       } else {
-        // Si es admin sin tienda, buscar su propio turno activo
-        turnoActivo = await Turno.findOne({
+        // Si es admin sin tienda asignada
+        // Verificar si el tenant tiene solo una tienda
+        const Tienda = require('../../modules/tiendas/model');
+        const tiendasActivas = await Tienda.find({
           tenantId: req.tenantId,
-          usuario: req.userId,
-          estado: 'abierto'
-        })
-        .populate('usuario', 'username')
-        .populate('usuarioCierre', 'username')
-        .populate('tienda', 'nombre')
-        .sort({ fechaApertura: -1 });
+          $or: [
+            { activa: true },
+            { activa: { $exists: false } }
+          ]
+        });
+
+        // Si el tenant tiene solo una tienda, buscar turno activo de esa tienda
+        if (tiendasActivas.length === 1) {
+          turnoActivo = await Turno.findOne({
+            tenantId: req.tenantId,
+            tienda: tiendasActivas[0]._id,
+            estado: 'abierto'
+          })
+          .populate('usuario', 'username')
+          .populate('usuarioCierre', 'username')
+          .populate('tienda', 'nombre')
+          .sort({ fechaApertura: -1 });
+        } else {
+          // Si tiene múltiples tiendas, buscar su propio turno activo
+          turnoActivo = await Turno.findOne({
+            tenantId: req.tenantId,
+            usuario: req.userId,
+            estado: 'abierto'
+          })
+          .populate('usuario', 'username')
+          .populate('usuarioCierre', 'username')
+          .populate('tienda', 'nombre')
+          .sort({ fechaApertura: -1 });
+        }
       }
 
       if (!turnoActivo) {

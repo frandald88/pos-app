@@ -98,7 +98,8 @@ class VacacionesService {
         params: { limit }
       }
     );
-    return response.data;
+    // Extract array from response - backend returns {success, data, message}
+    return response.data?.data || response.data || [];
   }
 
   // Restaurar solicitud eliminada (admin)

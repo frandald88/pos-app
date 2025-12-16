@@ -165,7 +165,8 @@ class EmpleadosService {
           params
         }
       );
-      return response.data;
+      // Backend devuelve { success, data, message } - extraer el array del campo data
+      return response.data.data || response.data || [];
     } catch (error) {
       console.error('Error obteniendo ranking de faltas:', error);
       throw error;

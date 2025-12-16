@@ -8,6 +8,51 @@ import {
   getSections
 } from '../services/tablesService';
 
+// SVG Icons
+const Icons = {
+  checkCircle: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+    </svg>
+  ),
+  solidCircle: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8" />
+    </svg>
+  ),
+  diamond: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 2l8 8-8 8-8-8 8-8z" />
+    </svg>
+  ),
+  halfCircle: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path d="M10 2a8 8 0 100 16V2z" />
+      <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  ),
+  circle: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8" />
+    </svg>
+  ),
+  edit: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  trash: () => (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  restaurant: () => (
+    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  )
+};
+
 const TablesPage = () => {
   const [tables, setTables] = useState([]);
   const [stats, setStats] = useState({});
@@ -182,15 +227,15 @@ const TablesPage = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'available':
-        return '✓';
+        return <Icons.checkCircle />;
       case 'occupied':
-        return '●';
+        return <Icons.solidCircle />;
       case 'reserved':
-        return '◆';
+        return <Icons.diamond />;
       case 'cleaning':
-        return '◐';
+        return <Icons.halfCircle />;
       default:
-        return '○';
+        return <Icons.circle />;
     }
   };
 
@@ -320,18 +365,18 @@ const TablesPage = () => {
               <div className="flex gap-1">
                 <button
                   onClick={() => handleOpenModal(table)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
+                  className="text-blue-600 hover:text-blue-800 p-1"
                   title="Editar"
                 >
-                  ✎
+                  <Icons.edit />
                 </button>
                 <button
                   onClick={() => handleDelete(table._id)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-red-600 hover:text-red-800 p-1"
                   title="Eliminar"
                   disabled={table.status === 'occupied'}
                 >
-                  ✕
+                  <Icons.trash />
                 </button>
               </div>
             </div>
@@ -369,7 +414,9 @@ const TablesPage = () => {
 
       {tables.length === 0 && !loading && (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-5xl mb-4">🍽️</div>
+          <div className="text-gray-400 mb-4 flex justify-center">
+            <Icons.restaurant />
+          </div>
           <p className="text-gray-600 text-lg">No hay mesas disponibles</p>
           <p className="text-gray-500 text-sm">Crea tu primera mesa para comenzar</p>
         </div>
