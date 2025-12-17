@@ -40,8 +40,13 @@ export const useEmployeeHistoryData = () => {
 
       const data = await empleadosService.getRankingFaltas(requestParams);
       setRanking(data);
-      setMsg('[SUCCESS] Ranking generado exitosamente');
-      setTimeout(() => setMsg(''), 3000);
+
+      if (data && data.length > 0) {
+        setMsg(`[SUCCESS] Ranking generado exitosamente: ${data.length} empleados encontrados`);
+      } else {
+        setMsg('[WARNING] No se encontraron registros de asistencia en el rango de fechas seleccionado');
+      }
+      setTimeout(() => setMsg(''), 5000);
     } catch (error) {
       setMsg(`[ERROR] Error al cargar ranking: ${error.response?.data?.message || error.message}`);
     } finally {

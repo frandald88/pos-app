@@ -43,7 +43,8 @@ export const useReportesData = () => {
 
       const response = await reportesService.getDevolucionesReport(params);
 
-      const data = response?.returns || [];
+      // Backend devuelve { success, message, data: { returns: [...] } }
+      const data = response?.data?.returns || response?.returns || [];
       if (Array.isArray(data) && data.length > 0) {
         setVentas(data);
         setMsg(`Reporte generado exitosamente - ${data.length} registros encontrados`);

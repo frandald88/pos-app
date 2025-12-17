@@ -14,6 +14,34 @@ import {
   VacationRequestsTable
 } from '../components';
 
+const Icons = {
+  user: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+    </svg>
+  ),
+  folder: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    </svg>
+  ),
+  lock: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+  ),
+  warning: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+    </svg>
+  ),
+  info: () => (
+    <svg className="w-5 h-5 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+    </svg>
+  )
+};
+
 export default function VacationsAdminPage() {
   const token = localStorage.getItem("token");
   const [currentUser, setCurrentUser] = useState(null);
@@ -56,7 +84,7 @@ export default function VacationsAdminPage() {
   // Verificar usuario actual al cargar
   useEffect(() => {
     if (!token) {
-      setMsg("⚠️ No hay token de autenticación. Inicia sesión.");
+      setMsg("No hay token de autenticación. Inicia sesión.");
       return;
     }
 
@@ -66,7 +94,7 @@ export default function VacationsAdminPage() {
     .then(res => {
       setCurrentUser(res.data);
       if (res.data.role !== 'admin') {
-        setMsg("⚠️ Solo los administradores pueden acceder a esta página.");
+        setMsg("Solo los administradores pueden acceder a esta página.");
         return;
       }
       loadRequests(filters);
@@ -74,11 +102,11 @@ export default function VacationsAdminPage() {
     .catch(error => {
       console.error('Error al verificar usuario:', error);
       if (error.response?.status === 403) {
-        setMsg("🔐 Token inválido o expirado. Inicia sesión nuevamente.");
+        setMsg("Token inválido o expirado. Inicia sesión nuevamente.");
         localStorage.removeItem("token");
         setTimeout(() => window.location.href = "/login", 2000);
       } else {
-        setMsg("❌ Error al verificar autenticación.");
+        setMsg("Error al verificar autenticación.");
       }
     });
   }, [token]);
@@ -180,7 +208,10 @@ export default function VacationsAdminPage() {
       <div className="p-4">
         <h1 className="text-xl font-bold mb-4">Gestión de Vacaciones</h1>
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>⚠️ Solo los administradores pueden acceder a esta funcionalidad.</p>
+          <p className="flex items-center gap-2">
+            <Icons.warning />
+            Solo los administradores pueden acceder a esta funcionalidad.
+          </p>
         </div>
       </div>
     );
@@ -192,7 +223,10 @@ export default function VacationsAdminPage() {
       <div className="p-4">
         <h1 className="text-xl font-bold mb-4">Gestión de Vacaciones</h1>
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>🔐 No hay token de autenticación. Por favor, inicia sesión.</p>
+          <p className="flex items-center gap-2">
+            <Icons.lock />
+            No hay token de autenticación. Por favor, inicia sesión.
+          </p>
           <button
             onClick={() => window.location.href = "/login"}
             className="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -237,9 +271,15 @@ export default function VacationsAdminPage() {
       {/* Información del usuario */}
       {currentUser && (
         <div className="mb-4 p-3 bg-blue-50 rounded">
-          <p className="text-sm text-blue-800">
-            👤 Administrador: <strong>{currentUser.username}</strong>
-            {showDeleted && <span className="ml-4 text-red-600">📂 Viendo solicitudes eliminadas</span>}
+          <p className="text-sm text-blue-800 flex items-center gap-2">
+            <Icons.user />
+            Administrador: <strong>{currentUser.username}</strong>
+            {showDeleted && (
+              <span className="ml-4 text-red-600 flex items-center gap-1">
+                <Icons.folder />
+                Viendo solicitudes eliminadas
+              </span>
+            )}
           </p>
         </div>
       )}
@@ -265,8 +305,8 @@ export default function VacationsAdminPage() {
       {/* Mensajes */}
       {msg && (
         <div className={`mb-4 p-3 rounded ${
-          msg.includes('✅') ? 'bg-green-100 text-green-700 border border-green-400' :
-          msg.includes('⚠️') || msg.includes('❌') || msg.includes('🔐') ? 'bg-red-100 text-red-700 border border-red-400' :
+          msg.includes('aprobada') || msg.includes('rechazada') || msg.includes('eliminada') || msg.includes('restaurada') ? 'bg-green-100 text-green-700 border border-green-400' :
+          msg.includes('Solo') || msg.includes('Error') || msg.includes('token') || msg.includes('inválido') ? 'bg-red-100 text-red-700 border border-red-400' :
           'bg-blue-100 text-blue-700 border border-blue-400'
         }`}>
           {msg}
@@ -297,7 +337,10 @@ export default function VacationsAdminPage() {
 
       {/* Información adicional */}
       <div className="mt-6 p-4 bg-blue-50 rounded">
-        <h3 className="font-medium text-blue-900 mb-2">ℹ️ Información para administradores:</h3>
+        <h3 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+          <Icons.info />
+          Información para administradores:
+        </h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Las solicitudes pendientes requieren tu aprobación o rechazo</li>
           <li>• Al rechazar una solicitud, debes proporcionar un motivo</li>

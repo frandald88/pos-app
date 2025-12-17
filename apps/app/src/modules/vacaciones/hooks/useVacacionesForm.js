@@ -25,25 +25,25 @@ export default function useVacacionesForm() {
     const targetEmployee = currentUser?.role === 'admin' ? selectedEmployeeId : currentUser?._id;
 
     if (!targetEmployee || !startDate || !endDate || !tienda) {
-      return { valid: false, message: '⚠️ Completa todos los campos obligatorios.' };
+      return { valid: false, message: 'Completa todos los campos obligatorios.' };
     }
 
     // Comparar fechas como strings para evitar problemas de zona horaria
     if (startDate > endDate) {
-      return { valid: false, message: '⚠️ La fecha de inicio no puede ser posterior a la fecha de fin.' };
+      return { valid: false, message: 'La fecha de inicio no puede ser posterior a la fecha de fin.' };
     }
 
     // Comparar con hoy (como string)
     const today = new Date().toISOString().split('T')[0];
     if (startDate < today) {
-      return { valid: false, message: '⚠️ La fecha de inicio no puede ser anterior a hoy.' };
+      return { valid: false, message: 'La fecha de inicio no puede ser anterior a hoy.' };
     }
 
     const requestedDays = calculateDays();
     if (daysAvailable && requestedDays > daysAvailable.availableDays) {
       return {
         valid: false,
-        message: `⚠️ Solo tienes ${daysAvailable.availableDays} días disponibles. Solicitas ${requestedDays} días.`
+        message: `Solo tienes ${daysAvailable.availableDays} días disponibles. Solicitas ${requestedDays} días.`
       };
     }
 

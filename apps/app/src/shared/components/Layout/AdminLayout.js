@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import logo from "../../../assets/astrodishlogo2_blank.png";
+import logo from "../../../assets/Astrodish_logo_2.png";
 import apiBaseUrl, { API_ENDPOINTS, getAuthHeaders } from "../../../config/api";
 import { useLicense } from "../../contexts/LicenseContext";
 import { useTurno } from "../../../core/turnos/hooks/useTurno";
@@ -586,12 +586,8 @@ export default function AdminLayout({ children }) {
         <div className="p-6 border-b flex-shrink-0" style={{ borderBottomColor: '#5e85e0' }}>
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
-              <div className="flex items-center space-x-3">
-                <img src={logo} alt="AstroDish POS" className="w-12 h-12 rounded-lg shadow-lg bg-white/10 p-2" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">AstroDish POS</h1>
-                  <p className="text-sm" style={{ color: '#8c95a4' }}>Panel de Control</p>
-                </div>
+              <div className="flex items-center justify-center w-full">
+                <img src={logo} alt="AstroDish" className="h-12 rounded-lg shadow-lg bg-white/10 p-2" />
               </div>
             )}
             <button
@@ -680,17 +676,19 @@ export default function AdminLayout({ children }) {
                     <Link
                       key={item.path}
                       to={item.path}
-                      className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg scroll-smooth-transition ${
+                      className={`flex items-center text-sm font-medium rounded-lg scroll-smooth-transition ${
+                        sidebarCollapsed ? 'justify-center p-3 mx-auto w-12 h-12' : 'px-4 py-3'
+                      } ${
                         location.pathname === item.path
-                          ? "shadow-lg border-l-4"
+                          ? "shadow-lg"
                           : ""
                       }`}
                       style={location.pathname === item.path
                         ? {
                             background: 'linear-gradient(135deg, #2b354f 0%, #2b354f 70%, #5e85e0 100%)',
                             color: 'white',
-                            borderLeftColor: '#f4f6fa',
-                            boxShadow: '0 4px 12px rgba(43, 53, 79, 0.3)'
+                            boxShadow: '0 4px 12px rgba(43, 53, 79, 0.3)',
+                            ...(sidebarCollapsed ? {} : { borderLeft: '4px solid #f4f6fa' })
                           }
                         : { color: '#8c95a4' }
                       }
@@ -710,7 +708,7 @@ export default function AdminLayout({ children }) {
                       }}
                       title={sidebarCollapsed ? item.title : undefined}
                     >
-                      <span className="mr-3">{item.icon()}</span>
+                      <span className={sidebarCollapsed ? '' : 'mr-3'}>{item.icon()}</span>
                       {!sidebarCollapsed && (
                         <span className="flex-1">{item.title}</span>
                       )}

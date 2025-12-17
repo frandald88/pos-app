@@ -101,11 +101,19 @@ export default function EmployeeHistoryPage() {
         {/* Mensajes */}
         {msg && (
           <div className={`p-4 rounded-lg mb-6 ${
-            msg.includes('exitosamente') || msg.includes('[SUCCESS]')
+            msg.includes('[SUCCESS]')
               ? 'bg-green-50 border border-green-200'
+              : msg.includes('[WARNING]')
+              ? 'bg-yellow-50 border border-yellow-200'
               : 'bg-red-50 border border-red-200'
           }`}>
-            <p className={msg.includes('exitosamente') || msg.includes('[SUCCESS]') ? 'text-green-800' : 'text-red-800'}>
+            <p className={
+              msg.includes('[SUCCESS]')
+                ? 'text-green-800'
+                : msg.includes('[WARNING]')
+                ? 'text-yellow-800'
+                : 'text-red-800'
+            }>
               {msg}
             </p>
           </div>

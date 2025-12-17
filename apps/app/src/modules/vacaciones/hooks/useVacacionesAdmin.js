@@ -16,18 +16,18 @@ export default function useVacacionesAdmin() {
       const data = await vacacionesService.getAll(filters);
       setRequests(data);
       setMsg('');
-      console.log('✅ Vacation requests loaded:', data.length);
+      console.log('Vacation requests loaded:', data.length);
     } catch (error) {
       console.error('Error al cargar solicitudes:', error);
 
       if (error.response?.status === 403) {
-        setMsg('⚠️ No tienes permisos para ver las solicitudes de vacaciones.');
+        setMsg('No tienes permisos para ver las solicitudes de vacaciones.');
       } else if (error.response?.status === 401) {
-        setMsg('🔐 Sesión expirada. Inicia sesión nuevamente.');
+        setMsg('Sesión expirada. Inicia sesión nuevamente.');
         localStorage.removeItem('token');
         setTimeout(() => window.location.href = '/login', 2000);
       } else {
-        setMsg('❌ Error al cargar solicitudes de vacaciones.');
+        setMsg('Error al cargar solicitudes de vacaciones.');
       }
     } finally {
       setLoading(false);
@@ -41,10 +41,10 @@ export default function useVacacionesAdmin() {
     try {
       const data = await vacacionesService.getDeleted();
       setDeletedRequests(data);
-      console.log('✅ Deleted vacation requests loaded:', data.length);
+      console.log('Deleted vacation requests loaded:', data.length);
     } catch (error) {
       console.error('Error al cargar solicitudes eliminadas:', error);
-      setMsg('❌ Error al cargar solicitudes eliminadas.');
+      setMsg('Error al cargar solicitudes eliminadas.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +59,7 @@ export default function useVacacionesAdmin() {
 
     try {
       const response = await vacacionesService.updateStatus(id, status, reason);
-      const statusText = status === 'aprobada' ? 'aprobada ✅' : 'rechazada ❌';
+      const statusText = status === 'aprobada' ? 'aprobada' : 'rechazada';
       setMsg(`${response.message || `Solicitud ${statusText}`}`);
       return response;
     } catch (error) {
@@ -67,11 +67,11 @@ export default function useVacacionesAdmin() {
       const errorMsg = error.response?.data?.message || 'Error al actualizar el estado de la solicitud';
 
       if (error.response?.status === 403) {
-        setMsg('⚠️ No tienes permisos para modificar solicitudes.');
+        setMsg('No tienes permisos para modificar solicitudes.');
       } else if (error.response?.status === 404) {
-        setMsg('⚠️ Solicitud no encontrada.');
+        setMsg('Solicitud no encontrada.');
       } else {
-        setMsg(`❌ ${errorMsg}`);
+        setMsg(errorMsg);
       }
       throw error;
     } finally {
@@ -85,11 +85,11 @@ export default function useVacacionesAdmin() {
 
     try {
       const response = await vacacionesService.deleteRequest(id, action);
-      setMsg(response.message + ' ✅');
+      setMsg(response.message);
       return response;
     } catch (error) {
       console.error('Error al eliminar solicitud:', error);
-      setMsg(`❌ ${error.response?.data?.message || 'Error al eliminar solicitud'}`);
+      setMsg(error.response?.data?.message || 'Error al eliminar solicitud');
       throw error;
     } finally {
       setUpdating(null);
@@ -102,11 +102,11 @@ export default function useVacacionesAdmin() {
 
     try {
       const response = await vacacionesService.restoreRequest(id);
-      setMsg(response.message + ' ✅');
+      setMsg(response.message);
       return response;
     } catch (error) {
       console.error('Error al restaurar solicitud:', error);
-      setMsg(`❌ ${error.response?.data?.message || 'Error al restaurar solicitud'}`);
+      setMsg(error.response?.data?.message || 'Error al restaurar solicitud');
       throw error;
     } finally {
       setUpdating(null);
@@ -120,11 +120,11 @@ export default function useVacacionesAdmin() {
 
     try {
       const response = await vacacionesService.cleanupRequests(options);
-      setMsg(response.message + ' ✅');
+      setMsg(response.message);
       return response;
     } catch (error) {
       console.error('Error en limpieza:', error);
-      setMsg(`❌ ${error.response?.data?.message || 'Error en limpieza masiva'}`);
+      setMsg(error.response?.data?.message || 'Error en limpieza masiva');
       throw error;
     } finally {
       setLoading(false);

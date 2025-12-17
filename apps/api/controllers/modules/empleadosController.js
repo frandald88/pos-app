@@ -89,8 +89,13 @@ class EmpleadosController {
         return errorResponse(res, 'La fecha de inicio debe ser anterior a la fecha de fin', 400);
       }
 
+      // Convertir tenantId a ObjectId si es string
+      const tenantObjectId = typeof req.tenantId === 'string'
+        ? new mongoose.Types.ObjectId(req.tenantId)
+        : req.tenantId;
+
       const matchFilter = {
-        tenantId: req.tenantId,
+        tenantId: tenantObjectId,
         date: { $gte: start, $lte: end },
         userId: { $ne: null } // Excluir registros sin usuario
       };

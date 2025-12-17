@@ -519,7 +519,7 @@ export default function ExpensesPage() {
               </div>
 
               <button
-                onClick={() => loadExpenses(getFilters())}
+                onClick={() => loadExpenses(getFilters(), true)}
                 className="px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 hover:shadow-lg transform hover:scale-105"
                 style={{ backgroundColor: '#23334e' }}
                 disabled={loading}

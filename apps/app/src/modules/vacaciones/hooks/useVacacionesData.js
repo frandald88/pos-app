@@ -22,9 +22,9 @@ export default function useVacacionesData() {
     try {
       const data = await vacacionesService.getAllUsers();
       setUsers(data);
-      console.log('✅ Users loaded:', data.length);
+      console.log('Users loaded:', data.length);
     } catch (error) {
-      console.error('❌ Error loading users:', error);
+      console.error('Error loading users:', error);
       handleAuthError(error);
     }
   }, []);
@@ -33,9 +33,9 @@ export default function useVacacionesData() {
   const loadDaysAvailable = useCallback(async (userId) => {
     if (!userId) return;
 
-    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    // OPTIMIZACIÓN: Prevenir llamadas duplicadas
     if (loadingDaysRef.current && lastUserIdRef.current === userId) {
-      console.log('⏭️ Skipping duplicate loadDaysAvailable call for:', userId);
+      console.log('Skipping duplicate loadDaysAvailable call for:', userId);
       return;
     }
 
@@ -45,9 +45,9 @@ export default function useVacacionesData() {
     try {
       const data = await vacacionesService.getDaysAvailable(userId);
       setDaysAvailable(data);
-      console.log('✅ Days available loaded:', data);
+      console.log('Days available loaded:', data);
     } catch (error) {
-      console.error('❌ Error loading available days:', error);
+      console.error('Error loading available days:', error);
       setDaysAvailable(null);
     } finally {
       loadingDaysRef.current = false;
@@ -58,9 +58,9 @@ export default function useVacacionesData() {
   const loadDaysSummary = useCallback(async (userId) => {
     if (!userId) return;
 
-    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    // OPTIMIZACIÓN: Prevenir llamadas duplicadas
     if (loadingSummaryRef.current && lastUserIdRef.current === userId) {
-      console.log('⏭️ Skipping duplicate loadDaysSummary call for:', userId);
+      console.log('Skipping duplicate loadDaysSummary call for:', userId);
       return;
     }
 
@@ -69,9 +69,9 @@ export default function useVacacionesData() {
     try {
       const data = await vacacionesService.getDaysSummary(userId);
       setDaysSummary(data);
-      console.log('✅ Days summary loaded:', data);
+      console.log('Days summary loaded:', data);
     } catch (error) {
-      console.error('❌ Error loading days summary:', error);
+      console.error('Error loading days summary:', error);
       setDaysSummary(null);
     } finally {
       loadingSummaryRef.current = false;
@@ -85,16 +85,16 @@ export default function useVacacionesData() {
       return;
     }
 
-    // ✅ OPTIMIZACIÓN: Prevenir llamadas duplicadas
+    // OPTIMIZACIÓN: Prevenir llamadas duplicadas
     if (loadingReplacementsRef.current && lastTiendaIdRef.current === tiendaId) {
-      console.log('⏭️ Skipping duplicate loadReplacementOptions call for:', tiendaId);
+      console.log('Skipping duplicate loadReplacementOptions call for:', tiendaId);
       return;
     }
 
     loadingReplacementsRef.current = true;
     lastTiendaIdRef.current = tiendaId;
 
-    console.log('🔍 Fetching replacement options for store:', tiendaId, 'role:', currentEmployeeRole);
+    console.log('Fetching replacement options for store:', tiendaId, 'role:', currentEmployeeRole);
 
     try {
       // Intentar endpoint específico primero
@@ -107,9 +107,9 @@ export default function useVacacionesData() {
       );
 
       setReplacementOptions(filtered);
-      console.log('✅ Replacement options loaded:', filtered.length, 'with role:', currentEmployeeRole);
+      console.log('Replacement options loaded:', filtered.length, 'with role:', currentEmployeeRole);
     } catch (error) {
-      console.error('❌ Error loading replacement options, using fallback:', error);
+      console.error('Error loading replacement options, using fallback:', error);
 
       // Fallback: cargar todos y filtrar manualmente
       try {
@@ -135,9 +135,9 @@ export default function useVacacionesData() {
         });
 
         setReplacementOptions(filtered);
-        console.log('✅ Manual filtering complete:', filtered.length, 'with role:', currentEmployeeRole);
+        console.log('Manual filtering complete:', filtered.length, 'with role:', currentEmployeeRole);
       } catch (fallbackError) {
-        console.error('❌ Error in fallback method:', fallbackError);
+        console.error('Error in fallback method:', fallbackError);
         setReplacementOptions([]);
       }
     } finally {
@@ -152,7 +152,7 @@ export default function useVacacionesData() {
 
     try {
       const response = await vacacionesService.updateTakenDays();
-      setMsg(`✅ ${response.message}`);
+      setMsg(response.message);
 
       // Recargar datos
       if (userId) {
@@ -163,7 +163,7 @@ export default function useVacacionesData() {
       return response;
     } catch (error) {
       console.error('Error updating taken days:', error);
-      setMsg(`❌ ${error.response?.data?.message || 'Error actualizando días tomados'}`);
+      setMsg(error.response?.data?.message || 'Error actualizando días tomados');
       throw error;
     } finally {
       setUpdatingDays(false);
@@ -177,13 +177,13 @@ export default function useVacacionesData() {
 
     try {
       const response = await vacacionesService.createRequest(requestData);
-      setMsg(`✅ ${response.message}`);
-      console.log('✅ Vacation request submitted:', response);
+      setMsg(response.message);
+      console.log('Vacation request submitted:', response);
       return response;
     } catch (error) {
-      console.error('❌ Error submitting vacation request:', error);
+      console.error('Error submitting vacation request:', error);
       const errorMsg = error.response?.data?.message || error.message;
-      setMsg(`❌ ${errorMsg}`);
+      setMsg(errorMsg);
       throw error;
     } finally {
       setLoading(false);
@@ -195,11 +195,11 @@ export default function useVacacionesData() {
     console.error('Auth Error:', error);
 
     if (error.response?.status === 401 || error.response?.status === 403) {
-      setMsg('🔐 Sesión expirada o token inválido. Inicia sesión nuevamente.');
+      setMsg('Sesión expirada o token inválido. Inicia sesión nuevamente.');
       localStorage.removeItem('token');
       setTimeout(() => window.location.href = '/login', 2000);
     } else {
-      setMsg(`❌ Error: ${error.response?.data?.message || error.message}`);
+      setMsg(`Error: ${error.response?.data?.message || error.message}`);
     }
   }, []);
 

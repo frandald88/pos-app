@@ -322,9 +322,9 @@ const handleSubmit = (e) => {
   };
 
   const getStockStatus = (stock) => {
-    if (stock === 0) return { color: '#ef4444', label: 'Sin stock', icon: '❌' };
-    if (stock <= 10) return { color: '#f59e0b', label: 'Bajo stock', icon: '⚠️' };
-    return { color: '#10b981', label: 'En stock', icon: '✅' };
+    if (stock === 0) return { color: '#ef4444', label: 'Sin stock', icon: Icons.xmark };
+    if (stock <= 10) return { color: '#f59e0b', label: 'Bajo stock', icon: Icons.warning };
+    return { color: '#10b981', label: 'En stock', icon: Icons.check };
   };
 
   return (
@@ -1786,7 +1786,7 @@ const handleSubmit = (e) => {
                               <span className="text-lg font-bold" style={{ color: stockStatus.color }}>
                                 {product.stock}
                               </span>
-                              <span>{stockStatus.icon}</span>
+                              <span>{stockStatus.icon()}</span>
                             </div>
                           </div>
                           

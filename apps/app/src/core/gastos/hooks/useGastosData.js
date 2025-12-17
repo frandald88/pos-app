@@ -63,7 +63,7 @@ export const useGastosData = () => {
   };
 
   // Cargar gastos según el rol del usuario
-  const loadExpenses = async (filters = {}) => {
+  const loadExpenses = async (filters = {}, showMessage = false) => {
     try {
       setLoading(true);
       setMsg('');
@@ -105,13 +105,19 @@ export const useGastosData = () => {
         }
 
         setReportData(expenses);
-        setMsg(`[SUCCESS] Reporte cargado exitosamente - ${expenses.length} gastos encontrados`);
+        if (showMessage) {
+          setMsg(`[SUCCESS] Reporte cargado exitosamente - ${expenses.length} gastos encontrados`);
+        }
       } else {
         setReportData([]);
-        setMsg('No se encontraron gastos');
+        if (showMessage) {
+          setMsg('No se encontraron gastos');
+        }
       }
 
-      setTimeout(() => setMsg(''), 3000);
+      if (showMessage) {
+        setTimeout(() => setMsg(''), 3000);
+      }
     } catch (error) {
       console.error('Error loading expenses:', error);
       setReportData([]);

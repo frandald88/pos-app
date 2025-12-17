@@ -8,6 +8,75 @@ import {
   useReportesMetadata
 } from '../hooks';
 
+// SVG Icons
+const Icons = {
+  Folder: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    </svg>
+  ),
+  Clipboard: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+  ),
+  Note: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  ),
+  Package: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+    </svg>
+  ),
+  ReturnArrow: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+    </svg>
+  ),
+  Refresh: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  X: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  ),
+  Check: () => (
+    <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  ),
+  Shuffle: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+    </svg>
+  ),
+  Chart: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  ),
+  Trash: () => (
+    <svg className="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  ),
+  Info: () => (
+    <svg className="w-5 h-5 inline" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+    </svg>
+  )
+};
+
 export default function ReportsPage() {
   const token = localStorage.getItem("token");
 
@@ -62,7 +131,6 @@ export default function ReportsPage() {
     showDeleteTooltip,
     loadMoreRows,
     toggleGraph,
-    setVisibleRows,
     resetView
   } = useReportesActions();
 
@@ -310,7 +378,7 @@ export default function ReportsPage() {
                     <option value="">Todas las categorías</option>
                     {categorias.map((cat) => (
                       <option key={cat} value={cat}>
-                        📂 {cat}
+                        {cat}
                       </option>
                     ))}
                   </select>
@@ -437,23 +505,25 @@ export default function ReportsPage() {
 
                 if (mixedOnly.length > 0) {
                   setVentas(mixedOnly);
-                  setMsg(`Mostrando solo pagos mixtos - ${mixedOnly.length} registros encontrados ✅`);
+                  setMsg(`Mostrando solo pagos mixtos - ${mixedOnly.length} registros encontrados`);
                 } else {
-                  setMsg("No se encontraron ventas con pagos mixtos en el período seleccionado ⚠️");
+                  setMsg("No se encontraron ventas con pagos mixtos en el período seleccionado");
                 }
               }}
-              className="px-6 py-3 font-medium rounded-md border transition-colors duration-200 hover:bg-gray-50"
+              className="px-6 py-3 font-medium rounded-md border transition-colors duration-200 hover:bg-gray-50 flex items-center gap-2"
               style={{ color: '#8c95a4', borderColor: '#8c95a4' }}
             >
-              🔀 Filtrar Solo Pagos Mixtos
+              <Icons.Shuffle />
+              Filtrar Solo Pagos Mixtos
             </button>
 
             <button
               onClick={handleGenerar}
-              className="px-6 py-3 font-medium rounded-md border transition-colors duration-200 hover:bg-gray-50"
+              className="px-6 py-3 font-medium rounded-md border transition-colors duration-200 hover:bg-gray-50 flex items-center gap-2"
               style={{ color: '#697487', borderColor: '#697487' }}
             >
-              📊 Mostrar Todas las Ventas
+              <Icons.Chart />
+              Mostrar Todas las Ventas
             </button>
           </div>
         )}
@@ -563,8 +633,9 @@ export default function ReportsPage() {
                             <div className="font-mono text-xs font-medium" style={{ color: '#23334e' }}>
                               {(venta.ventaId || venta._id).slice(-8)}
                             </div>
-                            <div className="text-xs" style={{ color: '#8c95a4' }}>
-                              📋 Copiar
+                            <div className="text-xs flex items-center gap-1" style={{ color: '#8c95a4' }}>
+                              <Icons.Clipboard />
+                              Copiar
                             </div>
                           </div>
                         </td>
@@ -626,8 +697,9 @@ export default function ReportsPage() {
                               {venta.producto}
                             </div>
                             {venta.nota && (
-                              <div className="text-xs mt-1 italic" style={{ color: '#8c95a4' }}>
-                                📝 {venta.nota}
+                              <div className="text-xs mt-1 italic flex items-center gap-1" style={{ color: '#8c95a4' }}>
+                                <Icons.Note />
+                                {venta.nota}
                               </div>
                             )}
                           </div>
@@ -727,8 +799,9 @@ export default function ReportsPage() {
                             {(() => {
                               if (venta.status === 'entregado_y_cobrado') {
                                 return (
-                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    📦 Entregado
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex items-center gap-1 justify-center">
+                                    <Icons.Package />
+                                    Entregado
                                   </span>
                                 );
                               } else if (venta.status === 'parcialmente_devuelta') {
@@ -759,33 +832,38 @@ export default function ReportsPage() {
 
                                 if (productoDevuelto === true) {
                                   return (
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                      ↩️ Producto Devuelto
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1 justify-center">
+                                      <Icons.ReturnArrow />
+                                      Producto Devuelto
                                     </span>
                                   );
                                 } else if (productoDevuelto === false) {
                                   return (
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      📦 Entregado
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex items-center gap-1 justify-center">
+                                      <Icons.Package />
+                                      Entregado
                                     </span>
                                   );
                                 } else {
                                   return (
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                      ↩️ Venta Parcial
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1 justify-center">
+                                      <Icons.ReturnArrow />
+                                      Venta Parcial
                                     </span>
                                   );
                                 }
                               } else if (venta.status === 'cancelada') {
                                 return (
-                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    ❌ Cancelado
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 flex items-center gap-1 justify-center">
+                                    <Icons.X />
+                                    Cancelado
                                   </span>
                                 );
                               } else {
                                 return (
-                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    ⏳ {venta.status || 'En proceso'}
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 flex items-center gap-1 justify-center">
+                                    <Icons.Clock />
+                                    {venta.status || 'En proceso'}
                                   </span>
                                 );
                               }
@@ -798,14 +876,16 @@ export default function ReportsPage() {
                               if (totalReturned > 0) {
                                 if (totalReturned >= totalVenta) {
                                   return (
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                      🔄 Devolución Completa
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 flex items-center gap-1 justify-center">
+                                      <Icons.Refresh />
+                                      Devolución Completa
                                     </span>
                                   );
                                 } else {
                                   return (
-                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                      ↩️ Devolución Parcial
+                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 flex items-center gap-1 justify-center">
+                                      <Icons.ReturnArrow />
+                                      Devolución Parcial
                                     </span>
                                   );
                                 }
@@ -893,8 +973,9 @@ export default function ReportsPage() {
                             <div className="font-mono text-xs font-medium" style={{ color: '#23334e' }}>
                               {devolucion._id.slice(-8)}
                             </div>
-                            <div className="text-xs" style={{ color: '#8c95a4' }}>
-                              📋 Copiar
+                            <div className="text-xs flex items-center gap-1" style={{ color: '#8c95a4' }}>
+                              <Icons.Clipboard />
+                              Copiar
                             </div>
                           </div>
                         </td>
@@ -909,8 +990,9 @@ export default function ReportsPage() {
                             <div className="font-mono text-xs font-medium" style={{ color: '#697487' }}>
                               {(devolucion.saleId?._id || devolucion.saleId)?.slice(-8)}
                             </div>
-                            <div className="text-xs" style={{ color: '#8c95a4' }}>
-                              📋 Copiar
+                            <div className="text-xs flex items-center gap-1" style={{ color: '#8c95a4' }}>
+                              <Icons.Clipboard />
+                              Copiar
                             </div>
                           </div>
                         </td>
@@ -1074,9 +1156,12 @@ export default function ReportsPage() {
               Resumen Ejecutivo
             </h3>
             <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                ℹ️ Se incluyen en el resumen las ventas con estado <strong>"Entregado"</strong> y <strong>"Parcialmente devuelta"</strong>.
-                Para devoluciones parciales se contabiliza solo el monto neto (total - devuelto). Las ventas canceladas se muestran en la tabla pero no se contabilizan.
+              <p className="text-sm text-blue-800 flex items-start gap-2">
+                <Icons.Info />
+                <span>
+                  Se incluyen en el resumen las ventas con estado <strong>"Entregado"</strong> y <strong>"Parcialmente devuelta"</strong>.
+                  Para devoluciones parciales se contabiliza solo el monto neto (total - devuelto). Las ventas canceladas se muestran en la tabla pero no se contabilizan.
+                </span>
               </p>
             </div>
 
@@ -1156,7 +1241,10 @@ export default function ReportsPage() {
             transition: 'opacity 0.2s ease-in-out'
           }}
         >
-          ✅ ID copiado: {copiedTooltip.id}
+          <span className="flex items-center gap-1">
+            <Icons.Check />
+            ID copiado: {copiedTooltip.id}
+          </span>
           <div
             className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0"
             style={{
@@ -1179,7 +1267,10 @@ export default function ReportsPage() {
             transition: 'opacity 0.2s ease-in-out'
           }}
         >
-          🗑️ {deleteTooltip.message} exitosamente
+          <span className="flex items-center gap-1">
+            <Icons.Trash />
+            {deleteTooltip.message} exitosamente
+          </span>
           <div
             className="absolute left-1/2 transform -translate-x-1/2 top-full w-0 h-0"
             style={{
