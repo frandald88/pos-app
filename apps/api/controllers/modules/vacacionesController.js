@@ -783,7 +783,10 @@ class VacacionesController {
         startDate: { $gte: yearStart, $lte: yearEnd }
       }).sort({ startDate: 1 });
 
+      // Obtener la fecha de hoy sin horas (solo día)
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       let totalApprovedDays = 0;
       let takenDays = 0;
       let pendingDays = 0;
@@ -792,7 +795,12 @@ class VacacionesController {
         const days = Math.ceil((request.endDate - request.startDate) / (1000 * 60 * 60 * 24)) + 1;
         totalApprovedDays += days;
 
-        const isExpired = request.endDate < today;
+        // Normalizar endDate a solo día (sin horas)
+        const endDate = new Date(request.endDate);
+        endDate.setHours(0, 0, 0, 0);
+
+        // Una solicitud se considera "tomada" solo si la fecha de fin ya pasó
+        const isExpired = endDate < today;
         if (isExpired) {
           takenDays += days;
         } else {

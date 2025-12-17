@@ -293,10 +293,12 @@ export default function SalesPage() {
           if (clienteEnLista) {
             selectCliente(clienteEnLista);
           } else {
-            // Si no está en la lista aún, crear objeto temporal
+            // Si no está en la lista aún, crear objeto temporal con todos los datos
             selectCliente({
               _id: clienteCreado._id,
               nombre: clienteCreado.nombre,
+              primerApellido: clienteCreado.primerApellido || '',
+              segundoApellido: clienteCreado.segundoApellido || '',
               telefono: clienteCreado.telefono,
               email: clienteCreado.email || '',
               direccion: clienteCreado.direccion || ''

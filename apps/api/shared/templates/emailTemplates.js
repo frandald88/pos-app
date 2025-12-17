@@ -29,7 +29,7 @@ const getBaseTemplate = (content) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>POS App</title>
+  <title>Astrodish</title>
   <style>
     * {
       margin: 0;
@@ -183,7 +183,7 @@ const getPasswordResetTemplate = ({ username, resetUrl, expiresInMinutes = 60 })
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">${svgIcons.lock} POS App</h1>
+      <h1 class="email-logo">${svgIcons.lock} Astrodish</h1>
     </div>
 
     <!-- Body -->
@@ -242,7 +242,7 @@ const getPasswordResetTemplate = ({ username, resetUrl, expiresInMinutes = 60 })
     <!-- Footer -->
     <div class="email-footer">
       <p class="email-footer-text">
-        © ${new Date().getFullYear()} POS App. Todos los derechos reservados.
+        © ${new Date().getFullYear()} Astrodish. Todos los derechos reservados.
       </p>
       <p class="email-footer-text">
         Este correo fue enviado automáticamente, por favor no respondas.
@@ -276,7 +276,7 @@ const getPasswordChangedTemplate = ({ username, changeDate }) => {
   const content = `
     <!-- Header -->
     <div class="email-header">
-      <h1 class="email-logo">${svgIcons.checkCircle} POS App</h1>
+      <h1 class="email-logo">${svgIcons.checkCircle} Astrodish</h1>
     </div>
 
     <!-- Body -->
@@ -327,7 +327,7 @@ const getPasswordChangedTemplate = ({ username, changeDate }) => {
     <!-- Footer -->
     <div class="email-footer">
       <p class="email-footer-text">
-        © ${new Date().getFullYear()} POS App. Todos los derechos reservados.
+        © ${new Date().getFullYear()} Astrodish. Todos los derechos reservados.
       </p>
       <p class="email-footer-text">
         Este correo fue enviado automáticamente, por favor no respondas.
@@ -357,7 +357,7 @@ const getWelcomeTemplate = ({ username, loginUrl }) => {
       </p>
 
       <p class="email-text">
-        Nos complace darte la bienvenida a POS App. Tu cuenta ha sido creada exitosamente
+        Nos complace darte la bienvenida a Astrodish. Tu cuenta ha sido creada exitosamente
         y ya puedes comenzar a usarla.
       </p>
 
@@ -378,7 +378,7 @@ const getWelcomeTemplate = ({ username, loginUrl }) => {
     <!-- Footer -->
     <div class="email-footer">
       <p class="email-footer-text">
-        © ${new Date().getFullYear()} POS App. Todos los derechos reservados.
+        © ${new Date().getFullYear()} Astrodish. Todos los derechos reservados.
       </p>
     </div>
   `;
@@ -405,7 +405,7 @@ const getNewUserCredentialsTemplate = ({ username, email, tempPassword, loginUrl
       </p>
 
       <p class="email-text">
-        Has sido agregado al sistema POS App. A continuación encontrarás tus credenciales
+        Has sido agregado al sistema Astrodish. A continuación encontrarás tus credenciales
         de acceso para iniciar sesión.
       </p>
 
@@ -467,7 +467,7 @@ const getNewUserCredentialsTemplate = ({ username, email, tempPassword, loginUrl
     <!-- Footer -->
     <div class="email-footer">
       <p class="email-footer-text">
-        © ${new Date().getFullYear()} POS App. Todos los derechos reservados.
+        © ${new Date().getFullYear()} Astrodish. Todos los derechos reservados.
       </p>
       <p class="email-footer-text">
         Este correo fue enviado automáticamente, por favor no respondas.

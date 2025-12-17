@@ -8,7 +8,7 @@ import apiBaseUrl from "../config/api";
 const Icons = {
   restaurant: () => (
     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
   ),
   darkKitchen: () => (
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
   // Paso 1: Configurar Tienda
   const handleStep1Submit = async () => {
     if (!storeData.nombre) {
-      setMessage({ type: 'error', text: 'El nombre de la tienda es requerido' });
+      setMessage({ type: 'error', text: 'El nombre del negocio es requerido' });
       return;
     }
 
@@ -492,7 +492,7 @@ export default function OnboardingPage() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
                 {/* Restaurant */}
                 <div
                   onClick={() => setBusinessType('restaurant')}
@@ -547,7 +547,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Supermercado */}
+                {/* Tienda/Retail */}
                 <div
                   onClick={() => setBusinessType('supermarket')}
                   className={`p-6 border-2 rounded-xl cursor-pointer transition-all hover:shadow-lg ${
@@ -561,15 +561,18 @@ export default function OnboardingPage() {
                     <div className="mb-3 flex justify-center" style={{ color: '#22c55e' }}>
                       <Icons.supermarket />
                     </div>
-                    <h3 className="font-bold text-lg mb-2" style={{ color: '#23334e' }}>Supermercado</h3>
+                    <h3 className="font-bold text-lg mb-2" style={{ color: '#23334e' }}>Tienda/Retail</h3>
                     <p className="text-sm mb-3" style={{ color: '#697487' }}>
-                      Ventas rápidas con códigos de barras y balanzas electrónicas
+                      Punto de venta rápido para comercios minoristas con control de inventario
+                    </p>
+                    <p className="text-xs mb-3 italic" style={{ color: '#8c95a4' }}>
+                      Ideal para supermercados, papelerías, ferreterías, farmacias, fruterias, etc.
                     </p>
                     <div className="text-xs space-y-1" style={{ color: '#697487' }}>
-                      <div><Icons.checkmark /> Códigos de barras</div>
-                      <div><Icons.checkmark /> Balanzas electrónicas</div>
+                      <div><Icons.checkmark /> Códigos de barras y escaner</div>
                       <div><Icons.checkmark /> Ventas instantáneas</div>
-                      <div><Icons.checkmark /> Inventario rápido</div>
+                      <div><Icons.checkmark /> Control de inventario</div>
+                      <div><Icons.checkmark /> Balanzas Electronicas</div>
                     </div>
                   </div>
                 </div>
@@ -616,7 +619,7 @@ export default function OnboardingPage() {
                   </svg>
                 </div>
                 <h2 className="text-2xl font-bold mb-2" style={{ color: '#23334e' }}>
-                  Configura tu Tienda
+                  Configura tu Negocio
                 </h2>
                 <p style={{ color: '#697487' }}>
                   Ingresa la información básica de tu negocio
@@ -626,7 +629,7 @@ export default function OnboardingPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: '#23334e' }}>
-                    Nombre de la Tienda *
+                    Nombre del Negocio *
                   </label>
                   <input
                     type="text"
@@ -635,7 +638,7 @@ export default function OnboardingPage() {
                     onChange={(e) => setStoreData({ ...storeData, nombre: e.target.value })}
                     className="block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
                     style={{ '--tw-ring-color': '#46546b' }}
-                    placeholder="Mi Tienda de Abarrotes"
+                    placeholder="Mi Negocio"
                   />
                 </div>
 
@@ -748,7 +751,7 @@ export default function OnboardingPage() {
                 </p>
                 <div className="text-center">
                   <p className="font-bold" style={{ color: '#23334e' }}>
-                    {storeData.nombre || 'Nombre de Tienda'}
+                    {storeData.nombre || 'Nombre del Negocio'}
                   </p>
                   {storeData.rfc && (
                     <p className="text-xs" style={{ color: '#697487' }}>
