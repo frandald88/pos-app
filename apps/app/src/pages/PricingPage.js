@@ -13,6 +13,7 @@ export default function PricingPage() {
   const [userEmail, setUserEmail] = useState('');
   const [userName, setUserName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Información de los planes
   const planInfo = {
@@ -123,6 +124,7 @@ export default function PricingPage() {
               <img src={`${process.env.PUBLIC_URL}/astrodishlogo1.png`} alt="AstroDish" style={{height: '40px'}} />
             </a>
 
+            {/* Desktop Navigation */}
             <div className="nav-links">
               <a href="http://localhost:3001/#/features">Características</a>
               <a href="http://localhost:3001/#pricing">Precios</a>
@@ -130,7 +132,29 @@ export default function PricingPage() {
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
               <button onClick={() => handlePlanClick('launch')} className="btn-primary">Comenzar</button>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
+              <span style={{opacity: mobileMenuOpen ? 0 : 1}}></span>
+              <span style={{transform: mobileMenuOpen ? 'rotate(-45deg) translateY(-6px)' : 'none'}}></span>
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="mobile-menu">
+              <a href="http://localhost:3001/#/features" onClick={() => setMobileMenuOpen(false)}>Características</a>
+              <a href="http://localhost:3001/#pricing" onClick={() => setMobileMenuOpen(false)}>Precios</a>
+              <a href="http://localhost:3001/#contact" onClick={() => setMobileMenuOpen(false)}>Contacto</a>
+              <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)}>Iniciar Sesión</a>
+              <button onClick={() => { handlePlanClick('launch'); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
+            </div>
+          )}
         </div>
       </nav>
 

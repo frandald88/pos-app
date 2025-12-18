@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import APP_URL from './config';
 
 function TermsPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="App">
       {/* Navigation */}
@@ -14,12 +16,41 @@ function TermsPage() {
                 <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
               </a>
             </div>
+
+            {/* Desktop Navigation */}
             <div className="nav-links">
               <a href="/#features">Características</a>
               <a href={`${APP_URL}/pricing`}>Precios</a>
               <a href="/#contact">Contacto</a>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="mobile-menu-button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
+              <span style={{opacity: mobileMenuOpen ? 0 : 1}}></span>
+              <span style={{transform: mobileMenuOpen ? 'rotate(-45deg) translateY(-6px)' : 'none'}}></span>
+            </button>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              padding: '1.5rem 0',
+              borderTop: '1px solid var(--gray-200)',
+              marginTop: '1rem'
+            }}>
+              <a href="/#features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
+              <a href={`${APP_URL}/pricing`} onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
+              <a href="/#contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -248,8 +279,9 @@ function TermsPage() {
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
-              <a href="#/terms">Términos de Servicio</a>
-              <a href="#/privacy">Privacidad</a>
+              <a href="/#/terms">Términos de Servicio</a>
+              <a href="/#/privacy">Privacidad</a>
+              <a href="/#/faq">Preguntas Frecuentes</a>
             </div>
           </div>
           <div className="footer-bottom">

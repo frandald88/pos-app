@@ -361,6 +361,54 @@
 }
 
 /* ==========================================
+   Mobile Menu
+   ========================================== */
+.pricing-page-app .mobile-menu-button {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 1001;
+}
+
+.pricing-page-app .mobile-menu-button span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--primary);
+  transition: all var(--transition);
+  border-radius: 2px;
+}
+
+.pricing-page-app .mobile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--gray-200);
+  margin-top: 1rem;
+}
+
+.pricing-page-app .mobile-menu a,
+.pricing-page-app .mobile-menu button {
+  text-decoration: none;
+  color: var(--gray-700);
+  font-weight: 500;
+  padding: 0.5rem 0;
+  text-align: left;
+  width: 100%;
+}
+
+.pricing-page-app .mobile-menu .btn-secondary,
+.pricing-page-app .mobile-menu .btn-primary {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* ==========================================
    Responsive Design
    ========================================== */
 @media (max-width: 1024px) {
@@ -370,14 +418,14 @@
 }
 
 @media (max-width: 768px) {
+  /* Hide desktop navigation */
   .pricing-page-app .nav-links {
-    gap: 0.5rem;
+    display: none;
   }
 
-  .pricing-page-app .nav-links .btn-primary,
-  .pricing-page-app .nav-links .btn-secondary {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
+  /* Show mobile menu button */
+  .pricing-page-app .mobile-menu-button {
+    display: flex;
   }
 
   .pricing-page-app .pricing {
@@ -393,10 +441,13 @@
   }
 
   .pricing-page-app .pricing-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pricing-page-app .pricing-grid .pricing-card {
     max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
   }
 
   .pricing-page-app .footer-content {
@@ -420,5 +471,17 @@
 
   .pricing-page-app .section-title {
     font-size: 1.75rem;
+  }
+
+  .pricing-page-app .section-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .pricing-page-app .pricing-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .pricing-page-app .amount {
+    font-size: 2rem;
   }
 }

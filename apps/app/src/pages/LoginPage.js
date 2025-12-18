@@ -266,20 +266,25 @@ export default function LoginPage() {
       </div>
 
       {/* Panel derecho - Formulario de login */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8" style={{ backgroundColor: '#f4f6fa' }}>
-        <div className="max-w-md w-full space-y-8">
-          {/* Header del formulario */}
+      <div className="w-full lg:w-1/2 flex flex-col" style={{ backgroundColor: '#f4f6fa' }}>
+        {/* Header azul para mobile */}
+        <div className="lg:hidden w-full py-8 px-6" style={{ background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)' }}>
           <div className="text-center">
-            <div className="lg:hidden mb-6">
-              <img src={logo} alt="Logo" className="w-16 h-16 mx-auto rounded-xl shadow-lg" />
-            </div>
-            <h2 className="text-3xl font-bold mb-2" style={{ color: '#2b354f' }}>
-              Iniciar Sesión
-            </h2>
-            <p style={{ color: '#697487' }}>
-              Accede a tu panel de administración
-            </p>
+            <img src={logo} alt="AstroDish POS" className="h-20 mx-auto shadow-2xl" style={{ objectFit: 'contain', maxWidth: '200px' }} />
           </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-md w-full space-y-8">
+            {/* Header del formulario */}
+            <div className="text-center">
+              <h2 className="text-3xl font-bold mb-2" style={{ color: '#2b354f' }}>
+                Iniciar Sesión
+              </h2>
+              <p style={{ color: '#697487' }}>
+                Accede a tu panel de administración
+              </p>
+            </div>
 
           {/* Formulario */}
           <div className="bg-white rounded-xl shadow-xl p-8 border border-gray-200">
@@ -524,6 +529,7 @@ export default function LoginPage() {
             <p className="text-xs mt-1" style={{ color: '#8c95a4' }}>
               Versión 2.0.1 •
             </p>
+          </div>
           </div>
         </div>
       </div>

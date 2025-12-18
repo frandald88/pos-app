@@ -3,6 +3,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import apiBaseUrl from '../config/api';
 
+// Iconos para los requisitos de contraseña
+const Icons = {
+  check: () => (
+    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  ),
+  circle: () => (
+    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="3" />
+    </svg>
+  )
+};
+
 export default function ActivateAccountPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -17,6 +31,19 @@ export default function ActivateAccountPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [activating, setActivating] = useState(false);
+
+  // Validación de contraseña en tiempo real
+  const getPasswordValidation = (password) => {
+    return {
+      minLength: password.length >= 8,
+      hasUppercase: /[A-Z]/.test(password),
+      hasLowercase: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)
+    };
+  };
+
+  const passwordValidation = getPasswordValidation(password);
 
   useEffect(() => {
     verifyToken();
@@ -64,8 +91,29 @@ export default function ActivateAccountPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    // Validar todos los requisitos de contraseña
+    if (!passwordValidation.minLength) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    if (!passwordValidation.hasUppercase) {
+      setError('La contraseña debe tener al menos una letra mayúscula');
+      return;
+    }
+
+    if (!passwordValidation.hasLowercase) {
+      setError('La contraseña debe tener al menos una letra minúscula');
+      return;
+    }
+
+    if (!passwordValidation.hasNumber) {
+      setError('La contraseña debe tener al menos un número');
+      return;
+    }
+
+    if (!passwordValidation.hasSpecial) {
+      setError('La contraseña debe tener al menos un carácter especial');
       return;
     }
 
@@ -142,7 +190,7 @@ export default function ActivateAccountPage() {
                 Volver al Inicio
               </button>
               <button
-                onClick={() => window.location.href = 'mailto:soporte@astrodish.com?subject=Problema con activación de cuenta'}
+                onClick={() => window.location.href = 'http://localhost:3001/#contact'}
                 className="w-full py-3 px-6 rounded-lg font-semibold border-2 transition-all duration-200"
                 style={{ borderColor: '#46546b', color: '#46546b' }}
               >
@@ -198,10 +246,31 @@ export default function ActivateAccountPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:border-blue-500 transition-colors"
               style={{ borderColor: '#e5e7eb', color: '#23334e' }}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Crea una contraseña segura"
               required
               disabled={activating}
+              minLength={8}
             />
+            <div className="mt-2 text-xs">
+              <p className="font-medium mb-1" style={{ color: '#46546b' }}>La contraseña debe tener:</p>
+              <ul className="space-y-0.5">
+                <li className="flex items-center gap-1" style={{ color: passwordValidation.minLength ? '#22c55e' : '#46546b' }}>
+                  {passwordValidation.minLength ? Icons.check() : Icons.circle()} Mínimo 8 caracteres
+                </li>
+                <li className="flex items-center gap-1" style={{ color: passwordValidation.hasUppercase ? '#22c55e' : '#46546b' }}>
+                  {passwordValidation.hasUppercase ? Icons.check() : Icons.circle()} Una letra mayúscula (A-Z)
+                </li>
+                <li className="flex items-center gap-1" style={{ color: passwordValidation.hasLowercase ? '#22c55e' : '#46546b' }}>
+                  {passwordValidation.hasLowercase ? Icons.check() : Icons.circle()} Una letra minúscula (a-z)
+                </li>
+                <li className="flex items-center gap-1" style={{ color: passwordValidation.hasNumber ? '#22c55e' : '#46546b' }}>
+                  {passwordValidation.hasNumber ? Icons.check() : Icons.circle()} Un número (0-9)
+                </li>
+                <li className="flex items-center gap-1" style={{ color: passwordValidation.hasSpecial ? '#22c55e' : '#46546b' }}>
+                  {passwordValidation.hasSpecial ? Icons.check() : Icons.circle()} Un carácter especial (!@#$%^&*)
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div>
@@ -247,13 +316,13 @@ export default function ActivateAccountPage() {
             ¿Problemas para activar tu cuenta?
           </p>
           <button
-            onClick={() => window.location.href = 'mailto:soporte@astrodish.com?subject=Ayuda con activación de cuenta'}
+            onClick={() => window.location.href = 'http://localhost:3001/#contact'}
             className="text-sm font-medium transition-colors duration-200"
             style={{ color: '#46546b' }}
             onMouseEnter={(e) => e.target.style.color = '#23334e'}
             onMouseLeave={(e) => e.target.style.color = '#46546b'}
           >
-            Contactar Soporte
+            Contactar Soporte →
           </button>
         </div>
       </div>

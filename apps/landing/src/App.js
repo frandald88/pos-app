@@ -333,6 +333,132 @@ function App() {
         </div>
       </section>
 
+      {/* Trust Badges Section */}
+      <section className="trust-badges">
+        <div className="container">
+          <div className="trust-badges-grid">
+            {/* SSL Badge */}
+            <div className="trust-badge">
+              <div className="trust-badge-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <div className="trust-badge-text">
+                <strong>Conexión Segura</strong>
+                <span>Encriptación SSL 256-bit</span>
+              </div>
+            </div>
+
+            {/* Hecho en México */}
+            <div className="trust-badge">
+              <div className="trust-badge-icon">
+                <span style={{fontSize: '2rem'}}>🇲🇽</span>
+              </div>
+              <div className="trust-badge-text">
+                <strong>Hecho en México</strong>
+                <span>Soporte local en español</span>
+              </div>
+            </div>
+
+            {/* Stripe Badge - CENTRO */}
+            <div className="trust-badge">
+              <div className="trust-badge-icon">
+                <svg viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.86zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.88z" fill="#635BFF"/>
+                </svg>
+              </div>
+              <div className="trust-badge-text">
+                <strong>Pagos Seguros</strong>
+                <span>Stripe • Visa • Mastercard • Amex</span>
+              </div>
+            </div>
+
+            {/* Cumplimiento LFPDPPP */}
+            <div className="trust-badge">
+              <div className="trust-badge-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <div className="trust-badge-text">
+                <strong>Privacidad Protegida</strong>
+                <span>Cumplimiento LFPDPPP</span>
+              </div>
+            </div>
+
+            {/* Soporte */}
+            <div className="trust-badge">
+              <div className="trust-badge-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                  <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                </svg>
+              </div>
+              <div className="trust-badge-text">
+                <strong>Soporte Dedicado</strong>
+                <span>Lun-Sáb 9am-7pm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Screenshots Section */}
+      <section className="screenshots">
+        <div className="container">
+          <h2 className="section-title">El sistema en acción</h2>
+          <p className="section-subtitle">Mira lo fácil que es gestionar tu negocio con AstroDish</p>
+
+          <div className="screenshots-grid">
+            {/* Screenshot 1 - Punto de Venta */}
+            <div className="screenshot-item">
+              <div className="screenshot-image">
+                <img src="/screenshots/pos.png" alt="Punto de Venta AstroDish" loading="lazy" />
+              </div>
+              <div className="screenshot-info">
+                <h3>Punto de Venta Intuitivo</h3>
+                <p>Interfaz rápida y fácil de usar. Vende en segundos, no en minutos.</p>
+              </div>
+            </div>
+
+            {/* Screenshot 2 - Reportes */}
+            <div className="screenshot-item">
+              <div className="screenshot-image">
+                <img src="/screenshots/reportes.png" alt="Dashboard y Reportes" loading="lazy" />
+              </div>
+              <div className="screenshot-info">
+                <h3>Reportes en Tiempo Real</h3>
+                <p>Visualiza tus ventas, productos más vendidos y métricas clave al instante.</p>
+              </div>
+            </div>
+
+            {/* Screenshot 3 - Restaurant */}
+            <div className="screenshot-item">
+              <div className="screenshot-image">
+                <img src="/screenshots/restaurant.png" alt="Modo Restaurant" loading="lazy" />
+              </div>
+              <div className="screenshot-info">
+                <h3>Modo Restaurant Completo</h3>
+                <p>Gestiona mesas, comandas y cuentas con total control.</p>
+              </div>
+            </div>
+
+            {/* Screenshot 4 - Productos */}
+            <div className="screenshot-item">
+              <div className="screenshot-image">
+                <img src="/screenshots/productos.png" alt="Gestión de Productos" loading="lazy" />
+              </div>
+              <div className="screenshot-info">
+                <h3>Control de Inventario</h3>
+                <p>Administra tu catálogo, stock y proveedores sin complicaciones.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="pricing">
         <div className="container">
@@ -703,6 +829,76 @@ function App() {
         </div>
       )}
 
+      {/* FAQ Section - Preview */}
+      <section className="faq">
+        <div className="container">
+          <h2 className="section-title">Preguntas Frecuentes</h2>
+          <p className="section-subtitle">Resolvemos tus dudas sobre AstroDish</p>
+
+          <div className="faq-grid-preview">
+            {/* Pregunta 1 */}
+            <details className="faq-item">
+              <summary className="faq-question">
+                ¿Qué es AstroDish y cómo funciona?
+                <span className="faq-icon">+</span>
+              </summary>
+              <div className="faq-answer">
+                <p>AstroDish es un sistema de punto de venta (POS) en la nube diseñado para negocios mexicanos. Funciona en cualquier dispositivo con internet: computadoras, tablets o teléfonos. Registra tus ventas, controla tu inventario y genera reportes en tiempo real, todo desde un solo lugar.</p>
+              </div>
+            </details>
+
+            {/* Pregunta 2 */}
+            <details className="faq-item">
+              <summary className="faq-question">
+                ¿Necesito instalar algo o comprar equipo especial?
+                <span className="faq-icon">+</span>
+              </summary>
+              <div className="faq-answer">
+                <p>No. AstroDish funciona 100% en la nube desde tu navegador web. Solo necesitas un dispositivo con internet (puede ser tu computadora, tablet o teléfono actual). Si quieres, puedes conectar impresoras de tickets o lectores de código de barras, pero no son obligatorios.</p>
+              </div>
+            </details>
+
+            {/* Pregunta 3 */}
+            <details className="faq-item">
+              <summary className="faq-question">
+                ¿Hay comisiones por venta o costos ocultos?
+                <span className="faq-icon">+</span>
+              </summary>
+              <div className="faq-answer">
+                <p>No. El precio que ves es el precio que pagas. No cobramos comisiones por venta ni porcentajes de tus ingresos. Tampoco hay costos de instalación o configuración. Es una suscripción mensual/anual fija.</p>
+              </div>
+            </details>
+
+            {/* Pregunta 4 */}
+            <details className="faq-item">
+              <summary className="faq-question">
+                ¿Funciona para restaurantes con mesas y comandas?
+                <span className="faq-icon">+</span>
+              </summary>
+              <div className="faq-answer">
+                <p>Sí. AstroDish incluye un modo especial para restaurantes con:</p>
+                <ul style={{marginTop: '0.5rem', marginLeft: '1.5rem', listStyle: 'disc'}}>
+                  <li>Gestión de mesas y su ocupación</li>
+                  <li>Comandas que se envían directo a cocina</li>
+                  <li>División de cuenta entre comensales</li>
+                  <li>Control de propinas</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+
+          {/* CTA para ver más preguntas */}
+          <div style={{textAlign: 'center', marginTop: '3rem'}}>
+            <p style={{fontSize: '1.1rem', color: 'var(--gray-600)', marginBottom: '1.5rem'}}>
+              ¿Tienes más preguntas?
+            </p>
+            <a href="/#/faq" className="btn-outline btn-large">
+              Ver todas las preguntas frecuentes
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="footer">
         <div className="container">
@@ -721,6 +917,7 @@ function App() {
               <h4>Legal</h4>
               <a href="/#/terms">Términos de Servicio</a>
               <a href="/#/privacy">Privacidad</a>
+              <a href="/#/faq">Preguntas Frecuentes</a>
             </div>
           </div>
           <div className="footer-bottom">

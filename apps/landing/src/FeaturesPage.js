@@ -597,8 +597,9 @@ function FeaturesPage() {
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
-              <a href="#/terms">Términos de Servicio</a>
-              <a href="#/privacy">Privacidad</a>
+              <a href="/#/terms">Términos de Servicio</a>
+              <a href="/#/privacy">Privacidad</a>
+              <a href="/#/faq">Preguntas Frecuentes</a>
             </div>
           </div>
           <div className="footer-bottom">
