@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import APP_URL from './config';
 
 function TermsPage() {
   return (
@@ -15,7 +16,7 @@ function TermsPage() {
             </div>
             <div className="nav-links">
               <a href="/#features">Características</a>
-              <a href="/#pricing">Precios</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
               <a href="/#contact">Contacto</a>
             </div>
           </div>
@@ -242,7 +243,7 @@ function TermsPage() {
             <div className="footer-section">
               <h4>Producto</h4>
               <a href="/#features">Características</a>
-              <a href="/#pricing">Precios</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
               <a href="/#contact">Contacto</a>
             </div>
             <div className="footer-section">

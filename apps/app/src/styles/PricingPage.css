@@ -1,0 +1,424 @@
+/* ==========================================
+   PricingPage - Matching Landing Page Design
+   ========================================== */
+
+:root {
+  /* Brand Colors - AstroDish Palette */
+  --primary: #2b354f;
+  --primary-light: #5e85e0;
+  --secondary: #7a9de8;
+  --accent: #2b354f;
+  --bg-light: #f4f6fa;
+
+  /* Neutrals */
+  --white: #ffffff;
+  --gray-50: #f4f6fa;
+  --gray-100: #e8ebf0;
+  --gray-200: #d1d5db;
+  --gray-300: #9ca3af;
+  --gray-400: #697487;
+  --gray-500: #46546b;
+  --gray-600: #374151;
+  --gray-700: #2b354f;
+  --gray-800: #1a2639;
+  --gray-900: #111827;
+
+  /* Status Colors */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pricing-page-app {
+  font-family: var(--font-sans);
+  color: var(--gray-700);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================
+   Container
+   ========================================== */
+.pricing-page-app .container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ==========================================
+   Navigation
+   ========================================== */
+.pricing-page-app .nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
+  z-index: 1000;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.pricing-page-app .nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pricing-page-app .logo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.pricing-page-app .nav-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* ==========================================
+   Buttons
+   ========================================== */
+.pricing-page-app .btn-primary,
+.pricing-page-app .btn-secondary,
+.pricing-page-app .btn-outline {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.pricing-page-app .btn-primary {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.pricing-page-app .btn-primary:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.pricing-page-app .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pricing-page-app .btn-secondary {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border-color: var(--gray-200);
+}
+
+.pricing-page-app .btn-secondary:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-300);
+}
+
+.pricing-page-app .btn-outline {
+  background: transparent;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.pricing-page-app .btn-outline:hover {
+  background: var(--primary);
+  color: var(--white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.pricing-page-app .btn-outline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================
+   Pricing Section
+   ========================================== */
+.pricing-page-app .pricing {
+  padding: 10rem 0 7rem;
+  background: var(--gray-50);
+  flex: 1;
+  margin-top: 68px;
+}
+
+.pricing-page-app .section-title {
+  text-align: center;
+  font-size: 2.75rem;
+  margin-bottom: 1rem;
+  color: var(--gray-900);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.pricing-page-app .section-subtitle {
+  text-align: center;
+  font-size: 1.15rem;
+  color: var(--gray-500);
+  margin-bottom: 4rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricing-page-app .pricing-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 4rem;
+  align-items: start;
+}
+
+.pricing-page-app .pricing-grid .pricing-card {
+  flex: 0 1 280px;
+  max-width: 320px;
+}
+
+.pricing-page-app .pricing-card {
+  background: var(--white);
+  padding: 2rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  position: relative;
+  transition: all var(--transition);
+  border: 2px solid transparent;
+}
+
+.pricing-page-app .pricing-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-xl);
+}
+
+.pricing-page-app .badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: var(--white);
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pricing-page-app .plan-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+}
+
+.pricing-page-app .plan-price {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.pricing-page-app .currency {
+  font-size: 1.25rem;
+  font-weight: 700;
+  vertical-align: super;
+  color: var(--gray-600);
+}
+
+.pricing-page-app .amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -1px;
+}
+
+.pricing-page-app .period {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.pricing-page-app .plan-features {
+  list-style: none;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  padding: 0;
+}
+
+.pricing-page-app .plan-features li {
+  padding: 0.5rem 0;
+  color: var(--gray-600);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pricing-page-app .plan-features li::before {
+  content: '✓';
+  color: var(--success);
+  font-weight: 700;
+}
+
+.pricing-page-app .pricing-card .btn-primary,
+.pricing-page-app .pricing-card .btn-outline {
+  width: 100%;
+  padding: 0.875rem 1rem;
+}
+
+/* ==========================================
+   Footer
+   ========================================== */
+.pricing-page-app .footer {
+  background: var(--gray-900);
+  color: var(--white);
+  padding: 5rem 0 2rem;
+}
+
+.pricing-page-app .footer-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.pricing-page-app .footer-section h4 {
+  margin-bottom: 1rem;
+  color: var(--gray-400);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.pricing-page-app .footer-section p {
+  color: var(--gray-400);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.pricing-page-app .footer-section a {
+  display: block;
+  color: var(--gray-400);
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  transition: all var(--transition-fast);
+}
+
+.pricing-page-app .footer-section a:hover {
+  color: var(--white);
+  transform: translateX(4px);
+}
+
+.pricing-page-app .footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  border-top: 1px solid var(--gray-800);
+  color: var(--gray-500);
+  font-size: 0.9rem;
+}
+
+/* ==========================================
+   Responsive Design
+   ========================================== */
+@media (max-width: 1024px) {
+  .pricing-page-app .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .pricing-page-app .nav-links {
+    gap: 0.5rem;
+  }
+
+  .pricing-page-app .nav-links .btn-primary,
+  .pricing-page-app .nav-links .btn-secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .pricing-page-app .pricing {
+    padding: 8rem 0 5rem;
+  }
+
+  .pricing-page-app .section-title {
+    font-size: 2rem;
+  }
+
+  .pricing-page-app .section-subtitle {
+    font-size: 1rem;
+  }
+
+  .pricing-page-app .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pricing-page-app .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .pricing-page-app .footer-section a:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricing-page-app .container {
+    padding: 0 16px;
+  }
+
+  .pricing-page-app .logo img {
+    height: 30px !important;
+  }
+
+  .pricing-page-app .section-title {
+    font-size: 1.75rem;
+  }
+}

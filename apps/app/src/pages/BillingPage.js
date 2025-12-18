@@ -8,6 +8,7 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelingSubscription, setCancelingSubscription] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
 
   useEffect(() => {
     fetchSubscription();
@@ -61,11 +62,40 @@ export default function BillingPage() {
     }
   };
 
+  const handleManageBilling = async () => {
+    setOpeningPortal(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${apiBaseUrl}/api/payments/create-portal-session`,
+        { returnUrl: window.location.href },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data.success && response.data.data.url) {
+        // Redirigir al portal de cliente de Stripe
+        window.location.href = response.data.data.url;
+      } else {
+        alert('Error al abrir el portal de facturación');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      alert('Error al abrir el portal de facturación. Por favor, intenta de nuevo.');
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
+
   const getPlanName = (planId) => {
     const plans = {
-      trial: 'Trial',
-      basic: 'Plan Básico',
-      pro: 'Plan Pro',
+      launch: 'Plan Lanzamiento',
+      basic: 'Plan Básico Anual',
+      pro: 'Plan Pro Anual',
       enterprise: 'Plan Enterprise'
     };
     return plans[planId] || planId;
@@ -136,15 +166,31 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {subscription?.status !== 'canceled' && !subscription?.isTrialing && (
-              <button
-                onClick={() => navigate('/admin/pricing')}
-                className="mt-4 md:mt-0 py-2 px-6 rounded-lg font-semibold text-white transition-all duration-200 transform hover:scale-105"
-                style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
-              >
-                Cambiar Plan
-              </button>
-            )}
+            <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-3">
+              {subscription?.status !== 'canceled' && !subscription?.isTrialing && (
+                <>
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={openingPortal}
+                    className="py-2 px-6 rounded-lg font-semibold border-2 transition-all duration-200"
+                    style={{
+                      borderColor: '#46546b',
+                      color: '#46546b',
+                      backgroundColor: 'white'
+                    }}
+                  >
+                    {openingPortal ? 'Abriendo...' : 'Gestionar Facturación'}
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/pricing')}
+                    className="py-2 px-6 rounded-lg font-semibold text-white transition-all duration-200 transform hover:scale-105"
+                    style={{ background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' }}
+                  >
+                    Cambiar Plan
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Trial Info */}

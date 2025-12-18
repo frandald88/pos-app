@@ -509,13 +509,13 @@ export default function LoginPage() {
             <p className="text-sm mb-4" style={{ color: '#697487' }}>
               ¿No tienes una cuenta?{' '}
               <button
-                onClick={() => navigate('/register')}
+                onClick={() => navigate('/pricing')}
                 className="font-medium transition-colors duration-200"
                 style={{ color: '#5e85e0' }}
                 onMouseEnter={(e) => e.target.style.color = '#2b354f'}
                 onMouseLeave={(e) => e.target.style.color = '#5e85e0'}
               >
-                Regístrate aquí
+                Ver planes y precios
               </button>
             </p>
             <p className="text-xs" style={{ color: '#8c95a4' }}>

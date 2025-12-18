@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import Barcode from 'react-barcode';
+import PrintService from '../services/printService';
 
 /**
  * Componente para imprimir tickets de venta
@@ -12,7 +13,7 @@ export default function PrintTicket({ sale, onClose }) {
   // Obtener configuración del ticket de la tienda
   const config = sale.tienda?.ticketConfig || {};
 
-  const handlePrint = useReactToPrint({
+  const handlePrintDialog = useReactToPrint({
     content: () => ticketRef.current,
     documentTitle: `Ticket-${sale.folio || sale._id}`,
     onAfterPrint: () => {
@@ -20,6 +21,32 @@ export default function PrintTicket({ sale, onClose }) {
       if (onClose) onClose();
     },
   });
+
+  // Manejar impresión (directa o con diálogo)
+  const handlePrint = async () => {
+    console.log('🖨️ Iniciando impresión de ticket...');
+
+    // Preparar configuración de la tienda
+    const storeConfig = {
+      printConfig: sale.tienda?.printConfig || { directPrint: false },
+      ticketConfig: sale.tienda?.ticketConfig || {}
+    };
+
+    try {
+      // Intentar impresión directa si está habilitada, sino usar diálogo
+      const result = await PrintService.printTicket(sale, storeConfig, handlePrintDialog);
+      console.log('📄 Resultado de impresión:', result);
+
+      // Solo cerrar el modal si se imprimió correctamente
+      if (result.success && result.method === 'direct' && onClose) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('❌ Error al imprimir:', error);
+      // En caso de error, intentar con el diálogo como último recurso
+      handlePrintDialog();
+    }
+  };
 
   // Formatear fecha
   const formatDate = (date) => {

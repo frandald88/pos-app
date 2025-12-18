@@ -16,6 +16,8 @@ import PricingPage from "./pages/PricingPage";
 import BillingPage from "./pages/BillingPage";
 import BillingSuccessPage from "./pages/BillingSuccessPage";
 import BillingCancelPage from "./pages/BillingCancelPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import ActivateAccountPage from "./pages/ActivateAccountPage";
 
 // Componentes compartidos (movidos a shared/)
 import AdminLayout from "./shared/components/Layout/AdminLayout";
@@ -57,8 +59,9 @@ function App() {
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Ruta de registro */}
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Ruta de registro - DESHABILITADA (solo pago por adelantado) */}
+          {/* Redirige a pricing en vez de permitir registro gratuito */}
+          <Route path="/register" element={<PricingPage />} />
 
           {/* Ruta de onboarding */}
           <Route path="/onboarding" element={<OnboardingPage />} />
@@ -72,6 +75,12 @@ function App() {
 
           {/* Ruta de pricing pública */}
           <Route path="/pricing" element={<PricingPage />} />
+
+          {/* Ruta de éxito de pago (público - para nuevos usuarios) */}
+          <Route path="/payment-success" element={<PaymentSuccessPage />} />
+
+          {/* Ruta de activación de cuenta (público - para nuevos usuarios) */}
+          <Route path="/activate-account" element={<ActivateAccountPage />} />
 
           {/* Ruta de acceso no autorizado */}
           <Route path="/401" element={<UnauthorizedPage />} />

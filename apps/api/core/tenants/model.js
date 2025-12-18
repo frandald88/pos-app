@@ -54,6 +54,17 @@ const tenantSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
+    // Marca si es un pago único (one-time) o recurrente
+    isOneTimePayment: {
+      type: Boolean,
+      default: false
+    },
+    // Fechas de recordatorios enviados
+    remindersSent: {
+      day60: { type: Boolean, default: false },
+      day80: { type: Boolean, default: false },
+      day90: { type: Boolean, default: false }
+    },
     // Campos específicos para plan Founder
     isLifetime: {
       type: Boolean,
@@ -74,6 +85,7 @@ const tenantSchema = new mongoose.Schema({
   billing: {
     stripeCustomerId: String,
     stripeSubscriptionId: String,
+    stripePaymentIntentId: String, // Para pagos one-time
     paymentMethod: String,
     lastPaymentDate: Date,
     nextPaymentDate: Date

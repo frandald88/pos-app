@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import APP_URL from './config';
 
 function PrivacyPage() {
   return (
@@ -15,7 +16,7 @@ function PrivacyPage() {
             </div>
             <div className="nav-links">
               <a href="/#features">Características</a>
-              <a href="/#pricing">Precios</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
               <a href="/#contact">Contacto</a>
             </div>
           </div>
@@ -124,7 +125,7 @@ function PrivacyPage() {
             <div className="footer-section">
               <h4>Producto</h4>
               <a href="/#features">Características</a>
-              <a href="/#pricing">Precios</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
               <a href="/#contact">Contacto</a>
             </div>
             <div className="footer-section">

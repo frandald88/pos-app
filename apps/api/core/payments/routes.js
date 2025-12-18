@@ -6,11 +6,14 @@ const { identifyTenant, requireTenant } = require('../../shared/middleware/tenan
 
 // ========== RUTAS PÚBLICAS ==========
 
-// Webhook de Stripe (NO usar verifyToken - Stripe envía su propia firma)
-router.post('/webhook', express.raw({ type: 'application/json' }), paymentController.handleWebhook);
+// NOTA: El webhook está montado directamente en server.js ANTES de express.json()
+// para que pueda recibir el body raw necesario para verificar la firma de Stripe
 
 // Obtener planes disponibles (público)
 router.get('/plans', paymentController.getPlans);
+
+// Verificar sesión de pago (público - para nuevos usuarios)
+router.get('/verify-session/:sessionId', paymentController.verifySession);
 
 // ========== RUTAS PROTEGIDAS ==========
 
@@ -18,7 +21,8 @@ router.get('/plans', paymentController.getPlans);
 router.post('/create-customer', verifyToken, identifyTenant, requireTenant, paymentController.createCustomer);
 
 // Crear sesión de checkout (método recomendado)
-router.post('/create-checkout-session', verifyToken, identifyTenant, requireTenant, paymentController.createCheckoutSession);
+// NOTA: No requiere verifyToken porque puede llamarse durante el registro
+router.post('/create-checkout-session', paymentController.createCheckoutSession);
 
 // Crear suscripción directamente (alternativa)
 router.post('/create-subscription', verifyToken, identifyTenant, requireTenant, paymentController.createSubscription);
@@ -28,5 +32,11 @@ router.post('/cancel-subscription', verifyToken, identifyTenant, requireTenant, 
 
 // Obtener información de suscripción actual
 router.get('/subscription', verifyToken, identifyTenant, requireTenant, paymentController.getCurrentSubscription);
+
+// Crear sesión del portal de cliente (para gestionar suscripción)
+router.post('/create-portal-session', verifyToken, identifyTenant, requireTenant, paymentController.createPortalSession);
+
+// Cambiar plan de suscripción
+router.post('/change-plan', verifyToken, identifyTenant, requireTenant, paymentController.changePlan);
 
 module.exports = router;

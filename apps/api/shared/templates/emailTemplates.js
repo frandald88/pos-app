@@ -481,9 +481,118 @@ const getNewUserCredentialsTemplate = ({ username, email, tempPassword, loginUrl
   return getBaseTemplate(content);
 };
 
+/**
+ * Template para activación de cuenta (nuevo usuario que pagó)
+ */
+const getAccountActivationTemplate = ({ companyName, activationUrl, expiresInHours = 48 }) => {
+  const content = `
+    <!-- Header -->
+    <div class="email-header">
+      <h1 class="email-logo">${svgIcons.party} Bienvenido a Astrodish</h1>
+    </div>
+
+    <!-- Body -->
+    <div class="email-body">
+      <h2 class="email-title">Tu Cuenta ha sido Creada</h2>
+
+      <p class="email-text">
+        Hola,
+      </p>
+
+      <p class="email-text">
+        Gracias por confiar en Astrodish para <strong>${companyName}</strong>. Tu pago se ha procesado
+        exitosamente y tu cuenta ha sido creada.
+      </p>
+
+      <p class="email-text">
+        Para completar el proceso y comenzar a usar el sistema, necesitas activar tu cuenta y
+        crear tu contraseña personal haciendo clic en el botón de abajo.
+      </p>
+
+      <!-- Activation Button -->
+      <div class="email-button-container">
+        <a href="${activationUrl}" class="email-button">
+          Activar Mi Cuenta
+        </a>
+      </div>
+
+      <!-- Alternative Link -->
+      <div class="email-info-box">
+        <p class="email-text" style="margin: 0; font-size: 14px;">
+          <strong>Si el botón no funciona</strong>, copia y pega este enlace en tu navegador:
+        </p>
+        <p class="email-text" style="margin: 10px 0 0 0; font-size: 13px;">
+          <a href="${activationUrl}" class="email-link">${activationUrl}</a>
+        </p>
+      </div>
+
+      <!-- Warning -->
+      <div class="email-warning-box">
+        <p class="email-text" style="margin: 0; font-size: 14px; color: #856404;">
+          ${svgIcons.clock} <strong>Este enlace expira en ${expiresInHours} horas</strong> por razones de seguridad.
+          Si no activas tu cuenta en este tiempo, deberás contactar a soporte.
+        </p>
+      </div>
+
+      <div class="divider"></div>
+
+      <p class="email-text" style="font-size: 14px;">
+        <strong>Próximos pasos:</strong>
+      </p>
+      <ol style="color: #697487; font-size: 14px; padding-left: 20px; margin: 10px 0;">
+        <li>Haz clic en el botón "Activar Mi Cuenta"</li>
+        <li>Crea una contraseña segura (mínimo 6 caracteres)</li>
+        <li>Confirma tu contraseña</li>
+        <li>¡Comienza a usar Astrodish inmediatamente!</li>
+      </ol>
+
+      <p class="email-text" style="font-size: 14px;">
+        <strong>Qué incluye tu cuenta:</strong>
+      </p>
+      <ul style="color: #697487; font-size: 14px; padding-left: 20px; margin: 10px 0;">
+        <li>Acceso completo a todas las funcionalidades</li>
+        <li>Módulos de ventas, inventario, reportes y más</li>
+        <li>Soporte técnico incluido</li>
+        <li>Actualizaciones automáticas</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <p class="email-text" style="font-size: 14px;">
+        <strong>¿No solicitaste esto?</strong><br>
+        Si no realizaste este pago ni creaste esta cuenta, por favor contacta inmediatamente
+        a nuestro equipo de soporte.
+      </p>
+
+      <p class="email-text" style="font-size: 14px; color: #8c95a4;">
+        <strong>Consejos de seguridad:</strong><br>
+        • No compartas tu contraseña con nadie<br>
+        • Usa una contraseña fuerte (letras, números y símbolos)<br>
+        • Nunca envíes tu contraseña por correo o mensaje
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="email-footer">
+      <p class="email-footer-text">
+        © ${new Date().getFullYear()} Astrodish. Todos los derechos reservados.
+      </p>
+      <p class="email-footer-text">
+        Este correo fue enviado automáticamente, por favor no respondas.
+      </p>
+      <p class="email-footer-text" style="margin-top: 10px;">
+        Si necesitas ayuda, contacta a: soporte@astrodish.com
+      </p>
+    </div>
+  `;
+
+  return getBaseTemplate(content);
+};
+
 module.exports = {
   getPasswordResetTemplate,
   getPasswordChangedTemplate,
   getWelcomeTemplate,
-  getNewUserCredentialsTemplate
+  getNewUserCredentialsTemplate,
+  getAccountActivationTemplate
 };

@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   },
   username: { type: String, required: true },
   email: { type: String, required: false }, // Email del usuario (usado principalmente para admins)
-  password: { type: String, required: true },
+  password: { type: String, required: false }, // Puede ser null si la cuenta no está activada
   role: { type: String, enum: ['admin', 'vendedor', 'repartidor'], default: 'vendedor' },
   telefono: { type: String },
   tienda: {
@@ -36,7 +36,10 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   // Campo para forzar cambio de contraseña en primer login
   mustChangePassword: { type: Boolean, default: false },
-  // ✅ CAMPOS para soft delete
+  // Campos para activación de cuenta
+  activationToken: { type: String },
+  activationTokenExpires: { type: Date },
+  // CAMPOS para soft delete
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date },
   deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
@@ -98,7 +101,7 @@ userSchema.methods.restore = function() {
 
 // Encriptar contraseña antes de guardar
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   try {
     const hash = await bcrypt.hash(this.password, 10);
     this.password = hash;

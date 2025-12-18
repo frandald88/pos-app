@@ -16,6 +16,89 @@ function App() {
   });
   const [contactStatus, setContactStatus] = useState({ type: '', message: '' });
   const [contactLoading, setContactLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+
+  // Información de los planes
+  const planInfo = {
+    launch: { name: 'Lanzamiento', price: '$1,249 MXN', period: '3 meses', badge: 'Oferta Especial' },
+    basic: { name: 'Básico Anual', price: '$5,999 MXN', period: 'año' },
+    pro: { name: 'Pro Anual', price: '$8,499 MXN', period: 'año' }
+  };
+
+  // Función para navegar a secciones (solo para secciones en la página principal, no rutas)
+  const handleNavigateToSection = (sectionId) => {
+    // Si estamos en la raíz, solo hacer scroll
+    if (window.location.hash === '' || window.location.hash === '#') {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Si estamos en otra ruta (ej: /#/features), ir a raíz primero
+      window.location.hash = '';
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+
+  // Función para manejar suscripción a planes
+  const handlePlanClick = (planId) => {
+    if (planId === 'enterprise') {
+      window.location.href = 'mailto:ventas@tuapp.com?subject=Plan Enterprise';
+      return;
+    }
+
+    // Mostrar modal para recopilar email antes de ir a Stripe
+    setSelectedPlan(planId);
+    setShowEmailModal(true);
+  };
+
+  // Función para proceder a Stripe Checkout
+  const handleProceedToCheckout = async (e) => {
+    e.preventDefault();
+    setLoadingPlan(selectedPlan);
+
+    try {
+      // Llamar a la API para crear sesión de Stripe Checkout
+      const response = await fetch(`${API_URL}/api/payments/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          planId: selectedPlan,
+          customerEmail: userEmail,
+          customerName: userName,
+          companyName: companyName,
+          successUrl: `${APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: window.location.href
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data.url) {
+        // Redirigir a Stripe Checkout
+        window.location.href = data.data.url;
+      } else {
+        alert(data.message || 'Error al crear sesión de pago');
+        setLoadingPlan(null);
+      }
+    } catch (err) {
+      console.error('Error al crear checkout:', err);
+      alert('Error de conexión. Por favor intenta de nuevo.');
+      setLoadingPlan(null);
+    }
+  };
 
   const handleContactChange = (e) => {
     setContactForm({ ...contactForm, [e.target.name]: e.target.value });
@@ -56,17 +139,17 @@ function App() {
       <nav className="nav">
         <div className="container">
           <div className="nav-content">
-            <div className="logo">
+            <a href="/" className="logo">
               <img src="/astrodishlogo1.png" alt="AstroDish" style={{height: '40px'}} />
-            </div>
+            </a>
 
             {/* Desktop Navigation */}
             <div className="nav-links">
-              <a href="#/features">Características</a>
-              <a href="#pricing">Precios</a>
-              <a href="#contact">Contacto</a>
+              <a href="/#/features">Características</a>
+              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); }}>Precios</a>
+              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); }}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
-              <a href={`${APP_URL}/register?plan=launch`} className="btn-primary">Comenzar</a>
+              <button onClick={() => handlePlanClick('launch')} className="btn-primary">Comenzar</button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -92,11 +175,11 @@ function App() {
               borderTop: '1px solid var(--gray-200)',
               marginTop: '1rem'
             }}>
-              <a href="#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
-              <a href="#pricing" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
-              <a href="#contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href="/#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
+              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); setMobileMenuOpen(false); }} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
+              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); setMobileMenuOpen(false); }} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)} style={{marginTop: '0.5rem'}}>Iniciar Sesión</a>
-              <a href={`${APP_URL}/register?plan=launch`} className="btn-primary" onClick={() => setMobileMenuOpen(false)}>Comenzar</a>
+              <button onClick={() => { handlePlanClick('launch'); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
             </div>
           )}
         </div>
@@ -113,10 +196,10 @@ function App() {
               Sin instalación, sin complicaciones.
             </p>
             <div className="hero-buttons">
-              <a href={`${APP_URL}/register?plan=launch`} className="btn-primary btn-large">
-                Comenzar por $1,249
-              </a>
-              <a href="#pricing" className="btn-secondary btn-large">
+              <button onClick={() => handlePlanClick('launch')} className="btn-primary btn-large">
+                Comenzar por $1,249 MXN
+              </button>
+              <a href="#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); }} className="btn-secondary btn-large">
                 Ver Planes
               </a>
             </div>
@@ -237,12 +320,12 @@ function App() {
 
           {/* CTA Button - Solicitar Demo */}
           <div style={{textAlign: 'center', marginTop: '3rem'}}>
-            <a href="#contact" className="btn-primary btn-large">
+            <a href="#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); }} className="btn-primary btn-large">
               Solicitar Demo
             </a>
             <p style={{marginTop: '1rem', color: 'var(--gray-500)', fontSize: '0.95rem'}}>
               Descubre todas las características en detalle →{' '}
-              <a href="#/features" style={{color: 'var(--primary)', fontWeight: '600', textDecoration: 'underline'}}>
+              <a href="/#/features" style={{color: 'var(--primary)', fontWeight: '600', textDecoration: 'underline'}}>
                 Ver características completas
               </a>
             </p>
@@ -264,6 +347,7 @@ function App() {
               <div className="plan-price">
                 <span className="currency">$</span>
                 <span className="amount">1,249</span>
+                <span className="currency" style={{fontSize: '1rem', marginLeft: '0.25rem'}}>MXN</span>
                 <span className="period">/3 meses</span>
               </div>
               <ul className="plan-features">
@@ -274,15 +358,16 @@ function App() {
                 <li>✓ Reportes completos</li>
                 <li>✓ Soporte por email</li>
               </ul>
-              <a href={`${APP_URL}/register?plan=launch`} className="btn-primary">Comenzar Ahora</a>
+              <button onClick={() => handlePlanClick('launch')} className="btn-primary">Comenzar Ahora</button>
             </div>
 
-            {/* Plan Basic Anual */}
+            {/* Plan Básico Anual */}
             <div className="pricing-card">
-              <div className="plan-name">Basic Anual</div>
+              <div className="plan-name">Básico Anual</div>
               <div className="plan-price">
                 <span className="currency">$</span>
                 <span className="amount">5,999</span>
+                <span className="currency" style={{fontSize: '1rem', marginLeft: '0.25rem'}}>MXN</span>
                 <span className="period">/año</span>
               </div>
               <ul className="plan-features">
@@ -293,7 +378,7 @@ function App() {
                 <li>✓ Reportes completos</li>
                 <li>✓ Soporte por email</li>
               </ul>
-              <a href={`${APP_URL}/register?plan=basic`} className="btn-outline">Comenzar</a>
+              <button onClick={() => handlePlanClick('basic')} className="btn-outline">Comenzar</button>
             </div>
 
             {/* Plan Pro Anual */}
@@ -302,6 +387,7 @@ function App() {
               <div className="plan-price">
                 <span className="currency">$</span>
                 <span className="amount">8,499</span>
+                <span className="currency" style={{fontSize: '1rem', marginLeft: '0.25rem'}}>MXN</span>
                 <span className="period">/año</span>
               </div>
               <ul className="plan-features">
@@ -312,7 +398,7 @@ function App() {
                 <li>✓ Reportes avanzados</li>
                 <li>✓ Soporte prioritario</li>
               </ul>
-              <a href={`${APP_URL}/register?plan=pro`} className="btn-outline">Comenzar</a>
+              <button onClick={() => handlePlanClick('pro')} className="btn-outline">Comenzar</button>
             </div>
 
             {/* Plan Enterprise */}
@@ -454,6 +540,169 @@ function App() {
         </div>
       </section>
 
+      {/* Modal para email */}
+      {showEmailModal && selectedPlan && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            {/* Plan seleccionado */}
+            <div style={{
+              background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+              color: 'white',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              {planInfo[selectedPlan].badge && (
+                <div style={{
+                  display: 'inline-block',
+                  background: '#22c55e',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '12px',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  marginBottom: '0.5rem',
+                  textTransform: 'uppercase'
+                }}>
+                  {planInfo[selectedPlan].badge}
+                </div>
+              )}
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                Plan {planInfo[selectedPlan].name}
+              </h3>
+              <div style={{ fontSize: '2rem', fontWeight: '800' }}>
+                {planInfo[selectedPlan].price}
+                <span style={{ fontSize: '1rem', fontWeight: '400', opacity: 0.9 }}>
+                  /{planInfo[selectedPlan].period}
+                </span>
+              </div>
+            </div>
+
+            <h2 style={{ marginBottom: '0.5rem', color: '#23334e' }}>
+              Completa tus datos
+            </h2>
+            <p style={{ marginBottom: '1.5rem', color: '#697487', fontSize: '0.9rem' }}>
+              Solo necesitamos algunos datos para proceder con tu suscripción
+            </p>
+            <form onSubmit={handleProceedToCheckout}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Nombre completo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="Tu nombre"
+                />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="tu@email.com"
+                />
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Nombre de tu negocio *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="Mi Negocio S.A."
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    setLoadingPlan(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    color: '#23334e',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingPlan}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: loadingPlan ? 'wait' : 'pointer',
+                    opacity: loadingPlan ? 0.7 : 1
+                  }}
+                >
+                  {loadingPlan ? 'Procesando...' : 'Continuar al pago'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="footer">
         <div className="container">
@@ -464,14 +713,14 @@ function App() {
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
-              <a href="#/features">Características</a>
-              <a href="#pricing">Precios</a>
-              <a href="#contact">Contacto</a>
+              <a href="/#/features">Características</a>
+              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); }}>Precios</a>
+              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); }}>Contacto</a>
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
-              <a href="#/terms">Términos de Servicio</a>
-              <a href="#/privacy">Privacidad</a>
+              <a href="/#/terms">Términos de Servicio</a>
+              <a href="/#/privacy">Privacidad</a>
             </div>
           </div>
           <div className="footer-bottom">

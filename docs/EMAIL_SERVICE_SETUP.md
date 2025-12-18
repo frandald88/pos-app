@@ -138,8 +138,8 @@ El email incluye:
 EMAIL_SERVICE=mailtrap
 MAILTRAP_HOST=sandbox.smtp.mailtrap.io
 MAILTRAP_PORT=2525
-MAILTRAP_USER=abc123def456
-MAILTRAP_PASS=xyz789uvw012
+MAILTRAP_USER=tu_usuario_mailtrap_aqui
+MAILTRAP_PASS=tu_password_mailtrap_aqui
 EMAIL_FROM=noreply@pos-app.com
 EMAIL_FROM_NAME=POS App
 FRONTEND_URL=http://localhost:3000
@@ -147,7 +147,7 @@ FRONTEND_URL=http://localhost:3000
 # ==========================================
 # Descomentar para usar en producción:
 # EMAIL_SERVICE=sendgrid
-# SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxx
+# SENDGRID_API_KEY=SG.tu_api_key_sendgrid_aqui
 # EMAIL_FROM=noreply@tudominio.com
 # FRONTEND_URL=https://tudominio.com
 # ==========================================

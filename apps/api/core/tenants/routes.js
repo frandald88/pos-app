@@ -33,4 +33,16 @@ router.post('/:id/reactivate', verifyToken, requireAdmin, tenantsController.reac
 // ✅ NUEVO: Upgrade de plan (requiere autenticación)
 router.post('/:tenantId/upgrade', verifyToken, identifyTenant, requireTenant, tenantsController.upgradePlan);
 
+// Endpoint para ejecutar manualmente el chequeo de suscripciones (solo admin)
+router.post('/admin/check-subscriptions', verifyToken, requireAdmin, async (req, res) => {
+  const subscriptionCheckJob = require('../../shared/jobs/subscriptionCheckJob');
+
+  try {
+    const result = await subscriptionCheckJob.runNow();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

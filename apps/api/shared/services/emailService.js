@@ -213,7 +213,24 @@ class EmailService {
 
     return await this.sendEmail({
       to,
-      subject: '🎉 Bienvenido al Equipo - Tus Credenciales de Acceso',
+      subject: 'Bienvenido al Equipo - Tus Credenciales de Acceso',
+      html
+    });
+  }
+
+  /**
+   * Enviar email de activación de cuenta
+   */
+  async sendAccountActivationEmail({ to, companyName, activationUrl, expiresInHours = 48 }) {
+    const html = this.getAccountActivationTemplate({
+      companyName,
+      activationUrl,
+      expiresInHours
+    });
+
+    return await this.sendEmail({
+      to,
+      subject: 'Activa tu cuenta de AstroDish',
       html
     });
   }
@@ -240,6 +257,14 @@ class EmailService {
   getNewUserCredentialsTemplate({ username, email, tempPassword, loginUrl, changePasswordUrl }) {
     const templates = require('../templates/emailTemplates');
     return templates.getNewUserCredentialsTemplate({ username, email, tempPassword, loginUrl, changePasswordUrl });
+  }
+
+  /**
+   * Template HTML para activación de cuenta
+   */
+  getAccountActivationTemplate({ companyName, activationUrl, expiresInHours }) {
+    const templates = require('../templates/emailTemplates');
+    return templates.getAccountActivationTemplate({ companyName, activationUrl, expiresInHours });
   }
 
   /**

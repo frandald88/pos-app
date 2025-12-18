@@ -16,8 +16,19 @@ loadLicense();
 // Importar servicio de cierre automático de turnos
 const { cerrarTurnosAutomaticamente } = require('./core/turnos/autoClose');
 
+// Importar job de chequeo de suscripciones
+const subscriptionCheckJob = require('./shared/jobs/subscriptionCheckJob');
+
 // Middleware
 app.use(cors());
+
+// IMPORTANTE: Stripe webhook necesita body raw, montarlo ANTES de express.json()
+const paymentController = require('./controllers/core/paymentController');
+app.post('/api/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  paymentController.handleWebhook
+);
+
 // Aumentar límite de tamaño del body para permitir imágenes en base64
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -159,7 +170,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/tenants', tenantsRoutes);
-app.use('/api/payments', paymentRoutes);
+app.use('/api/payments', paymentRoutes); // Las otras rutas de payments (excepto webhook)
 app.use('/api/onboarding', onboardingRoutes);
 
 // ✨ NUEVO: Restaurant routes
@@ -327,6 +338,9 @@ app.listen(PORT, () => {
     scheduled: true,
     timezone: "America/Mexico_City" // Ajusta según tu zona horaria
   });
+
+  // Iniciar cron job para chequeo de suscripciones
+  subscriptionCheckJob.start();
 
   console.log('⏰ Cron job configurado: Cierre automático de turnos a las 11:59 PM');
 });

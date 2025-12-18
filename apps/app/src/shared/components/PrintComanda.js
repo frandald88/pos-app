@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
+import PrintService from '../services/printService';
 
 /**
  * Componente para imprimir comanda de cocina
@@ -9,7 +10,7 @@ import { useReactToPrint } from 'react-to-print';
 export default function PrintComanda({ sale, onClose }) {
   const comandaRef = useRef();
 
-  const handlePrint = useReactToPrint({
+  const handlePrintDialog = useReactToPrint({
     content: () => comandaRef.current,
     documentTitle: `Comanda-${sale.folio || sale._id}`,
     onAfterPrint: () => {
@@ -17,6 +18,32 @@ export default function PrintComanda({ sale, onClose }) {
       if (onClose) onClose();
     },
   });
+
+  // Manejar impresión (directa o con diálogo)
+  const handlePrint = async () => {
+    console.log('🖨️ Iniciando impresión de comanda...');
+
+    // Preparar configuración de la tienda
+    const storeConfig = {
+      printConfig: sale.tienda?.printConfig || { directPrint: false },
+      ticketConfig: sale.tienda?.ticketConfig || {}
+    };
+
+    try {
+      // Intentar impresión directa si está habilitada, sino usar diálogo
+      const result = await PrintService.printComanda(sale, storeConfig, handlePrintDialog);
+      console.log('📄 Resultado de impresión de comanda:', result);
+
+      // Solo cerrar el modal si se imprimió correctamente
+      if (result.success && result.method === 'direct' && onClose) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('❌ Error al imprimir comanda:', error);
+      // En caso de error, intentar con el diálogo como último recurso
+      handlePrintDialog();
+    }
+  };
 
   // Formatear fecha y hora
   const formatDateTime = (date) => {

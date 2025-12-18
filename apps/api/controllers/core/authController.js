@@ -527,6 +527,82 @@ class AuthController {
       return errorResponse(res, 'Error al restablecer contraseña', 500);
     }
   }
+
+  // Verificar token de activación de cuenta
+  async verifyActivationToken(req, res) {
+    try {
+      const { token } = req.params;
+
+      if (!token) {
+        return errorResponse(res, 'Token requerido', 400);
+      }
+
+      // Buscar usuario con este token
+      const user = await User.findOne({
+        activationToken: token,
+        activationTokenExpires: { $gt: new Date() }
+      }).populate('tenantId', 'companyName');
+
+      if (!user) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      return successResponse(res, {
+        email: user.email,
+        companyName: user.tenantId?.companyName || '',
+        valid: true
+      }, 'Token válido');
+
+    } catch (error) {
+      console.error('Error al verificar token de activación:', error);
+      return errorResponse(res, 'Error al verificar token', 500);
+    }
+  }
+
+  // Activar cuenta y establecer contraseña
+  async activateAccount(req, res) {
+    try {
+      const { token, password } = req.body;
+
+      // Validaciones
+      if (!token || !password) {
+        return errorResponse(res, 'Token y contraseña son requeridos', 400);
+      }
+
+      // Validar contraseña
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.valid) {
+        return errorResponse(res, passwordValidation.message, 400);
+      }
+
+      // Buscar usuario con este token
+      const user = await User.findOne({
+        activationToken: token,
+        activationTokenExpires: { $gt: new Date() }
+      });
+
+      if (!user) {
+        return errorResponse(res, 'Token inválido o expirado', 400);
+      }
+
+      // Activar cuenta y establecer contraseña
+      user.password = password; // El hook pre-save la hasheará
+      user.isActive = true;
+      user.activationToken = undefined;
+      user.activationTokenExpires = undefined;
+      await user.save();
+
+      console.log('Cuenta activada exitosamente:', user.email);
+
+      return successResponse(res, {
+        message: 'Cuenta activada exitosamente'
+      }, 'Cuenta activada - ahora puedes iniciar sesión');
+
+    } catch (error) {
+      console.error('Error al activar cuenta:', error);
+      return errorResponse(res, 'Error al activar cuenta', 500);
+    }
+  }
 }
 
 module.exports = new AuthController();

@@ -35,4 +35,14 @@ router.post('/verify-reset-token', authController.verifyResetToken);
 // Restablecer contraseña con token (público)
 router.post('/reset-password', authController.resetPassword);
 
+// ========================================
+// ACTIVACIÓN DE CUENTA
+// ========================================
+
+// Verificar token de activación (público)
+router.get('/verify-activation-token/:token', authController.verifyActivationToken);
+
+// Activar cuenta y establecer contraseña (público)
+router.post('/activate-account', authController.activateAccount);
+
 module.exports = router;

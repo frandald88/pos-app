@@ -4,6 +4,7 @@ import { useTiendasForm } from "../hooks/useTiendasForm";
 import { useTiendasFilters } from "../hooks/useTiendasFilters";
 import TiendaModal from "../components/TiendaModal";
 import TicketConfigModal from "../components/TicketConfigModal";
+import PrintConfigModal from "../components/PrintConfigModal";
 
 // SVG Icons
 const Icons = {
@@ -41,6 +42,11 @@ const Icons = {
     <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
+  ),
+  printer: () => (
+    <svg className="w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+    </svg>
   )
 };
 
@@ -48,6 +54,7 @@ export default function TiendasPage() {
   const [modalError, setModalError] = useState("");
   const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
   const [mostrarConfigTicket, setMostrarConfigTicket] = useState(false);
+  const [mostrarConfigPrint, setMostrarConfigPrint] = useState(false);
   const [tiendaConfig, setTiendaConfig] = useState(null);
 
   // Hooks
@@ -240,6 +247,29 @@ export default function TiendasPage() {
     } catch (error) {
       console.error('Error al guardar configuración:', error);
       setMsg('[ERROR] Error al guardar configuración');
+    }
+  };
+
+  // Handler para abrir configuración de impresión
+  const handleConfigPrint = (tienda) => {
+    setTiendaConfig(tienda);
+    setMostrarConfigPrint(true);
+  };
+
+  // Handler para guardar configuración de impresión
+  const handleGuardarConfigPrint = async (config) => {
+    try {
+      await updateTienda(tiendaConfig._id, {
+        ...tiendaConfig,
+        printConfig: config
+      });
+      setMsg('[SUCCESS] Configuración de impresión actualizada');
+      setMostrarConfigPrint(false);
+      setTiendaConfig(null);
+      fetchTiendas();
+    } catch (error) {
+      console.error('Error al guardar configuración de impresión:', error);
+      setMsg('[ERROR] Error al guardar configuración de impresión');
     }
   };
 
@@ -453,22 +483,30 @@ export default function TiendasPage() {
                             <>
                               <button
                                 onClick={() => handleConfigTicket(tienda)}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-2"
+                                className="px-3 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-1"
                                 style={{ backgroundColor: '#10b981' }}
                                 title="Configurar diseño del ticket"
                               >
                                 <Icons.palette /> Ticket
                               </button>
                               <button
+                                onClick={() => handleConfigPrint(tienda)}
+                                className="px-3 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md flex items-center gap-1"
+                                style={{ backgroundColor: '#3b82f6' }}
+                                title="Configurar impresión directa"
+                              >
+                                <Icons.printer /> Impresión
+                              </button>
+                              <button
                                 onClick={() => handleEditarTienda(tienda)}
-                                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
+                                className="px-3 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:shadow-md"
                                 style={{ backgroundColor: '#46546b' }}
                               >
                                 Editar
                               </button>
                               <button
                                 onClick={() => handleIniciarEliminacion(tienda)}
-                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
+                                className="px-3 py-2 text-sm font-medium text-white bg-red-500 rounded-lg transition-all duration-200 hover:shadow-md hover:bg-red-600"
                               >
                                 Eliminar
                               </button>
@@ -627,6 +665,18 @@ export default function TiendasPage() {
               setTiendaConfig(null);
             }}
             onSave={handleGuardarConfigTicket}
+          />
+        )}
+
+        {/* Modal de Configuración de Impresión */}
+        {mostrarConfigPrint && tiendaConfig && (
+          <PrintConfigModal
+            tienda={tiendaConfig}
+            onClose={() => {
+              setMostrarConfigPrint(false);
+              setTiendaConfig(null);
+            }}
+            onSave={handleGuardarConfigPrint}
           />
         )}
       </div>

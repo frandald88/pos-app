@@ -56,6 +56,74 @@ const tiendaSchema = new mongoose.Schema({
     // Configuración fiscal
     mostrarRFC: { type: Boolean, default: false },
     leyendaFiscal: { type: String, default: 'Este ticket no es válido como factura' }
+  },
+
+  // Configuración de impresión directa
+  printConfig: {
+    // Activar/desactivar impresión directa
+    directPrint: {
+      type: Boolean,
+      default: false
+    },
+
+    // URL del servidor de impresión local
+    printServerUrl: {
+      type: String,
+      default: 'http://localhost:9100'
+    },
+
+    // Nombre de la impresora en el sistema
+    printerName: {
+      type: String,
+      default: ''
+    },
+
+    // Tipo de impresora (para compatibilidad)
+    printerType: {
+      type: String,
+      enum: ['EPSON', 'STAR', 'TANCA', 'DARUMA', 'BEMATECH'],
+      default: 'EPSON'
+    },
+
+    // Interfaz de conexión
+    connectionType: {
+      type: String,
+      enum: ['USB', 'NETWORK', 'SERIAL'],
+      default: 'USB'
+    },
+
+    // IP de la impresora (si es de red)
+    printerIP: {
+      type: String,
+      default: ''
+    },
+
+    // Puerto de la impresora (si es de red)
+    printerPort: {
+      type: Number,
+      default: 9100
+    },
+
+    // Abrir cajón automáticamente
+    autoOpenCashDrawer: {
+      type: Boolean,
+      default: false
+    },
+
+    // Número de copias por defecto
+    defaultCopies: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 5
+    },
+
+    // Configuración para comanda (cocina)
+    comandaConfig: {
+      enabled: { type: Boolean, default: false },
+      printerName: { type: String, default: '' },
+      autoPrint: { type: Boolean, default: false }
+    }
   }
 }, { timestamps: true });
 

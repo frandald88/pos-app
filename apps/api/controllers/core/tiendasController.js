@@ -286,7 +286,7 @@ class TiendasController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const { nombre, direccion, telefono, ticketConfig } = req.body;
+      const { nombre, direccion, telefono, ticketConfig, printConfig } = req.body;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return errorResponse(res, 'ID de tienda inválido', 400);
@@ -330,6 +330,11 @@ class TiendasController {
       // Si se envía ticketConfig, agregarlo a la actualización
       if (ticketConfig) {
         updateData.ticketConfig = ticketConfig;
+      }
+
+      // ⭐ NUEVO: Si se envía printConfig, agregarlo a la actualización
+      if (printConfig) {
+        updateData.printConfig = printConfig;
       }
 
       // Actualizar solo si pertenece al tenant
