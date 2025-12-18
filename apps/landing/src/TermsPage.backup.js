@@ -65,10 +65,9 @@ function TermsPage() {
 
             {/* Desktop Navigation */}
             <div className="nav-links">
-              <a href="/">Inicio</a>
-              <a href="/#/features">Características</a>
+              <a href="/#features">Características</a>
               <a href={`${APP_URL}/pricing`}>Precios</a>
-              <a href="/#/contact">Contacto</a>
+              <a href="/#contact">Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
               <button onClick={handlePlanClick} className="btn-primary">Comenzar</button>
             </div>
@@ -77,7 +76,6 @@ function TermsPage() {
             <button
               className="mobile-menu-button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{display: 'none'}}
               aria-label="Toggle menu"
             >
               <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
@@ -96,10 +94,9 @@ function TermsPage() {
               borderTop: '1px solid var(--gray-200)',
               marginTop: '1rem'
             }}>
-              <a href="/" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Inicio</a>
-              <a href="/#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
+              <a href="/#features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
               <a href={`${APP_URL}/pricing`} onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
-              <a href="/#/contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href="/#contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)} style={{marginTop: '0.5rem'}}>Iniciar Sesión</a>
               <button onClick={() => { handlePlanClick(); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
             </div>
@@ -326,9 +323,9 @@ function TermsPage() {
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
-              <a href="/#/features">Características</a>
+              <a href="/#features">Características</a>
               <a href={`${APP_URL}/pricing`}>Precios</a>
-              <a href="/#/contact">Contacto</a>
+              <a href="/#contact">Contacto</a>
             </div>
             <div className="footer-section">
               <h4>Legal</h4>

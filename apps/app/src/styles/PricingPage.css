@@ -97,8 +97,20 @@
 
 .pricing-page-app .nav-links {
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
   align-items: center;
+}
+
+.pricing-page-app .nav-links a {
+  color: var(--gray-700);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color var(--transition);
+}
+
+.pricing-page-app .nav-links a:hover {
+  color: var(--primary);
 }
 
 /* ==========================================

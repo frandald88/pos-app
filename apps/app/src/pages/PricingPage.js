@@ -4,6 +4,7 @@ import '../styles/PricingPage.css';
 
 const API_URL = apiBaseUrl;
 const APP_URL = window.location.origin;
+const LANDING_URL = process.env.REACT_APP_LANDING_URL || 'http://localhost:3001';
 
 export default function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState(null);
@@ -25,7 +26,7 @@ export default function PricingPage() {
   // Función para manejar suscripción a planes
   const handlePlanClick = (planId) => {
     if (planId === 'enterprise') {
-      window.location.href = 'mailto:ventas@astrodish.com?subject=Plan Enterprise';
+      window.location.href = `${LANDING_URL}/#/contact`;
       return;
     }
 
@@ -120,15 +121,16 @@ export default function PricingPage() {
       <nav className="nav">
         <div className="container">
           <div className="nav-content">
-            <a href="http://localhost:3001" className="logo">
+            <a href={`${LANDING_URL}`} className="logo">
               <img src={`${process.env.PUBLIC_URL}/astrodishlogo1.png`} alt="AstroDish" style={{height: '40px'}} />
             </a>
 
             {/* Desktop Navigation */}
             <div className="nav-links">
-              <a href="http://localhost:3001/#/features">Características</a>
-              <a href="http://localhost:3001/#pricing">Precios</a>
-              <a href="http://localhost:3001/#contact">Contacto</a>
+              <a href={`${LANDING_URL}`}>Inicio</a>
+              <a href={`${LANDING_URL}/#/features`}>Características</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
+              <a href={`${LANDING_URL}/#/contact`}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
               <button onClick={() => handlePlanClick('launch')} className="btn-primary">Comenzar</button>
             </div>
@@ -137,6 +139,7 @@ export default function PricingPage() {
             <button
               className="mobile-menu-button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{display: 'none'}}
               aria-label="Toggle menu"
             >
               <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
@@ -148,9 +151,10 @@ export default function PricingPage() {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="mobile-menu">
-              <a href="http://localhost:3001/#/features" onClick={() => setMobileMenuOpen(false)}>Características</a>
-              <a href="http://localhost:3001/#pricing" onClick={() => setMobileMenuOpen(false)}>Precios</a>
-              <a href="http://localhost:3001/#contact" onClick={() => setMobileMenuOpen(false)}>Contacto</a>
+              <a href={`${LANDING_URL}`} onClick={() => setMobileMenuOpen(false)}>Inicio</a>
+              <a href={`${LANDING_URL}/#/features`} onClick={() => setMobileMenuOpen(false)}>Características</a>
+              <a href={`${APP_URL}/pricing`} onClick={() => setMobileMenuOpen(false)}>Precios</a>
+              <a href={`${LANDING_URL}/#/contact`} onClick={() => setMobileMenuOpen(false)}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)}>Iniciar Sesión</a>
               <button onClick={() => { handlePlanClick('launch'); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
             </div>
@@ -275,7 +279,7 @@ export default function PricingPage() {
                 <li>Soporte 24/7</li>
                 <li>Capacitación incluida</li>
               </ul>
-              <a href="mailto:ventas@astrodish.com" className="btn-outline">Contactar Ventas</a>
+              <a href={`${LANDING_URL}/#/contact`} className="btn-outline">Contactar Ventas</a>
             </div>
           </div>
         </div>
@@ -454,14 +458,15 @@ export default function PricingPage() {
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
-              <a href="http://localhost:3001/#/features">Características</a>
-              <a href="http://localhost:3001/#pricing">Precios</a>
-              <a href="http://localhost:3001/#contact">Contacto</a>
+              <a href={`${LANDING_URL}/#/features`}>Características</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
+              <a href={`${LANDING_URL}/#/contact`}>Contacto</a>
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
-              <a href="http://localhost:3001/#/terms">Términos de Servicio</a>
-              <a href="http://localhost:3001/#/privacy">Privacidad</a>
+              <a href={`${LANDING_URL}/#/terms`}>Términos de Servicio</a>
+              <a href={`${LANDING_URL}/#/privacy`}>Privacidad</a>
+              <a href={`${LANDING_URL}/#/faq`}>Preguntas Frecuentes</a>
             </div>
           </div>
           <div className="footer-bottom">

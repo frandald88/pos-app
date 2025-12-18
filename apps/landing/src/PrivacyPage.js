@@ -2,8 +2,54 @@ import React, { useState } from 'react';
 import './App.css';
 import APP_URL from './config';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function PrivacyPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [loadingPlan, setLoadingPlan] = useState(null);
+
+  const handlePlanClick = () => {
+    setShowEmailModal(true);
+  };
+
+  const handleProceedToCheckout = async (e) => {
+    e.preventDefault();
+    setLoadingPlan('launch');
+
+    try {
+      const response = await fetch(`${API_URL}/api/payments/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          planId: 'launch',
+          customerEmail: userEmail,
+          customerName: userName,
+          companyName: companyName,
+          successUrl: `${APP_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: window.location.href
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data.url) {
+        window.location.href = data.data.url;
+      } else {
+        alert(data.message || 'Error al crear sesión de pago');
+        setLoadingPlan(null);
+      }
+    } catch (err) {
+      console.error('Error al crear checkout:', err);
+      alert('Error de conexión. Por favor intenta de nuevo.');
+      setLoadingPlan(null);
+    }
+  };
 
   return (
     <div className="App">
@@ -19,15 +65,19 @@ function PrivacyPage() {
 
             {/* Desktop Navigation */}
             <div className="nav-links">
-              <a href="/#features">Características</a>
+              <a href="/">Inicio</a>
+              <a href="/#/features">Características</a>
               <a href={`${APP_URL}/pricing`}>Precios</a>
-              <a href="/#contact">Contacto</a>
+              <a href="/#/contact">Contacto</a>
+              <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
+              <button onClick={handlePlanClick} className="btn-primary">Comenzar</button>
             </div>
 
             {/* Mobile Menu Button */}
             <button
               className="mobile-menu-button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{display: 'none'}}
               aria-label="Toggle menu"
             >
               <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>
@@ -46,9 +96,12 @@ function PrivacyPage() {
               borderTop: '1px solid var(--gray-200)',
               marginTop: '1rem'
             }}>
-              <a href="/#features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
+              <a href="/" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Inicio</a>
+              <a href="/#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
               <a href={`${APP_URL}/pricing`} onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
-              <a href="/#contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href="/#/contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)} style={{marginTop: '0.5rem'}}>Iniciar Sesión</a>
+              <button onClick={() => { handlePlanClick(); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
             </div>
           )}
         </div>
@@ -155,9 +208,9 @@ function PrivacyPage() {
             </div>
             <div className="footer-section">
               <h4>Producto</h4>
-              <a href="/#features">Características</a>
+              <a href="/#/features">Características</a>
               <a href={`${APP_URL}/pricing`}>Precios</a>
-              <a href="/#contact">Contacto</a>
+              <a href="/#/contact">Contacto</a>
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
@@ -171,6 +224,166 @@ function PrivacyPage() {
           </div>
         </div>
       </footer>
+
+      {/* Modal para email */}
+      {showEmailModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #2b354f 0%, #5e85e0 100%)',
+              color: 'white',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                display: 'inline-block',
+                background: '#22c55e',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem',
+                textTransform: 'uppercase'
+              }}>
+                Oferta Especial
+              </div>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                Plan Lanzamiento
+              </h3>
+              <div style={{ fontSize: '2rem', fontWeight: '800' }}>
+                $1,249 MXN
+                <span style={{ fontSize: '1rem', fontWeight: '400', opacity: 0.9 }}>
+                  /3 meses
+                </span>
+              </div>
+            </div>
+
+            <h2 style={{ marginBottom: '0.5rem', color: '#23334e' }}>
+              Completa tus datos
+            </h2>
+            <p style={{ marginBottom: '1.5rem', color: '#697487', fontSize: '0.9rem' }}>
+              Solo necesitamos algunos datos para proceder con tu suscripción
+            </p>
+            <form onSubmit={handleProceedToCheckout}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Nombre completo *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="Tu nombre"
+                />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="tu@email.com"
+                />
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#23334e', fontWeight: '500' }}>
+                  Nombre de tu negocio *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '6px',
+                    fontSize: '1rem'
+                  }}
+                  placeholder="Mi Negocio S.A."
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    setLoadingPlan(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    color: '#23334e',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingPlan}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: loadingPlan ? 'wait' : 'pointer',
+                    opacity: loadingPlan ? 0.7 : 1
+                  }}
+                >
+                  {loadingPlan ? 'Procesando...' : 'Continuar al pago'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

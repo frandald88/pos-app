@@ -6,6 +6,7 @@ import PrivacyPage from './PrivacyPage';
 import TermsPage from './TermsPage';
 import FeaturesPage from './FeaturesPage';
 import FAQPage from './FAQPage';
+import ContactPage from './ContactPage';
 
 // Simple hash-based routing
 function Router() {
@@ -35,6 +36,10 @@ function Router() {
 
   if (currentPath === '#/faq') {
     return <FAQPage />;
+  }
+
+  if (currentPath === '#/contact') {
+    return <ContactPage />;
   }
 
   return <App />;

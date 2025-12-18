@@ -146,8 +146,8 @@ function App() {
             {/* Desktop Navigation */}
             <div className="nav-links">
               <a href="/#/features">Características</a>
-              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); }}>Precios</a>
-              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); }}>Contacto</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
+              <a href="/#/contact">Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary">Iniciar Sesión</a>
               <button onClick={() => handlePlanClick('launch')} className="btn-primary">Comenzar</button>
             </div>
@@ -176,8 +176,8 @@ function App() {
               marginTop: '1rem'
             }}>
               <a href="/#/features" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Características</a>
-              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); setMobileMenuOpen(false); }} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
-              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); setMobileMenuOpen(false); }} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
+              <a href={`${APP_URL}/pricing`} onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Precios</a>
+              <a href="/#/contact" onClick={() => setMobileMenuOpen(false)} style={{textDecoration: 'none', color: 'var(--gray-700)', fontWeight: '500', padding: '0.5rem 0'}}>Contacto</a>
               <a href={`${APP_URL}/login`} className="btn-secondary" onClick={() => setMobileMenuOpen(false)} style={{marginTop: '0.5rem'}}>Iniciar Sesión</a>
               <button onClick={() => { handlePlanClick('launch'); setMobileMenuOpen(false); }} className="btn-primary">Comenzar</button>
             </div>
@@ -910,8 +910,8 @@ function App() {
             <div className="footer-section">
               <h4>Producto</h4>
               <a href="/#/features">Características</a>
-              <a href="/#pricing" onClick={(e) => { e.preventDefault(); handleNavigateToSection('pricing'); }}>Precios</a>
-              <a href="/#contact" onClick={(e) => { e.preventDefault(); handleNavigateToSection('contact'); }}>Contacto</a>
+              <a href={`${APP_URL}/pricing`}>Precios</a>
+              <a href="/#/contact">Contacto</a>
             </div>
             <div className="footer-section">
               <h4>Legal</h4>
