@@ -267,9 +267,30 @@ class GastosController {
       }
 
       // Verificar que el gasto existe
-      const expense = await Expense.findOne({ _id: req.params.id, tenantId: req.tenantId });
+      const expense = await Expense.findOne({ _id: req.params.id, tenantId: req.tenantId }).populate('tienda', 'nombre');
       if (!expense) {
         return errorResponse(res, 'Gasto no encontrado', 404);
+      }
+
+      // ⭐ VALIDACIÓN: Si se va a aprobar el gasto, verificar que exista un turno abierto en la tienda
+      if (status === 'aprobado') {
+        const Turno = require('../../core/turnos/model');
+
+        const turnoAbierto = await Turno.findOne({
+          tenantId: req.tenantId,
+          tienda: expense.tienda._id,
+          estado: 'abierto'
+        });
+
+        if (!turnoAbierto) {
+          return errorResponse(
+            res,
+            `No se puede aprobar el gasto. Debe haber un turno abierto en la tienda "${expense.tienda.nombre}" para aprobar gastos.`,
+            400
+          );
+        }
+
+        console.log(`✅ Gasto aprobado en turno ${turnoAbierto._id} de la tienda ${expense.tienda.nombre}`);
       }
 
       const updatedExpense = await Expense.findOneAndUpdate(

@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import apiBaseUrl from '../config/api';
 
+const LANDING_URL = process.env.REACT_APP_LANDING_URL || 'http://localhost:3001';
+
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -94,7 +96,7 @@ export default function PaymentSuccessPage() {
                 Volver al inicio
               </button>
               <button
-                onClick={() => window.location.href = 'http://localhost:3001/#contact'}
+                onClick={() => window.location.href = `${LANDING_URL}/#/contact`}
                 className="w-full py-3 px-6 rounded-lg font-semibold border-2 transition-all duration-200"
                 style={{ borderColor: '#46546b', color: '#46546b' }}
               >
@@ -208,7 +210,7 @@ export default function PaymentSuccessPage() {
             ¿No recibiste el correo o tienes problemas?
           </p>
           <button
-            onClick={() => window.location.href = 'http://localhost:3001/#contact'}
+            onClick={() => window.location.href = `${LANDING_URL}/#/contact`}
             className="text-sm font-medium transition-colors duration-200"
             style={{ color: '#46546b' }}
             onMouseEnter={(e) => e.target.style.color = '#23334e'}

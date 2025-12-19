@@ -139,7 +139,6 @@ export default function PricingPage() {
             <button
               className="mobile-menu-button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{display: 'none'}}
               aria-label="Toggle menu"
             >
               <span style={{transform: mobileMenuOpen ? 'rotate(45deg) translateY(6px)' : 'none'}}></span>

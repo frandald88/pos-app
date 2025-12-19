@@ -60,6 +60,23 @@ const isDryRun = args.includes('--dry-run');
 const isConfirmed = args.includes('--confirm');
 const keepAdmin = args.includes('--keep-admin');
 
+// Tenants protegidos que NO se eliminarán (como strings para comparación)
+const PROTECTED_TENANT_IDS = [
+  '69110bb43363b3535ab1b841',
+  '6920cb987e1518833f799b55',
+  '6920ebccf1fca0f7a063396e'
+];
+
+// Convertir a ObjectId para las consultas de MongoDB
+const PROTECTED_TENANTS = PROTECTED_TENANT_IDS.map(id => {
+  try {
+    return new mongoose.Types.ObjectId(id);
+  } catch (error) {
+    console.error(`Error al convertir ID ${id} a ObjectId:`, error);
+    return id; // Fallback al string si falla la conversión
+  }
+});
+
 async function connectDB() {
   try {
     const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/pos-app';
@@ -98,6 +115,74 @@ async function getCollectionStats() {
   return stats;
 }
 
+async function verifyProtectedTenants() {
+  console.log(`${colors.cyan}Verificando tenants protegidos...${colors.reset}\n`);
+
+  const verification = {
+    tenantsExist: 0,
+    sales: 0,
+    products: 0,
+    users: 0,
+    tiendas: 0,
+    clientes: 0,
+    empleados: 0,
+    turnos: 0,
+    gastos: 0,
+    devoluciones: 0,
+    orders: 0,
+    asistencias: 0,
+    schedules: 0,
+    tables: 0,
+    accounts: 0,
+    purchaseOrders: 0,
+    vacaciones: 0,
+    counters: 0
+  };
+
+  // Verificar si los tenants existen
+  verification.tenantsExist = await Tenant.countDocuments({ _id: { $in: PROTECTED_TENANTS } });
+
+  // Contar documentos de cada colección que pertenecen a los tenants protegidos
+  verification.sales = await Sale.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.products = await Product.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.users = await User.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.tiendas = await Tienda.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.clientes = await Cliente.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.empleados = await Empleado.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.turnos = await Turno.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.gastos = await Gasto.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.devoluciones = await Devolucion.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.orders = await Order.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.asistencias = await Asistencia.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.schedules = await Schedule.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.tables = await Table.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.accounts = await Account.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.purchaseOrders = await PurchaseOrder.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.vacaciones = await Vacacion.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+  verification.counters = await Counter.countDocuments({ tenantId: { $in: PROTECTED_TENANTS } });
+
+  console.log(`${colors.bright}Datos de Tenants Protegidos:${colors.reset}`);
+  console.log('═'.repeat(50));
+  console.log(`  ${'Tenants encontrados'.padEnd(30)} ${colors.green}${verification.tenantsExist}${colors.reset} de ${PROTECTED_TENANT_IDS.length}`);
+  console.log('─'.repeat(50));
+
+  Object.entries(verification).forEach(([collection, count]) => {
+    if (collection === 'tenantsExist') return;
+    const color = count > 0 ? colors.green : colors.yellow;
+    console.log(`  ${collection.padEnd(30)} ${color}${count.toString().padStart(6)}${colors.reset}`);
+  });
+
+  const total = Object.entries(verification)
+    .filter(([key]) => key !== 'tenantsExist')
+    .reduce((sum, [, count]) => sum + count, 0);
+  console.log('─'.repeat(50));
+  console.log(`  ${'TOTAL A PROTEGER'.padEnd(30)} ${colors.bright}${colors.green}${total.toString().padStart(6)}${colors.reset}`);
+  console.log('═'.repeat(50));
+  console.log();
+
+  return verification;
+}
+
 function printStats(title, stats) {
   console.log(`${colors.bright}${title}${colors.reset}`);
   console.log('═'.repeat(50));
@@ -125,13 +210,19 @@ async function cleanDatabase() {
   // Mostrar configuración
   console.log(`${colors.cyan}Configuración:${colors.reset}`);
   console.log(`  Modo: ${isDryRun ? colors.yellow + 'DRY RUN (simulación)' : colors.red + 'LIMPIEZA REAL' + colors.reset}`);
-  console.log(`  Mantener admin: ${keepAdmin ? colors.green + 'SÍ' : colors.red + 'NO'}${colors.reset}`);
+  console.log(`  Tenants protegidos: ${colors.green}${PROTECTED_TENANT_IDS.length}${colors.reset}`);
+  PROTECTED_TENANT_IDS.forEach(id => {
+    console.log(`    - ${colors.green}${id}${colors.reset}`);
+  });
   console.log();
 
   // Obtener estadísticas iniciales
   console.log(`${colors.cyan}Obteniendo estadísticas...${colors.reset}\n`);
   const statsBefore = await getCollectionStats();
   printStats('📊 Estado ANTES de la limpieza:', statsBefore);
+
+  // Verificar tenants protegidos
+  const protectedData = await verifyProtectedTenants();
 
   // Advertencia de seguridad
   if (!isDryRun && !isConfirmed) {
@@ -155,59 +246,70 @@ async function cleanDatabase() {
     // 1. VENTAS Y RELACIONADOS
     console.log(`${colors.cyan}1️⃣  Limpiando ventas y devoluciones...${colors.reset}`);
     if (!isDryRun) {
-      results.sales = await Sale.deleteMany({});
-      results.devoluciones = await Devolucion.deleteMany({});
+      results.sales = await Sale.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
+      results.devoluciones = await Devolucion.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Ventas: ${statsBefore.sales} registros`);
-    console.log(`   ✓ Devoluciones: ${statsBefore.devoluciones} registros\n`);
+    const salesToDelete = statsBefore.sales - protectedData.sales;
+    const devolucionesToDelete = statsBefore.devoluciones - protectedData.devoluciones;
+    console.log(`   ✓ Ventas: ${colors.red}${salesToDelete}${colors.reset} a eliminar de ${statsBefore.sales} (protegiendo ${colors.green}${protectedData.sales}${colors.reset})`);
+    console.log(`   ✓ Devoluciones: ${colors.red}${devolucionesToDelete}${colors.reset} a eliminar de ${statsBefore.devoluciones} (protegiendo ${colors.green}${protectedData.devoluciones}${colors.reset})\n`);
 
     // 2. CAJA Y TURNOS
     console.log(`${colors.cyan}2️⃣  Limpiando turnos y gastos...${colors.reset}`);
     if (!isDryRun) {
-      results.turnos = await Turno.deleteMany({});
-      results.gastos = await Gasto.deleteMany({});
+      results.turnos = await Turno.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
+      results.gastos = await Gasto.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Turnos: ${statsBefore.turnos} registros`);
-    console.log(`   ✓ Gastos: ${statsBefore.gastos} registros\n`);
+    const turnosToDelete = statsBefore.turnos - protectedData.turnos;
+    const gastosToDelete = statsBefore.gastos - protectedData.gastos;
+    console.log(`   ✓ Turnos: ${colors.red}${turnosToDelete}${colors.reset} a eliminar de ${statsBefore.turnos} (protegiendo ${colors.green}${protectedData.turnos}${colors.reset})`);
+    console.log(`   ✓ Gastos: ${colors.red}${gastosToDelete}${colors.reset} a eliminar de ${statsBefore.gastos} (protegiendo ${colors.green}${protectedData.gastos}${colors.reset})\n`);
 
     // 3. DELIVERY Y ÓRDENES
     console.log(`${colors.cyan}3️⃣  Limpiando órdenes de delivery...${colors.reset}`);
     if (!isDryRun) {
-      results.orders = await Order.deleteMany({});
+      results.orders = await Order.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Órdenes: ${statsBefore.orders} registros\n`);
+    const ordersToDelete = statsBefore.orders - protectedData.orders;
+    console.log(`   ✓ Órdenes: ${colors.red}${ordersToDelete}${colors.reset} a eliminar de ${statsBefore.orders} (protegiendo ${colors.green}${protectedData.orders}${colors.reset})\n`);
 
     // 4. COMPRAS
     console.log(`${colors.cyan}4️⃣  Limpiando órdenes de compra...${colors.reset}`);
     if (!isDryRun) {
-      results.purchaseOrders = await PurchaseOrder.deleteMany({});
+      results.purchaseOrders = await PurchaseOrder.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Órdenes de compra: ${statsBefore.purchaseOrders} registros\n`);
+    const purchaseOrdersToDelete = statsBefore.purchaseOrders - protectedData.purchaseOrders;
+    console.log(`   ✓ Órdenes de compra: ${colors.red}${purchaseOrdersToDelete}${colors.reset} a eliminar de ${statsBefore.purchaseOrders} (protegiendo ${colors.green}${protectedData.purchaseOrders}${colors.reset})\n`);
 
     // 5. ASISTENCIAS Y HORARIOS
     console.log(`${colors.cyan}5️⃣  Limpiando asistencias y horarios...${colors.reset}`);
     if (!isDryRun) {
-      results.asistencias = await Asistencia.deleteMany({});
-      results.schedules = await Schedule.deleteMany({});
+      results.asistencias = await Asistencia.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
+      results.schedules = await Schedule.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Asistencias: ${statsBefore.asistencias} registros`);
-    console.log(`   ✓ Horarios: ${statsBefore.schedules} registros\n`);
+    const asistenciasToDelete = statsBefore.asistencias - protectedData.asistencias;
+    const schedulesToDelete = statsBefore.schedules - protectedData.schedules;
+    console.log(`   ✓ Asistencias: ${colors.red}${asistenciasToDelete}${colors.reset} a eliminar de ${statsBefore.asistencias} (protegiendo ${colors.green}${protectedData.asistencias}${colors.reset})`);
+    console.log(`   ✓ Horarios: ${colors.red}${schedulesToDelete}${colors.reset} a eliminar de ${statsBefore.schedules} (protegiendo ${colors.green}${protectedData.schedules}${colors.reset})\n`);
 
     // 6. VACACIONES
     console.log(`${colors.cyan}6️⃣  Limpiando solicitudes de vacaciones...${colors.reset}`);
     if (!isDryRun) {
-      results.vacaciones = await Vacacion.deleteMany({});
+      results.vacaciones = await Vacacion.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Vacaciones: ${statsBefore.vacaciones} registros\n`);
+    const vacacionesToDelete = statsBefore.vacaciones - protectedData.vacaciones;
+    console.log(`   ✓ Vacaciones: ${colors.red}${vacacionesToDelete}${colors.reset} a eliminar de ${statsBefore.vacaciones} (protegiendo ${colors.green}${protectedData.vacaciones}${colors.reset})\n`);
 
     // 7. RESTAURANTE (MESAS Y CUENTAS)
     console.log(`${colors.cyan}7️⃣  Limpiando mesas y cuentas de restaurante...${colors.reset}`);
     if (!isDryRun) {
-      results.accounts = await Account.deleteMany({});
-      results.tables = await Table.deleteMany({});
+      results.accounts = await Account.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
+      results.tables = await Table.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Cuentas: ${statsBefore.accounts} registros`);
-    console.log(`   ✓ Mesas: ${statsBefore.tables} registros\n`);
+    const accountsToDelete = statsBefore.accounts - protectedData.accounts;
+    const tablesToDelete = statsBefore.tables - protectedData.tables;
+    console.log(`   ✓ Cuentas: ${colors.red}${accountsToDelete}${colors.reset} a eliminar de ${statsBefore.accounts} (protegiendo ${colors.green}${protectedData.accounts}${colors.reset})`);
+    console.log(`   ✓ Mesas: ${colors.red}${tablesToDelete}${colors.reset} a eliminar de ${statsBefore.tables} (protegiendo ${colors.green}${protectedData.tables}${colors.reset})\n`);
 
     // 8. CONTACTOS
     console.log(`${colors.cyan}8️⃣  Limpiando mensajes de contacto...${colors.reset}`);
@@ -219,81 +321,62 @@ async function cleanDatabase() {
     // 9. CLIENTES (OPCIONAL - Comentado por si quieres mantenerlos)
     console.log(`${colors.cyan}9️⃣  Limpiando clientes...${colors.reset}`);
     if (!isDryRun) {
-      results.clientes = await Cliente.deleteMany({});
+      results.clientes = await Cliente.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Clientes: ${statsBefore.clientes} registros\n`);
+    const clientesToDelete = statsBefore.clientes - protectedData.clientes;
+    console.log(`   ✓ Clientes: ${colors.red}${clientesToDelete}${colors.reset} a eliminar de ${statsBefore.clientes} (protegiendo ${colors.green}${protectedData.clientes}${colors.reset})\n`);
 
     // 10. PRODUCTOS (OPCIONAL - Comentado por si quieres mantenerlos)
     console.log(`${colors.cyan}🔟 Limpiando productos...${colors.reset}`);
     if (!isDryRun) {
-      results.products = await Product.deleteMany({});
+      results.products = await Product.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Productos: ${statsBefore.products} registros\n`);
+    const productsToDelete = statsBefore.products - protectedData.products;
+    console.log(`   ✓ Productos: ${colors.red}${productsToDelete}${colors.reset} a eliminar de ${statsBefore.products} (protegiendo ${colors.green}${protectedData.products}${colors.reset})\n`);
 
     // 11. EMPLEADOS (OPCIONAL)
     console.log(`${colors.cyan}1️⃣1️⃣  Limpiando empleados...${colors.reset}`);
     if (!isDryRun) {
-      results.empleados = await Empleado.deleteMany({});
+      results.empleados = await Empleado.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Empleados: ${statsBefore.empleados} registros\n`);
+    const empleadosToDelete = statsBefore.empleados - protectedData.empleados;
+    console.log(`   ✓ Empleados: ${colors.red}${empleadosToDelete}${colors.reset} a eliminar de ${statsBefore.empleados} (protegiendo ${colors.green}${protectedData.empleados}${colors.reset})\n`);
 
     // 12. USUARIOS (Cuidado con este!)
     console.log(`${colors.cyan}1️⃣2️⃣  Limpiando usuarios...${colors.reset}`);
     if (!isDryRun) {
-      if (keepAdmin) {
-        // Mantener el primer usuario admin
-        const adminUser = await User.findOne({ role: 'admin' }).sort({ createdAt: 1 });
-        if (adminUser) {
-          results.users = await User.deleteMany({ _id: { $ne: adminUser._id } });
-          console.log(`   ℹ️  Manteniendo usuario admin: ${adminUser.username}`);
-        } else {
-          results.users = await User.deleteMany({});
-        }
-      } else {
-        results.users = await User.deleteMany({});
-      }
+      // Eliminar usuarios que NO pertenecen a los tenants protegidos
+      results.users = await User.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Usuarios: ${statsBefore.users} registros (${keepAdmin ? 'manteniendo 1 admin' : 'todos eliminados'})\n`);
+    const usersToDelete = statsBefore.users - protectedData.users;
+    console.log(`   ✓ Usuarios: ${colors.red}${usersToDelete}${colors.reset} a eliminar de ${statsBefore.users} (protegiendo ${colors.green}${protectedData.users}${colors.reset})\n`);
 
     // 13. TIENDAS
     console.log(`${colors.cyan}1️⃣3️⃣  Limpiando tiendas...${colors.reset}`);
     if (!isDryRun) {
-      if (keepAdmin) {
-        // Si mantenemos admin, mantener su tienda principal
-        const adminUser = await User.findOne({ role: 'admin' }).sort({ createdAt: 1 });
-        if (adminUser) {
-          results.tiendas = await Tienda.deleteMany({ tenantId: { $ne: adminUser.tenantId } });
-        } else {
-          results.tiendas = await Tienda.deleteMany({});
-        }
-      } else {
-        results.tiendas = await Tienda.deleteMany({});
-      }
+      // Eliminar tiendas que NO pertenecen a los tenants protegidos
+      results.tiendas = await Tienda.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Tiendas: ${statsBefore.tiendas} registros\n`);
+    const tiendasToDelete = statsBefore.tiendas - protectedData.tiendas;
+    console.log(`   ✓ Tiendas: ${colors.red}${tiendasToDelete}${colors.reset} a eliminar de ${statsBefore.tiendas} (protegiendo ${colors.green}${protectedData.tiendas}${colors.reset})\n`);
 
     // 14. TENANTS
     console.log(`${colors.cyan}1️⃣4️⃣  Limpiando tenants...${colors.reset}`);
     if (!isDryRun) {
-      if (keepAdmin) {
-        const adminUser = await User.findOne({ role: 'admin' }).sort({ createdAt: 1 });
-        if (adminUser) {
-          results.tenants = await Tenant.deleteMany({ _id: { $ne: adminUser.tenantId } });
-        } else {
-          results.tenants = await Tenant.deleteMany({});
-        }
-      } else {
-        results.tenants = await Tenant.deleteMany({});
-      }
+      // Eliminar tenants que NO están en la lista de protegidos
+      results.tenants = await Tenant.deleteMany({ _id: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Tenants: ${statsBefore.tenants} registros\n`);
+    const tenantsToDelete = statsBefore.tenants - protectedData.tenantsExist;
+    console.log(`   ✓ Tenants: ${colors.red}${tenantsToDelete}${colors.reset} a eliminar de ${statsBefore.tenants} (protegiendo ${colors.green}${protectedData.tenantsExist}${colors.reset})\n`);
 
     // 15. CONTADORES (Reiniciar secuencias)
     console.log(`${colors.cyan}1️⃣5️⃣  Reiniciando contadores...${colors.reset}`);
     if (!isDryRun) {
-      results.counters = await Counter.deleteMany({});
+      // Eliminar contadores que NO pertenecen a los tenants protegidos
+      results.counters = await Counter.deleteMany({ tenantId: { $nin: PROTECTED_TENANTS } });
     }
-    console.log(`   ✓ Contadores: ${statsBefore.counters} registros\n`);
+    const countersToDelete = statsBefore.counters - protectedData.counters;
+    console.log(`   ✓ Contadores: ${colors.red}${countersToDelete}${colors.reset} a eliminar de ${statsBefore.counters} (protegiendo ${colors.green}${protectedData.counters}${colors.reset})\n`);
 
     // Mostrar estadísticas finales
     if (!isDryRun) {
