@@ -504,42 +504,104 @@ class CajaController {
         cantidad: cat.cantidad
       }));
 
-      // Devoluciones (solo para información)
+      // Devoluciones (información y desglose por método)
       let detallesDevoluciones = { total: 0, cantidad: 0 };
+      const desgloseDevoluciones = {
+        efectivo: { total: 0, cantidad: 0 },
+        transferencia: { total: 0, cantidad: 0 },
+        tarjeta: { total: 0, cantidad: 0 }
+      };
 
       if (incluirDevoluciones === 'true') {
         try {
           const Return = require('../../core/devoluciones/model');
 
           const filtroDevolucion = {
-            tenantId: req.tenantId, // Filtrar por tenant
+            tenantId: tenantObjectId, // Filtrar por tenant
             date: { $gte: inicioMexico, $lte: finMexico }
           };
           if (tiendaIdFinal) {
             const tiendaObjectId = new mongoose.Types.ObjectId(tiendaIdFinal);
             filtroDevolucion.tienda = tiendaObjectId;
           }
-          
+
+          // Total de devoluciones
           const devoluciones = await Return.aggregate([
             { $match: filtroDevolucion },
             { $group: { _id: null, total: { $sum: "$refundAmount" }, cantidad: { $sum: 1 } } }
           ]);
-          
+
           if (devoluciones[0]) {
             detallesDevoluciones = {
               total: Number(devoluciones[0].total.toFixed(2)),
               cantidad: devoluciones[0].cantidad
             };
           }
+
+          // ⭐ NUEVO: Desglose de devoluciones por método usando refundMethod
+          const devolucionesPorMetodo = await Return.aggregate([
+            { $match: filtroDevolucion },
+            {
+              $facet: {
+                devolucionesUnicas: [
+                  { $match: { $or: [{ originalPaymentType: "single" }, { originalPaymentType: { $exists: false } }] } },
+                  {
+                    $group: {
+                      _id: "$refundMethod",
+                      total: { $sum: "$refundAmount" },
+                      cantidad: { $sum: 1 }
+                    }
+                  }
+                ],
+                devolucionesMixtas: [
+                  { $match: { originalPaymentType: "mixed" } },
+                  { $unwind: "$mixedRefunds" },
+                  {
+                    $group: {
+                      _id: "$mixedRefunds.method",
+                      total: { $sum: "$mixedRefunds.amount" },
+                      cantidad: { $sum: 1 }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              $project: {
+                combinedResults: { $concatArrays: ["$devolucionesUnicas", "$devolucionesMixtas"] }
+              }
+            },
+            { $unwind: "$combinedResults" },
+            {
+              $group: {
+                _id: "$combinedResults._id",
+                total: { $sum: "$combinedResults.total" },
+                cantidad: { $sum: "$combinedResults.cantidad" }
+              }
+            }
+          ]);
+
+          devolucionesPorMetodo.forEach(devolucion => {
+            const metodo = devolucion._id;
+            if (desgloseDevoluciones[metodo]) {
+              desgloseDevoluciones[metodo] = {
+                total: Number(devolucion.total.toFixed(2)),
+                cantidad: devolucion.cantidad
+              };
+            }
+          });
+
+          console.log('🔍 DEVOLUCIONES POR MÉTODO:', desgloseDevoluciones);
         } catch (error) {
-          console.log('Módulo de devoluciones no disponible');
+          console.log('⚠️ Error procesando devoluciones:', error.message);
         }
       }
 
+      // ⭐ CORREGIDO: Restar devoluciones por método de devolución (no método original)
       const cortePorMetodo = {
-        efectivo: Number((desglosVentas.efectivo.total - desglosGastos.efectivo.total).toFixed(2)),
-        transferencia: Number((desglosVentas.transferencia.total - desglosGastos.transferencia.total).toFixed(2)),
-        tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total).toFixed(2))
+        efectivo: Number((desglosVentas.efectivo.total - desglosGastos.efectivo.total - desgloseDevoluciones.efectivo.total).toFixed(2)),
+        transferencia: Number((desglosVentas.transferencia.total - desglosGastos.transferencia.total - desgloseDevoluciones.transferencia.total).toFixed(2)),
+        tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total - desgloseDevoluciones.tarjeta.total).toFixed(2))
       };
 
       const corteFinal = Number((totalVentas - totalGastos).toFixed(2));
@@ -572,7 +634,10 @@ class CajaController {
           total: Number(totalGastos.toFixed(2)),
           desglose: desglosGastos
         },
-        devoluciones: detallesDevoluciones,
+        devoluciones: {
+          ...detallesDevoluciones,
+          desglose: desgloseDevoluciones
+        },
         corte: {
           porMetodo: cortePorMetodo,
           final: corteFinal,
