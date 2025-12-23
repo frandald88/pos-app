@@ -106,6 +106,11 @@ class CajaController {
           {
             status: 'parcialmente_devuelta',
             createdAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) }
+          },
+          // Ventas con devolución total (canceladas) - contar en turno donde se vendió originalmente
+          {
+            status: 'cancelada',
+            createdAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) }
           }
         ]
       };
@@ -124,13 +129,13 @@ class CajaController {
       console.log('🔍 EJECUTANDO CONSULTA VENTAS con filtro:', JSON.stringify(filtroVentas, null, 2));
       console.log('🔍 EJECUTANDO CONSULTA GASTOS con filtro:', JSON.stringify(filtroGastos, null, 2));
       console.log('🔍 Buscando ventas desde:', inicioMexico.toISOString(), 'hasta:', finMexico.toISOString());
-      console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta']);
+      console.log('🔍 Estados incluidos en corte de caja:', ['entregado_y_cobrado', 'parcialmente_devuelta', 'cancelada']);
       console.log('💡 Lógica aplicada:');
       console.log('  - Ventas sin devoluciones: se filtran por updatedAt (turno donde se completaron)');
-      console.log('  - Ventas con devoluciones: se filtran por createdAt (turno donde se cobraron originalmente)');
+      console.log('  - Ventas con devoluciones parciales o totales: se filtran por createdAt (turno donde se cobraron originalmente)');
       console.log('  - Gastos: se filtran por updatedAt (turno donde se aprobaron)');
 
-      // Ventas con soporte para pagos mixtos y devoluciones
+      // Ventas BRUTAS por método (sin restar totalReturned)
       const ventasPorMetodo = await Sale.aggregate([
         { $match: filtroVentas },
         {
@@ -140,7 +145,7 @@ class CajaController {
               {
                 $group: {
                   _id: "$method",
-                  total: { $sum: { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] } },
+                  total: { $sum: "$total" }, // Total bruto, sin restar devoluciones
                   cantidad: { $sum: 1 }
                 }
               }
@@ -149,19 +154,9 @@ class CajaController {
               { $match: { paymentType: "mixed" } },
               { $unwind: "$mixedPayments" },
               {
-                $addFields: {
-                  adjustmentFactor: {
-                    $divide: [
-                      { $subtract: ["$total", { $ifNull: ["$totalReturned", 0] }] },
-                      "$total"
-                    ]
-                  }
-                }
-              },
-              {
                 $group: {
                   _id: "$mixedPayments.method",
-                  total: { $sum: { $multiply: ["$mixedPayments.amount", "$adjustmentFactor"] } },
+                  total: { $sum: "$mixedPayments.amount" }, // Total bruto
                   cantidad: { $sum: 1 }
                 }
               }
@@ -183,7 +178,7 @@ class CajaController {
         }
       ]);
 
-      let totalVentas = 0;
+      let totalVentas = 0; // Total bruto de ventas
       const desglosVentas = {
         efectivo: { total: 0, cantidad: 0 },
         transferencia: { total: 0, cantidad: 0 },
@@ -200,7 +195,8 @@ class CajaController {
         }
       });
 
-      console.log('🔍 TOTAL VENTAS CALCULADO:', totalVentas);
+      console.log('🔍 TOTAL VENTAS BRUTO:', totalVentas);
+      console.log('🔍 DESGLOSE VENTAS (BRUTO):', desglosVentas);
 
       // Gastos por método de pago
       const gastosPorMetodo = await Expense.aggregate([
@@ -384,14 +380,33 @@ class CajaController {
         }
       });
 
-      // ⭐ NUEVO: Folio inicial y final
+      // ⭐ NUEVO: Folio inicial y final (usando solo ventas creadas en este período)
+      const filtroFolios = {
+        tenantId: tenantObjectId,
+        createdAt: { $gte: inicioMexico, $lte: finMexico },
+        status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta', 'cancelada'] }
+      };
+      if (tiendaIdFinal) {
+        filtroFolios.tienda = new mongoose.Types.ObjectId(tiendaIdFinal);
+      }
+
       const foliosStats = await Sale.aggregate([
-        { $match: filtroVentas },
+        { $match: filtroFolios },
         {
           $group: {
             _id: null,
             folioInicial: { $min: "$folio" },
-            folioFinal: { $max: "$folio" }
+            folioFinal: { $max: "$folio" },
+            totalVentas: { $sum: 1 },
+            folios: { $push: "$folio" },
+            detalles: {
+              $push: {
+                folio: "$folio",
+                createdAt: "$createdAt",
+                status: "$status",
+                total: "$total"
+              }
+            }
           }
         }
       ]);
@@ -401,9 +416,23 @@ class CajaController {
         folioFinal: null
       };
 
+      if (foliosStats[0]) {
+        console.log('🔍 ANÁLISIS DE FOLIOS:');
+        console.log('  - Folio inicial:', foliosStats[0].folioInicial);
+        console.log('  - Folio final:', foliosStats[0].folioFinal);
+        console.log('  - Total de ventas encontradas:', foliosStats[0].totalVentas);
+        console.log('  - Folios encontrados:', foliosStats[0].folios.sort((a, b) => a - b));
+        console.log('  - Detalles de cada venta:');
+        foliosStats[0].detalles
+          .sort((a, b) => a.folio - b.folio)
+          .forEach(venta => {
+            console.log(`    Folio ${venta.folio}: $${venta.total} | ${venta.status} | ${new Date(venta.createdAt).toLocaleString('es-MX')}`);
+          });
+      }
+
       // ⭐ NUEVO: Cálculo de IVA (desglose fiscal)
-      // Calcular IVA sobre el total de ventas después de devoluciones
-      const totalVentasConDevoluciones = totalVentas; // Ya tiene devoluciones restadas
+      // Calcular IVA sobre el total de ventas BRUTO (antes de devoluciones)
+      const totalVentasConDevoluciones = totalVentas; // Total bruto de ventas
       const subtotalSinIVA = totalVentasConDevoluciones / (1 + IVA_RATE);
       const ivaTotal = totalVentasConDevoluciones - subtotalSinIVA;
 
@@ -512,6 +541,13 @@ class CajaController {
         tarjeta: { total: 0, cantidad: 0 }
       };
 
+      // Inicializar balance por método (se actualizará si hay devoluciones)
+      let cortePorMetodo = {
+        efectivo: Number((desglosVentas.efectivo.total - desglosGastos.efectivo.total).toFixed(2)),
+        transferencia: Number((desglosVentas.transferencia.total - desglosGastos.transferencia.total).toFixed(2)),
+        tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total).toFixed(2))
+      };
+
       if (incluirDevoluciones === 'true') {
         try {
           const Return = require('../../core/devoluciones/model');
@@ -591,20 +627,36 @@ class CajaController {
             }
           });
 
-          console.log('🔍 DEVOLUCIONES POR MÉTODO:', desgloseDevoluciones);
+          console.log('🔍 DEVOLUCIONES POR MÉTODO DE DEVOLUCIÓN:', desgloseDevoluciones);
+
+          // ⭐ Calcular balance por método (ventas brutas - gastos - devoluciones por método de devolución)
+          cortePorMetodo = {
+            efectivo: Number((
+              desglosVentas.efectivo.total
+              - desglosGastos.efectivo.total
+              - desgloseDevoluciones.efectivo.total
+            ).toFixed(2)),
+            transferencia: Number((
+              desglosVentas.transferencia.total
+              - desglosGastos.transferencia.total
+              - desgloseDevoluciones.transferencia.total
+            ).toFixed(2)),
+            tarjeta: Number((
+              desglosVentas.tarjeta.total
+              - desglosGastos.tarjeta.total
+              - desgloseDevoluciones.tarjeta.total
+            ).toFixed(2))
+          };
+
+          console.log('🔍 BALANCE POR MÉTODO:', cortePorMetodo);
         } catch (error) {
           console.log('⚠️ Error procesando devoluciones:', error.message);
         }
       }
 
-      // ⭐ CORREGIDO: Restar devoluciones por método de devolución (no método original)
-      const cortePorMetodo = {
-        efectivo: Number((desglosVentas.efectivo.total - desglosGastos.efectivo.total - desgloseDevoluciones.efectivo.total).toFixed(2)),
-        transferencia: Number((desglosVentas.transferencia.total - desglosGastos.transferencia.total - desgloseDevoluciones.transferencia.total).toFixed(2)),
-        tarjeta: Number((desglosVentas.tarjeta.total - desglosGastos.tarjeta.total - desgloseDevoluciones.tarjeta.total).toFixed(2))
-      };
-
-      const corteFinal = Number((totalVentas - totalGastos).toFixed(2));
+      // Balance final (ventas brutas - devoluciones - gastos)
+      const totalDevoluciones = detallesDevoluciones.total || 0;
+      const corteFinal = Number((totalVentas - totalDevoluciones - totalGastos).toFixed(2));
 
       // ⭐ Contar ventas únicas correctamente (no por método de pago)
       // Esto es importante porque pagos mixtos cuentan múltiples métodos pero es 1 sola venta
@@ -627,8 +679,8 @@ class CajaController {
           turnoId: turnoId || null
         },
         ventas: {
-          total: Number(totalVentas.toFixed(2)),
-          desglose: desglosVentas
+          total: Number(totalVentas.toFixed(2)), // Total bruto
+          desglose: desglosVentas // Bruto por método
         },
         gastos: {
           total: Number(totalGastos.toFixed(2)),

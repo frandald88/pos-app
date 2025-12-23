@@ -74,8 +74,8 @@ class SalesController {
         }
       }
       
-      // Generar folio consecutivo
-      const folio = await getNextSequence('sale');
+      // Generar folio consecutivo específico por tenant
+      const folio = await getNextSequence('sale', req.tenantId);
 
       // Obtener información del tenant para determinar el estado inicial
       const Tenant = require('../../core/tenants/model');

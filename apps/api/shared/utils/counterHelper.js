@@ -3,12 +3,16 @@ const Counter = require('../models/Counter');
 /**
  * Genera el siguiente número de folio para un contador específico
  * @param {string} counterName - Nombre del contador (ej: 'sale', 'quote', 'invoice')
+ * @param {string} tenantId - ID del tenant (opcional, para contadores multi-tenant)
  * @returns {Promise<number>} - El siguiente número de folio
  */
-async function getNextSequence(counterName) {
+async function getNextSequence(counterName, tenantId = null) {
   try {
+    // Si hay tenantId, crear un contador específico por tenant
+    const counterId = tenantId ? `${counterName}_${tenantId}` : counterName;
+
     const counter = await Counter.findByIdAndUpdate(
-      counterName,
+      counterId,
       { $inc: { seq: 1 } },
       {
         new: true,           // Retornar el documento actualizado

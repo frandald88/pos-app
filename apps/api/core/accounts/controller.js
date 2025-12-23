@@ -75,7 +75,7 @@ class AccountsController {
 
       // Generar folio de venta (para trazabilidad y auditoría)
       // El folio se genera al crear la cuenta y se mantiene cuando se genera la venta final
-      const folio = await getNextSequence(tenantId, 'sale');
+      const folio = await getNextSequence('sale', tenantId);
 
       // Crear cuenta
       const account = new Account({
