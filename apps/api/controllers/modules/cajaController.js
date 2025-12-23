@@ -87,32 +87,20 @@ class CajaController {
       }
 
       // Filtros base usando fechas de México
-      // ⭐ IMPORTANTE: Lógica combinada para contar ventas correctamente:
-      // 1. Ventas SIN devoluciones: usar updatedAt (para capturar ventas completadas en este turno)
-      // 2. Ventas CON devoluciones parciales: usar createdAt (para mantenerlas en el turno original donde se cobró)
-      // Esto evita que ventas se "muevan" al turno donde se hizo la devolución
-      // Convertir tenantId a ObjectId para el aggregation
+      // ⭐ SOLUCIÓN DEFINITIVA: Usar completedAt para TODAS las ventas
+      // completedAt se establece cuando una venta se marca como 'entregado_y_cobrado' y NUNCA cambia
+      // Esto resuelve el problema de ventas que "desaparecen" cuando se hacen devoluciones
+      //
+      // Comportamiento:
+      // - Venta creada en Turno A, completada en Turno B: completedAt = Turno B → aparece en Turno B ✓
+      // - Devolución en Turno C: completedAt NO cambia → venta sigue en Turno B ✓
+      // - La devolución se registra por separado en la colección Returns con su propia fecha
       const tenantObjectId = new mongoose.Types.ObjectId(req.tenantId);
 
       const filtroVentas = {
-        tenantId: tenantObjectId, // Filtrar por tenant (como ObjectId)
-        $or: [
-          // Ventas completadas durante este turno (sin devoluciones aún)
-          {
-            status: 'entregado_y_cobrado',
-            updatedAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) }
-          },
-          // Ventas con devoluciones parciales - contar en turno donde se vendió originalmente
-          {
-            status: 'parcialmente_devuelta',
-            createdAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) }
-          },
-          // Ventas con devolución total (canceladas) - contar en turno donde se vendió originalmente
-          {
-            status: 'cancelada',
-            createdAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) }
-          }
-        ]
+        tenantId: tenantObjectId,
+        completedAt: { $gte: new Date(inicioMexico), $lte: new Date(finMexico) },
+        status: { $in: ['entregado_y_cobrado', 'parcialmente_devuelta', 'cancelada'] }
       };
       const filtroGastos = {
         tenantId: tenantObjectId, // Filtrar por tenant (como ObjectId para aggregation)

@@ -147,6 +147,14 @@ const saleSchema = new mongoose.Schema({
     default: 'en_preparacion'
   },
   totalReturned: { type: Number, default: 0 },
+  // ⭐ NUEVO: Fecha cuando la venta se marcó como entregado_y_cobrado (para reportes de caja)
+  // Este campo se establece UNA VEZ cuando status cambia a 'entregado_y_cobrado' y NUNCA cambia
+  // Permite que las ventas aparezcan en el turno/período donde se cobraron, no donde se devolvieron
+  completedAt: {
+    type: Date,
+    default: null,
+    index: true
+  },
 }, { timestamps: true });
 
 // Índices compuestos para multi-tenancy

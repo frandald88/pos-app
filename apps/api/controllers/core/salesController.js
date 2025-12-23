@@ -121,6 +121,11 @@ class SalesController {
 
       const newSale = new Sale(saleData);
 
+      // ⭐ Si la venta se crea directamente como entregado_y_cobrado (supermercados), establecer completedAt
+      if (initialStatus === 'entregado_y_cobrado') {
+        newSale.completedAt = new Date();
+      }
+
       // 📦 REDUCCIÓN DE STOCK: Solo para supermercados
       // Restaurants y dark kitchens preparan items al momento (hamburguesas, etc.)
       // Supermercados venden productos pre-hechos que deben restarse del inventario
@@ -502,6 +507,13 @@ class SalesController {
 
       // Actualizar el estado
       sale.status = status;
+
+      // ⭐ IMPORTANTE: Si se está marcando como entregado_y_cobrado por primera vez, guardar la fecha
+      // Este campo NUNCA cambia después, incluso si hay devoluciones
+      if (status === 'entregado_y_cobrado' && !sale.completedAt) {
+        sale.completedAt = new Date();
+      }
+
       await sale.save();
 
       // Intentar popular los campos relacionados
