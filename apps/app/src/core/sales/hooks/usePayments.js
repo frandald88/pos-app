@@ -9,13 +9,30 @@ export const usePayments = () => {
   // Estados para pagos mixtos
   const [mixedPayments, setMixedPayments] = useState([]);
 
+  // Obtener métodos de pago ya usados
+  const getUsedMethods = () => {
+    return mixedPayments.map(p => p.method);
+  };
+
+  // Obtener el primer método de pago disponible (no usado)
+  const getFirstAvailableMethod = () => {
+    const allMethods = ['efectivo', 'tarjeta', 'transferencia'];
+    const usedMethods = getUsedMethods();
+    return allMethods.find(method => !usedMethods.includes(method)) || 'efectivo';
+  };
+
   // Agregar método de pago mixto
   const addMixedPayment = (remaining) => {
     if (remaining <= 0) return;
 
+    // Si ya tenemos los 3 métodos de pago, no permitir agregar más
+    if (mixedPayments.length >= 3) {
+      return;
+    }
+
     setMixedPayments([...mixedPayments, {
       id: Date.now(),
-      method: 'efectivo',
+      method: getFirstAvailableMethod(),
       amount: Math.min(remaining, 100),
       receivedAmount: '',
       reference: ''
@@ -24,7 +41,19 @@ export const usePayments = () => {
 
   // Actualizar pago mixto
   const updateMixedPayment = (id, field, value) => {
-    setMixedPayments(mixedPayments.map(payment => 
+    // Si se está actualizando el método de pago, verificar que no esté ya usado
+    if (field === 'method') {
+      const isMethodUsed = mixedPayments.some(payment =>
+        payment.id !== id && payment.method === value
+      );
+
+      // Si el método ya está usado, no permitir el cambio
+      if (isMethodUsed) {
+        return;
+      }
+    }
+
+    setMixedPayments(mixedPayments.map(payment =>
       payment.id === id ? { ...payment, [field]: value } : payment
     ));
   };
@@ -105,7 +134,7 @@ export const usePayments = () => {
     paymentMethod,
     amountPaid,
     mixedPayments,
-    
+
     // Payment actions
     setPaymentType,
     setPaymentMethod,
@@ -114,11 +143,14 @@ export const usePayments = () => {
     updateMixedPayment,
     removeMixedPayment,
     clearPayments,
-    
+
     // Payment calculations
     getRemainingAmount,
     getTotalChange,
     validateMixedPayments,
-    singlePaymentChange
+    singlePaymentChange,
+
+    // Payment utilities
+    getUsedMethods
   };
 };

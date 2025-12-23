@@ -29,7 +29,8 @@ const PaymentSection = ({
   onUpdateMixedPayment,
   onRemoveMixedPayment,
   getRemainingAmount,
-  getTotalChange
+  getTotalChange,
+  getUsedMethods
 }) => {
   return (
     <div className="space-y-4">
@@ -210,45 +211,59 @@ const PaymentSection = ({
                     <div>
                       <label className="block text-xs font-medium mb-1" style={{ color: '#374151' }}>Método</label>
                       <div className="flex gap-1">
-                        <button
-                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'efectivo')}
-                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
-                            payment.method === 'efectivo' ? 'text-white' : ''
-                          }`}
-                          style={
-                            payment.method === 'efectivo'
-                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
-                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
-                          }
-                        >
-                          {Icons.cash()}
-                        </button>
-                        <button
-                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'transferencia')}
-                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
-                            payment.method === 'transferencia' ? 'text-white' : ''
-                          }`}
-                          style={
-                            payment.method === 'transferencia'
-                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
-                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
-                          }
-                        >
-                          {Icons.bank()}
-                        </button>
-                        <button
-                          onClick={() => onUpdateMixedPayment(payment.id, 'method', 'tarjeta')}
-                          className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all active:scale-95 ${
-                            payment.method === 'tarjeta' ? 'text-white' : ''
-                          }`}
-                          style={
-                            payment.method === 'tarjeta'
-                              ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
-                              : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
-                          }
-                        >
-                          {Icons.creditCard()}
-                        </button>
+                        {(() => {
+                          const usedMethods = getUsedMethods();
+                          const isEfectivoUsed = usedMethods.includes('efectivo') && payment.method !== 'efectivo';
+                          const isTransferenciaUsed = usedMethods.includes('transferencia') && payment.method !== 'transferencia';
+                          const isTarjetaUsed = usedMethods.includes('tarjeta') && payment.method !== 'tarjeta';
+
+                          return (
+                            <>
+                              <button
+                                onClick={() => onUpdateMixedPayment(payment.id, 'method', 'efectivo')}
+                                disabled={isEfectivoUsed}
+                                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all ${
+                                  !isEfectivoUsed ? 'active:scale-95' : 'cursor-not-allowed opacity-50'
+                                } ${payment.method === 'efectivo' ? 'text-white' : ''}`}
+                                style={
+                                  payment.method === 'efectivo'
+                                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                                }
+                              >
+                                {Icons.cash()}
+                              </button>
+                              <button
+                                onClick={() => onUpdateMixedPayment(payment.id, 'method', 'transferencia')}
+                                disabled={isTransferenciaUsed}
+                                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all ${
+                                  !isTransferenciaUsed ? 'active:scale-95' : 'cursor-not-allowed opacity-50'
+                                } ${payment.method === 'transferencia' ? 'text-white' : ''}`}
+                                style={
+                                  payment.method === 'transferencia'
+                                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                                }
+                              >
+                                {Icons.bank()}
+                              </button>
+                              <button
+                                onClick={() => onUpdateMixedPayment(payment.id, 'method', 'tarjeta')}
+                                disabled={isTarjetaUsed}
+                                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded border transition-all ${
+                                  !isTarjetaUsed ? 'active:scale-95' : 'cursor-not-allowed opacity-50'
+                                } ${payment.method === 'tarjeta' ? 'text-white' : ''}`}
+                                style={
+                                  payment.method === 'tarjeta'
+                                    ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)', borderColor: '#23334e' }
+                                    : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }
+                                }
+                              >
+                                {Icons.creditCard()}
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
 

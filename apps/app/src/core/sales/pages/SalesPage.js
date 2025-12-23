@@ -124,7 +124,8 @@ export default function SalesPage() {
     clearPayments,
     getRemainingAmount,
     getTotalChange,
-    validateMixedPayments
+    validateMixedPayments,
+    getUsedMethods
   } = usePayments();
 
   const {
@@ -733,6 +734,7 @@ export default function SalesPage() {
               onRemoveMixedPayment={removeMixedPayment}
               getRemainingAmount={() => getRemainingAmount(totalWithTax)}
               getTotalChange={getTotalChange}
+              getUsedMethods={getUsedMethods}
             />
 
             {/* Tipo de venta */}

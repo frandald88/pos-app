@@ -533,6 +533,8 @@ export function usePrintTicket() {
     if (camposMostrar.folio) {
       infoHTML += `<p><strong>Folio:</strong> ${sale.folio || sale._id?.substring(0, 8).toUpperCase()}</p>`;
     }
+    // ID de Venta para devoluciones
+    infoHTML += `<p style="font-size: 10px; color: #555;"><strong>ID Venta:</strong> ${sale._id}</p>`;
     if (camposMostrar.fecha) {
       infoHTML += `<p><strong>Fecha:</strong> ${formatDate(sale.fecha || new Date())}</p>`;
     }
