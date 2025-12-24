@@ -1381,25 +1381,34 @@ const handleEdit = async (user) => {
           </div>
         </div>
 
-        {/* Mensaje de estado */}
+        {/* Mensaje de estado - Notificación flotante que aparece sobre modales */}
         {msg && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 flex items-center gap-3 ${
-            msg.includes('[SUCCESS]')
-              ? 'bg-green-50 border-green-400 text-green-800'
-              : msg.includes('[WARNING]')
-              ? 'bg-yellow-50 border-yellow-400 text-yellow-800'
-              : 'bg-red-50 border-red-400 text-red-800'
-          }`}>
-            <div className="flex-shrink-0">
-              {msg.includes('[SUCCESS]') ? (
-                <div className="text-green-600"><Icons.check /></div>
-              ) : msg.includes('[WARNING]') ? (
-                <div className="text-yellow-600"><Icons.warning /></div>
-              ) : (
-                <div className="text-red-600"><Icons.xmark /></div>
-              )}
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] max-w-2xl w-full mx-4 animate-fade-in">
+            <div className={`p-4 rounded-lg border-l-4 flex items-center gap-3 shadow-2xl ${
+              msg.includes('[SUCCESS]')
+                ? 'bg-green-50 border-green-400 text-green-800'
+                : msg.includes('[WARNING]')
+                ? 'bg-yellow-50 border-yellow-400 text-yellow-800'
+                : 'bg-red-50 border-red-400 text-red-800'
+            }`}>
+              <div className="flex-shrink-0">
+                {msg.includes('[SUCCESS]') ? (
+                  <div className="text-green-600"><Icons.check /></div>
+                ) : msg.includes('[WARNING]') ? (
+                  <div className="text-yellow-600"><Icons.warning /></div>
+                ) : (
+                  <div className="text-red-600"><Icons.xmark /></div>
+                )}
+              </div>
+              <p className="font-medium flex-1">{msg.replace('[SUCCESS]', '').replace('[ERROR]', '').replace('[WARNING]', '').trim()}</p>
+              <button
+                onClick={() => setMsg('')}
+                className="flex-shrink-0 p-1 hover:bg-black/10 rounded-full transition-colors"
+                type="button"
+              >
+                <Icons.xmark />
+              </button>
             </div>
-            <p className="font-medium">{msg.replace('[SUCCESS]', '').replace('[ERROR]', '').replace('[WARNING]', '').trim()}</p>
           </div>
         )}
 
