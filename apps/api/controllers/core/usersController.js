@@ -216,6 +216,14 @@ class UsersController {
       });
       const savedUser = await newUser.save();
 
+      // ⭐ CRÍTICO: Incrementar contador de usuarios
+      const Tenant = require('../../core/tenants/model');
+      await Tenant.findByIdAndUpdate(
+        req.tenantId,
+        { $inc: { 'metadata.totalUsers': 1 } }
+      );
+      console.log(`📈 Incrementado totalUsers para tenant ${req.tenantId}`);
+
       return successResponse(res, {
         user: {
           _id: savedUser._id,
@@ -367,6 +375,14 @@ class UsersController {
 
       await user.restore();
 
+      // ⭐ CRÍTICO: Incrementar contador de usuarios (restauración)
+      const Tenant = require('../../core/tenants/model');
+      await Tenant.findByIdAndUpdate(
+        req.tenantId,
+        { $inc: { 'metadata.totalUsers': 1 } }
+      );
+      console.log(`📈 Incrementado totalUsers para tenant ${req.tenantId} (restauración)`);
+
       res.json({
         message: 'Usuario restaurado exitosamente',
         user: {
@@ -412,6 +428,14 @@ class UsersController {
       }
 
       await user.softDelete(req.userId);
+
+      // ⭐ CRÍTICO: Decrementar contador de usuarios
+      const Tenant = require('../../core/tenants/model');
+      await Tenant.findByIdAndUpdate(
+        req.tenantId,
+        { $inc: { 'metadata.totalUsers': -1 } }
+      );
+      console.log(`📉 Decrementado totalUsers para tenant ${req.tenantId}`);
 
       res.json({
         message: 'Usuario eliminado exitosamente',

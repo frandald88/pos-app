@@ -2,6 +2,7 @@ const Tienda = require('../../modules/tiendas/model');
 const User = require('../../core/users/model');
 const Product = require('../../core/products/model');
 const Sale = require('../../core/sales/model');
+const Tenant = require('../../core/tenants/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const { validateInternationalPhone } = require('../../shared/utils/phoneValidation');
 const mongoose = require('mongoose');
@@ -274,6 +275,14 @@ class TiendasController {
       });
 
       await newTienda.save();
+
+      // ⭐ CRÍTICO: Incrementar contador de tiendas
+      await Tenant.findByIdAndUpdate(
+        req.tenantId,
+        { $inc: { 'metadata.totalTiendas': 1 } }
+      );
+      console.log(`📈 Incrementado totalTiendas para tenant ${req.tenantId}`);
+
       return successResponse(res, newTienda, 'Tienda creada exitosamente', 201);
 
     } catch (error) {
@@ -520,6 +529,13 @@ class TiendasController {
       console.log('🗑️ Eliminando tienda de la base de datos...');
       await Tienda.findOneAndDelete({ _id: id, tenantId: req.tenantId });
       console.log('✅ Tienda eliminada exitosamente');
+
+      // ⭐ CRÍTICO: Decrementar contador de tiendas
+      await Tenant.findByIdAndUpdate(
+        req.tenantId,
+        { $inc: { 'metadata.totalTiendas': -1 } }
+      );
+      console.log(`📉 Decrementado totalTiendas para tenant ${req.tenantId}`);
 
       return successResponse(
         res,
