@@ -776,11 +776,16 @@ class VacacionesController {
       const yearStart = new Date(currentYear, 0, 1);
       const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
 
+      // ⭐ CORREGIDO: Incluir solicitudes que tengan cualquier parte dentro del año actual o próximo
+      // Esto permite ver vacaciones aprobadas para el próximo año desde finales del año actual
+      const nextYearEnd = new Date(currentYear + 1, 11, 31, 23, 59, 59, 999);
+
       const approvedThisYear = await VacationRequest.find({
         tenantId: req.tenantId,
         employee: userId,
         status: 'aprobada',
-        startDate: { $gte: yearStart, $lte: yearEnd }
+        // Incluir solicitudes que comiencen desde este año hasta el próximo
+        startDate: { $gte: yearStart, $lte: nextYearEnd }
       }).sort({ startDate: 1 });
 
       // Obtener la fecha de hoy sin horas (solo día)
