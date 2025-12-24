@@ -701,6 +701,7 @@ class AccountsController {
         mixedPayments: paymentType === 'mixed' ? mixedPayments : undefined,
         type: 'mostrador',
         status: 'entregado_y_cobrado',
+        completedAt: new Date(), // ⭐ NUEVO: Fecha cuando se completó la venta (para reportes de caja)
         tienda: account.tiendaId,
         turno: account.turnoId,
         user: userId,
@@ -885,6 +886,7 @@ class AccountsController {
           : undefined,
         type: 'mostrador',
         status: 'entregado_y_cobrado',
+        completedAt: new Date(), // ⭐ NUEVO: Fecha cuando se completó la venta (para reportes de caja)
         tienda: account.tiendaId,
         turno: account.turnoId,
         user: userId,
@@ -1648,6 +1650,7 @@ class AccountsController {
         },
         cliente: null,
         status: 'entregado_y_cobrado',
+        completedAt: new Date(), // ⭐ NUEVO: Fecha cuando se completó la venta (para reportes de caja)
         sourceAccount: account._id,
         restaurantInfo: {
           tableNumber: account.tableIds.map(t => t.number).join('+'),

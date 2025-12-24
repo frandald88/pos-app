@@ -1135,8 +1135,6 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
     setCargando(true);
     const payload = {
       // Datos laborales existentes
-      startDate: editHistorial.startDate || null,
-      endDate: editHistorial.endDate || null,
       seguroSocial: editHistorial.seguro,
       motivoBaja: editHistorial.motivo,
       razonBaja: editHistorial.razon,
@@ -1152,6 +1150,14 @@ const loadScheduleForEdit = (schedule, isTemplate = false) => {
       curp: editPersonalData.curp?.trim() || null,
       numeroSeguroSocial: editPersonalData.numeroSeguroSocial?.trim() || null
     };
+
+    // ✅ CORREGIDO: Solo incluir startDate y endDate si tienen valores válidos (no null, no cadena vacía)
+    if (editHistorial.startDate && editHistorial.startDate.trim()) {
+      payload.startDate = editHistorial.startDate;
+    }
+    if (editHistorial.endDate && editHistorial.endDate.trim()) {
+      payload.endDate = editHistorial.endDate;
+    }
 
     try {
       await axios.put(`${apiBaseUrl}/api/employees/history/${id}`, payload, { 
@@ -3571,12 +3577,13 @@ const handleEdit = async (user) => {
                             
                             ) : (
                           <div className="flex gap-2">
-                            <button 
+                            <button
                               onClick={() => {
                                 setEditHistorial({
                                   id: h._id,
                                   sueldo: h.sueldoDiario || h.salary || "",
                                   position: h.position || "",
+                                  startDate: h.startDate && typeof h.startDate === 'string' ? h.startDate.split('T')[0] : "",
                                   endDate: h.endDate && typeof h.endDate === 'string' ? h.endDate.split('T')[0] : "",
                                   seguro: h.seguroSocial === 'Sí' || h.seguroSocial === true,
                                   motivo: h.motivoBaja || "",
