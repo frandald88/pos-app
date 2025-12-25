@@ -3,6 +3,7 @@ import { useProductState } from '../hooks/useProductState';
 import { useProductActions } from '../hooks/useProductActions';
 import { productService } from '../services/productService';
 import { usePrintProductLabel } from '../../../shared/components/PrintProductLabel';
+import Pagination from '../../../shared/components/Pagination.jsx';
 
 // SVG Icons - AstroDish Design System
 const Icons = {
@@ -107,7 +108,9 @@ export default function ProductsPage() {
     setMostrarTodasCategorias,
     categoriasFiltradas,
     setCategoriasFiltradas,
-    stockActualizado
+    stockActualizado,
+    pagination,
+    productStats
   } = state;
   
   const token = localStorage.getItem("token");
@@ -122,6 +125,17 @@ export default function ProductsPage() {
     fetchCategorias,
     buscarProductos
   } = actions;
+
+  // ⭐ NUEVO: Funciones de paginación
+  const handlePageChange = (newPage) => {
+    fetchProducts({ page: newPage });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLimitChange = (newLimit) => {
+    fetchProducts({ page: 1, limit: newLimit });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -139,19 +153,34 @@ export default function ProductsPage() {
     }
   }, [mostrarFormulario, setCategoriasFiltradas, setMostrarTodasCategorias]);
 
-  // Refetch products when store filter changes
+  // ⭐ Refetch products when filters change (tienda, categoría, búsqueda)
   useEffect(() => {
-    const filters = {};
+    // Debounce para la búsqueda (esperar 500ms después de que el usuario deje de escribir)
+    const timeoutId = setTimeout(() => {
+      const filters = {};
 
-    // Only add tiendaId filter if a specific store is selected
-    if (filtroTienda && filtroTienda !== "") {
-      filters.tiendaId = filtroTienda;
-      console.log('Filtrando productos por tienda:', filtroTienda);
-    }
+      // Filtro por tienda
+      if (filtroTienda && filtroTienda !== "") {
+        filters.tiendaId = filtroTienda;
+      }
 
-    // Refetch products with the filter
-    fetchProducts(filters);
-  }, [filtroTienda]); // Refetch whenever filtroTienda changes
+      // Filtro por categoría
+      if (filtroCategoria && filtroCategoria !== "") {
+        filters.category = filtroCategoria;
+      }
+
+      // Filtro por búsqueda
+      if (search && search.trim() !== "") {
+        filters.search = search.trim();
+      }
+
+      // Refetch con todos los filtros
+      fetchProducts(filters);
+    }, 500); // Esperar 500ms antes de buscar
+
+    // Cleanup: cancelar el timeout si el usuario sigue escribiendo
+    return () => clearTimeout(timeoutId);
+  }, [filtroTienda, filtroCategoria, search]); // Refetch cuando cualquier filtro cambia
 
 const handleSubmit = (e) => {
   e.preventDefault();
@@ -288,31 +317,17 @@ const handleSubmit = (e) => {
   };
 
 
-  // Filtrar productos
-  const filteredProducts = (products || []).filter((p) => {
-    const matchesSearch = 
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase());
-    
-    const matchesCategory = filtroCategoria === "" || p.category === filtroCategoria;
-    const matchesTienda = filtroTienda === "" || p.tienda?._id === filtroTienda;
-    
-    return matchesSearch && matchesCategory && matchesTienda;
-  });
+  // ⭐ NO filtrar client-side - el filtrado se hace en el backend
+  // Simplemente usar los productos que vienen del backend ya filtrados
+  const filteredProducts = products || [];
 
-  // Estadísticas del inventario
-  const getInventoryStats = () => {
-    const productArray = products || [];
-    return {
-      total: productArray.length,
-      sinStock: productArray.filter(p => p.stock === 0).length,
-      bajoStock: productArray.filter(p => p.stock > 0 && p.stock <= 10).length,
-      valorTotal: productArray.reduce((sum, p) => sum + (p.price * p.stock), 0)
-    };
+  // ⭐ Usar estadísticas del backend (calculadas sobre TODOS los productos)
+  const stats = {
+    total: productStats?.totalProducts || 0,
+    sinStock: productStats?.outOfStock || 0,
+    bajoStock: productStats?.lowStock || 0,
+    valorTotal: productStats?.totalValue || 0
   };
-
-  const stats = getInventoryStats();
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
@@ -1865,6 +1880,16 @@ const handleSubmit = (e) => {
                 );
               })}
             </div>
+          )}
+
+          {/* ⭐ NUEVO: Paginación */}
+          {!cargando && filteredProducts.length > 0 && (
+            <Pagination
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onLimitChange={handleLimitChange}
+              limitOptions={[50, 100, 200, 500]}
+            />
           )}
         </div>
       </div>

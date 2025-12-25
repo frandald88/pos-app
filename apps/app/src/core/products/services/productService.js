@@ -19,24 +19,45 @@ export const productService = {
     if (filters.inStock !== undefined) {
       params.inStock = filters.inStock;
     }
+    // ⭐ NUEVO: Paginación
+    if (filters.page) {
+      params.page = filters.page;
+    }
+    if (filters.limit) {
+      params.limit = filters.limit;
+    }
 
     const response = await axios.get(`${apiBaseUrl}/api/products`, {
       headers: { Authorization: `Bearer ${token}` },
       params
     });
-    // El controller devuelve un objeto con products, pagination, stats
-    // Pero el frontend solo necesita el array de products
-    let products;
+
+    // ⭐ NUEVO: Retornar el objeto completo con products, pagination y stats
     if (response.data.data?.products) {
-      products = response.data.data.products;
+      return {
+        products: response.data.data.products,
+        pagination: response.data.data.pagination || {},
+        stats: response.data.data.stats || {}
+      };
     } else if (response.data.products) {
-      products = response.data.products;
+      return {
+        products: response.data.products,
+        pagination: response.data.pagination || {},
+        stats: response.data.stats || {}
+      };
     } else if (Array.isArray(response.data)) {
-      products = response.data;
+      return {
+        products: response.data,
+        pagination: {},
+        stats: {}
+      };
     } else {
-      products = [];
+      return {
+        products: [],
+        pagination: {},
+        stats: {}
+      };
     }
-    return products;
   },
 
   // Obtener siguiente SKU

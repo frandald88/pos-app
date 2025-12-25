@@ -39,6 +39,15 @@ export const useProductState = () => {
   const [categoriasFiltradas, setCategoriasFiltradas] = useState([]);
   const [stockActualizado, setStockActualizado] = useState(false);
 
+  // ⭐ NUEVO: Estados de paginación
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 100,
+    total: 0,
+    pages: 0
+  });
+  const [productStats, setProductStats] = useState({});
+
   return {
     // Estados principales
     products,
@@ -94,6 +103,12 @@ export const useProductState = () => {
     categoriasFiltradas,
     setCategoriasFiltradas,
     stockActualizado,
-    setStockActualizado
+    setStockActualizado,
+
+    // ⭐ NUEVO: Estados de paginación
+    pagination,
+    setPagination,
+    productStats,
+    setProductStats
   };
 };

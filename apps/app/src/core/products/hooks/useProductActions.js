@@ -30,7 +30,11 @@ export const useProductActions = (state) => {
     setUsarSkuManual,
     setMostrarTodasCategorias,
     setCategoriasFiltradas: resetCategoriasFiltradas,
-    fetchNextSKU: externalFetchNextSKU
+    fetchNextSKU: externalFetchNextSKU,
+    // ⭐ NUEVO: Estados de paginación
+    pagination,
+    setPagination,
+    setProductStats
   } = state;
 
   const token = localStorage.getItem("token");
@@ -54,21 +58,28 @@ export const useProductActions = (state) => {
   const fetchProducts = (filters = {}) => {
     setCargando(true);
 
+    // ⭐ NUEVO: Incluir paginación en los filtros
+    const filtersWithPagination = {
+      ...filters,
+      page: filters.page || pagination.page,
+      limit: filters.limit || pagination.limit
+    };
+
     // Log de filtros aplicados
-    if (Object.keys(filters).length > 0) {
-      console.log('🔍 Obteniendo productos con filtros:', filters);
+    if (Object.keys(filtersWithPagination).length > 0) {
+      console.log('🔍 Obteniendo productos con filtros:', filtersWithPagination);
     }
 
-    productService.getAllProducts(token, filters)
-      .then((data) => {
-        console.log('📦 Productos obtenidos (primeros 3):', data.slice(0, 3).map(p => ({
-          name: p.name,
-          sku: p.sku,
-          tienda: p.tienda?.nombre || 'Sin tienda',
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt
-        })));
-        setProducts(data);
+    productService.getAllProducts(token, filtersWithPagination)
+      .then((response) => {
+        // ⭐ NUEVO: El servicio ahora retorna { products, pagination, stats }
+        console.log('📦 Productos obtenidos:', response.products?.length || 0);
+        console.log('📄 Paginación:', response.pagination);
+        console.log('📊 Stats recibidas:', response.stats);
+
+        setProducts(response.products || []);
+        setPagination(response.pagination || pagination);
+        setProductStats(response.stats || {});
         setCargando(false);
       })
       .catch((error) => {
