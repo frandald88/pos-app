@@ -114,6 +114,12 @@ class ProductsController {
       const tenantFilter = { tenantId: req.tenantId };
       const tenantFilterForAggregate = { tenantId: new mongoose.Types.ObjectId(req.tenantId) };
 
+      // ⭐ NUEVO: Para categoryCounts, respetar filtro de tienda si está seleccionada
+      const statsFilterForAggregate = { ...tenantFilterForAggregate };
+      if (tiendaId && mongoose.Types.ObjectId.isValid(tiendaId)) {
+        statsFilterForAggregate.tienda = new mongoose.Types.ObjectId(tiendaId);
+      }
+
       const totalProducts = await Product.countDocuments(tenantFilter);
       const outOfStock = await Product.countDocuments({ ...tenantFilter, stock: 0 });
       const lowStock = await Product.countDocuments({
@@ -142,7 +148,7 @@ class ProductsController {
 
       // ⭐ NUEVO: Conteo de productos por categoría (limitado a 40 por categoría para el frontend)
       const categoryCounts = await Product.aggregate([
-        { $match: tenantFilterForAggregate },
+        { $match: statsFilterForAggregate },
         {
           $group: {
             _id: '$category',
