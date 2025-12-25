@@ -59,23 +59,21 @@ function generateRandomProduct(tenantId, tiendaId, index, category = null) {
   const type = types[Math.floor(Math.random() * types.length)];
   const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
 
-  const name = `${prefix} ${type} ${index}`;
+  const productName = `${prefix} ${type} ${index}`;
   const price = (Math.random() * 500 + 10).toFixed(2); // Entre $10 y $510
-  const cost = (price * 0.6).toFixed(2); // Costo es ~60% del precio
   const stock = Math.floor(Math.random() * 100); // Entre 0 y 100 unidades
+  const sku = `SKU-${Date.now()}-${Math.floor(Math.random() * 100000)}`.substring(0, 20);
   const barcode = `${Date.now()}${Math.floor(Math.random() * 10000)}`.substring(0, 13);
 
   return {
     tenantId,
     tienda: tiendaId,
-    nombre: name,
-    precio: parseFloat(price),
-    costo: parseFloat(cost),
+    name: productName,
+    sku: sku,
+    barcode: barcode,
+    price: parseFloat(price),
     stock: stock,
-    categoria: selectedCategory,
-    descripcion: `Producto de prueba generado automáticamente - ${selectedCategory}`,
-    codigo: barcode,
-    activo: true
+    category: selectedCategory
   };
 }
 
@@ -143,22 +141,34 @@ async function generateProducts(tenantId, count, tiendaId = null, category = nul
       }
 
       try {
-        await Product.insertMany(products, { ordered: false });
-        created += batchCount;
+        const result = await Product.insertMany(products, { ordered: false });
+        const actuallyInserted = result.length;
+        created += actuallyInserted;
 
-        // Actualizar contador de productos
-        await Tenant.findByIdAndUpdate(
-          tenantId,
-          { $inc: { 'metadata.totalProducts': batchCount } }
-        );
+        // Actualizar contador de productos solo con los realmente insertados
+        if (actuallyInserted > 0) {
+          await Tenant.findByIdAndUpdate(
+            tenantId,
+            { $inc: { 'metadata.totalProducts': actuallyInserted } }
+          );
+        }
+
+        // Contar fallidos en este lote
+        const batchFailed = batchCount - actuallyInserted;
+        if (batchFailed > 0) {
+          failed += batchFailed;
+        }
 
         // Mostrar progreso
-        const progress = ((created / count) * 100).toFixed(1);
+        const progress = (((i + batchCount) / count) * 100).toFixed(1);
         const bar = '█'.repeat(Math.floor(progress / 2)) + '░'.repeat(50 - Math.floor(progress / 2));
-        process.stdout.write(`\r  ${colors.cyan}[${bar}] ${progress}% (${created}/${count})${colors.reset}`);
+        process.stdout.write(`\r  ${colors.cyan}[${bar}] ${progress}% (${created} creados, ${failed} fallidos)${colors.reset}`);
       } catch (error) {
         failed += batchCount;
-        console.error(`\n${colors.red}Error en lote ${i / batchSize + 1}:${colors.reset}`, error.message);
+        console.error(`\n${colors.red}Error en lote ${Math.floor(i / batchSize) + 1}:${colors.reset}`, error.message);
+        if (error.writeErrors && error.writeErrors.length > 0) {
+          console.error(`${colors.yellow}Primer error detallado:${colors.reset}`, error.writeErrors[0].err);
+        }
       }
     }
 

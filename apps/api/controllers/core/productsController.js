@@ -1,4 +1,5 @@
 const Product = require('../../core/products/model');
+const Tenant = require('../../core/tenants/model');
 const { successResponse, errorResponse } = require('../../shared/utils/responseHelper');
 const mongoose = require('mongoose');
 
@@ -60,7 +61,7 @@ class ProductsController {
         category,
         search,
         inStock,
-        limit = 50,
+        limit = 100, // Aumentado de 50 a 100
         page = 1,
         sortBy = 'createdAt',
         sortOrder = 'asc'
@@ -107,19 +108,45 @@ class ProductsController {
 
       const total = await Product.countDocuments(filter);
 
-      // Estadísticas adicionales
-      const stats = await Product.aggregate([
-        { $match: filter },
+      // ⭐ IMPORTANTE: Estadísticas calculadas sobre TODOS los productos del tenant
+      // Para aggregate, necesitamos convertir tenantId a ObjectId explícitamente
+      const tenantFilter = { tenantId: req.tenantId };
+      const tenantFilterForAggregate = { tenantId: new mongoose.Types.ObjectId(req.tenantId) };
+
+      const totalProducts = await Product.countDocuments(tenantFilter);
+      const outOfStock = await Product.countDocuments({ ...tenantFilter, stock: 0 });
+      const lowStock = await Product.countDocuments({
+        ...tenantFilter,
+        stock: { $gt: 0, $lte: 10 }
+      });
+
+      // Para totalValue necesitamos aggregate
+      // Convertir a números explícitamente para evitar problemas con strings
+      const valueAgg = await Product.aggregate([
+        { $match: tenantFilterForAggregate },
         {
           $group: {
             _id: null,
-            totalProducts: { $sum: 1 },
-            totalValue: { $sum: { $multiply: ['$price', '$stock'] } },
-            lowStock: { $sum: { $cond: [{ $lte: ['$stock', 10] }, 1, 0] } },
-            outOfStock: { $sum: { $cond: [{ $eq: ['$stock', 0] }, 1, 0] } }
+            totalValue: {
+              $sum: {
+                $multiply: [
+                  { $ifNull: [{ $toDouble: '$price' }, 0] },
+                  { $ifNull: [{ $toDouble: '$stock' }, 0] }
+                ]
+              }
+            }
           }
         }
       ]);
+
+      const stats = {
+        totalProducts,
+        totalValue: valueAgg[0]?.totalValue || 0,
+        lowStock,
+        outOfStock
+      };
+
+      console.log('📊 Stats calculadas:', stats);
 
       return successResponse(res, {
         products,
@@ -129,12 +156,7 @@ class ProductsController {
           limit: parseInt(limit),
           pages: Math.ceil(total / parseInt(limit))
         },
-        stats: stats[0] || {
-          totalProducts: 0,
-          totalValue: 0,
-          lowStock: 0,
-          outOfStock: 0
-        }
+        stats
       }, 'Productos obtenidos exitosamente');
 
     } catch (error) {
@@ -206,6 +228,31 @@ class ProductsController {
         finalSKU = sku.trim();
       }
 
+      // ⭐ CRÍTICO: Verificar límite de productos según plan
+      const tenant = await Tenant.findById(req.tenantId);
+
+      if (!tenant) {
+        return errorResponse(res, 'Tenant no encontrado', 404);
+      }
+
+      const maxProducts = tenant.limits?.maxProducts || 500; // Default: 500
+      const currentProductCount = await Product.countDocuments({ tenantId: req.tenantId });
+
+      // Solo validar si el límite no es ilimitado (-1)
+      if (maxProducts !== -1 && currentProductCount >= maxProducts) {
+        console.log(`🚫 Límite de productos alcanzado: ${currentProductCount}/${maxProducts}`);
+        return errorResponse(
+          res,
+          `Has alcanzado el límite de productos para tu plan (${maxProducts} productos).`,
+          403,
+          {
+            limit: maxProducts,
+            current: currentProductCount,
+            planName: tenant.name || 'Básico'
+          }
+        );
+      }
+
       const newProduct = new Product({
         name,
         sku: finalSKU,
@@ -219,7 +266,6 @@ class ProductsController {
       await newProduct.save();
 
       // ⭐ CRÍTICO: Incrementar contador de productos
-      const Tenant = require('../../core/tenants/model');
       await Tenant.findByIdAndUpdate(
         req.tenantId,
         { $inc: { 'metadata.totalProducts': 1 } }
@@ -320,7 +366,6 @@ class ProductsController {
       await Product.findOneAndDelete({ _id: id, tenantId: req.tenantId });
 
       // ⭐ CRÍTICO: Decrementar contador de productos
-      const Tenant = require('../../core/tenants/model');
       await Tenant.findByIdAndUpdate(
         req.tenantId,
         { $inc: { 'metadata.totalProducts': -1 } }
