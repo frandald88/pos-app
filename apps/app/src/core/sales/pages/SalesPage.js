@@ -86,9 +86,12 @@ export default function SalesPage() {
     deliveryUsers,
     userRole,
     tiendaSeleccionada,
+    productStats,
     loading,
     error,
     setTiendaSeleccionada,
+    loadProducts,
+    searchProductByBarcode,
     reloadClientes // ⭐ NUEVO: Función para recargar clientes
   } = useSalesData();
 
@@ -155,6 +158,31 @@ export default function SalesPage() {
     setMsg
   } = useSaleActions();
 
+  // ⭐ NUEVO: Búsqueda con debounce en el backend
+  useEffect(() => {
+    if (!tiendaSeleccionada) return;
+
+    // Debounce de 500ms para la búsqueda
+    const timeoutId = setTimeout(() => {
+      loadProducts(tiendaSeleccionada, search);
+    }, 500);
+
+    // Cleanup: cancelar timeout si el usuario sigue escribiendo
+    return () => clearTimeout(timeoutId);
+  }, [search, tiendaSeleccionada]);
+
+  // ⭐ NUEVO: Recargar productos cuando cambia la categoría activa
+  useEffect(() => {
+    if (!tiendaSeleccionada) return;
+
+    // No hacer nada si hay búsqueda activa (la búsqueda tiene prioridad)
+    if (search.trim()) return;
+
+    // Si hay categoría activa, cargar productos de esa categoría del backend
+    // Si no hay categoría (activeCategory = ''), cargar todos los productos
+    loadProducts(tiendaSeleccionada, '', activeCategory);
+  }, [activeCategory, tiendaSeleccionada]);
+
   // Listener para escaneo de código de barras
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -206,7 +234,31 @@ export default function SalesPage() {
           }
         } else {
           // Búsqueda normal de código de barras
-          const product = products.find(p => p.barcode === barcode);
+          let product = products.find(p => p.barcode === barcode);
+
+          // ⭐ Si no se encuentra localmente, buscar en el backend
+          if (!product) {
+            searchProductByBarcode(barcode).then(foundProduct => {
+              if (foundProduct) {
+                product = foundProduct;
+
+                // Verificar si es un producto que se vende por peso (Escenario 2)
+                if (product.soldByWeight) {
+                  setProductForWeight(product);
+                  setShowWeightModal(true);
+                } else {
+                  addToCart(product);
+                  setMsg(`Producto "${product.name}" agregado al carrito`);
+                  setTimeout(() => setMsg(''), 2000);
+                }
+              } else {
+                setMsg(`No se encontró producto con código de barras: ${barcode}`);
+                setTimeout(() => setMsg(''), 3000);
+              }
+            });
+            setBarcodeBuffer('');
+            return; // Salir aquí porque el resto se maneja en el .then()
+          }
 
           if (product) {
             // Verificar si es un producto que se vende por peso (Escenario 2)
@@ -220,9 +272,6 @@ export default function SalesPage() {
               setMsg(`Producto "${product.name}" agregado al carrito`);
               setTimeout(() => setMsg(''), 2000);
             }
-          } else {
-            setMsg(`No se encontró producto con código de barras: ${barcode}`);
-            setTimeout(() => setMsg(''), 3000);
           }
         }
 
@@ -238,11 +287,16 @@ export default function SalesPage() {
   }, [barcodeBuffer, lastKeyTime, products, addToCart, setMsg]);
 
   // Manejar búsqueda manual por código de barras
-  const handleManualBarcodeSearch = (e) => {
+  const handleManualBarcodeSearch = async (e) => {
     e.preventDefault();
     if (!manualBarcode.trim()) return;
 
-    const product = products.find(p => p.barcode === manualBarcode.trim());
+    let product = products.find(p => p.barcode === manualBarcode.trim());
+
+    // ⭐ Si no se encuentra localmente, buscar en el backend
+    if (!product) {
+      product = await searchProductByBarcode(manualBarcode.trim());
+    }
 
     if (product) {
       addToCart(product);
@@ -594,6 +648,7 @@ export default function SalesPage() {
             onAddToCart={handleAddToCart}
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
+            categoryCounts={productStats?.categoryCounts || {}}
           />
         </div>
       </div>

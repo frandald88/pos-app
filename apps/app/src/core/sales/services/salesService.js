@@ -15,15 +15,24 @@ class SalesService {
   }
 
   // Obtener productos para la venta
-  async getProducts(tiendaId = null) {
+  async getProducts(tiendaId = null, searchQuery = '', category = '') {
     try {
-      const params = tiendaId ? { tiendaId } : {};
+      // ⭐ Mostrar 40 productos por defecto (optimización para supermercados)
+      // La búsqueda y código de barras siguen buscando en TODA la base de datos
+      const params = {
+        limit: 40,
+        inStock: true, // Solo productos con stock disponible
+        ...(tiendaId && { tiendaId }),
+        ...(searchQuery && { search: searchQuery }),
+        ...(category && { category })
+      };
+
       const response = await axios.get(`${apiBaseUrl}/api/products`, {
         headers: this.getHeaders(),
         params
       });
+
       // El controller devuelve un objeto con products, pagination, stats
-      // Pero el frontend solo necesita el array de products
       let products;
       if (response.data.data?.products) {
         products = response.data.data.products;
@@ -34,7 +43,11 @@ class SalesService {
       } else {
         products = [];
       }
-      return products;
+
+      // ⭐ NUEVO: También extraer stats para conteos de categorías
+      const stats = response.data.data?.stats || response.data.stats || {};
+
+      return { products, stats };
     } catch (error) {
       console.error('Error al cargar productos:', error);
       throw error;

@@ -10,6 +10,7 @@ export const useSalesData = () => {
   const [tiendaSeleccionada, setTiendaSeleccionada] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [productStats, setProductStats] = useState({}); // ⭐ NUEVO: Stats con conteos de categorías
   const initialLoadDone = useRef(false);
 
   // Cargar datos iniciales
@@ -45,13 +46,14 @@ export const useSalesData = () => {
 
         // Cargar clientes y productos en paralelo una vez que sabemos la tienda
         if (tiendaToUse) {
-          const [clientesData, productsData] = await Promise.all([
+          const [clientesData, productsResponse] = await Promise.all([
             salesService.getClientes(),
             salesService.getProducts(tiendaToUse)
           ]);
 
           setClientes(clientesData);
-          setProducts(productsData);
+          setProducts(productsResponse.products);
+          setProductStats(productsResponse.stats); // ⭐ NUEVO
           setTiendaSeleccionada(tiendaToUse);
           localStorage.setItem('tiendaId', tiendaToUse);
           initialLoadDone.current = true;
@@ -74,13 +76,26 @@ export const useSalesData = () => {
   }, []);
 
   // Cargar productos cuando cambia la tienda
-  const loadProducts = async (tiendaId) => {
+  const loadProducts = async (tiendaId, searchQuery = '', category = '') => {
     try {
-      const productsData = await salesService.getProducts(tiendaId);
-      setProducts(productsData);
+      const productsResponse = await salesService.getProducts(tiendaId, searchQuery, category);
+      setProducts(productsResponse.products);
+      setProductStats(productsResponse.stats); // ⭐ NUEVO
     } catch (err) {
       console.error('Error loading products:', err);
       setProducts([]);
+      setProductStats({});
+    }
+  };
+
+  // ⭐ NUEVO: Buscar producto por código de barras en toda la BD
+  const searchProductByBarcode = async (barcode) => {
+    try {
+      const productsResponse = await salesService.getProducts(tiendaSeleccionada, barcode);
+      return productsResponse.products.find(p => p.barcode === barcode);
+    } catch (err) {
+      console.error('Error searching product by barcode:', err);
+      return null;
     }
   };
 
@@ -136,6 +151,7 @@ export const useSalesData = () => {
     deliveryUsers,
     userRole,
     tiendaSeleccionada,
+    productStats, // ⭐ NUEVO: Stats con conteos de categorías
 
     // State
     loading,
@@ -145,6 +161,7 @@ export const useSalesData = () => {
     setTiendaSeleccionada,
     loadProducts,
     loadDeliveryUsers,
-    reloadClientes // ⭐ NUEVO
+    reloadClientes,
+    searchProductByBarcode // ⭐ NUEVO: Búsqueda de productos por barcode en BD
   };
 };

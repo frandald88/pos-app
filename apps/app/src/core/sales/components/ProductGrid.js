@@ -6,7 +6,8 @@ const ProductGrid = ({
   setSearch,
   onAddToCart,
   activeCategory,
-  setActiveCategory
+  setActiveCategory,
+  categoryCounts = {} // ⭐ NUEVO: Conteos reales de categorías del backend
 }) => {
   const [addingCustomProduct, setAddingCustomProduct] = useState(false);
   const [customProduct, setCustomProduct] = useState({ name: '', price: '' });
@@ -129,24 +130,21 @@ const ProductGrid = ({
     return '📦';
   };
 
-  // Filtrar productos por búsqueda
-  const filteredProducts = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase()) ||
-    (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()))
-  );
+  // ⭐ La búsqueda y filtrado de categorías ahora se hacen en el backend
+  // El ProductGrid solo muestra los productos que recibe (ya filtrados por el backend)
 
-  // Agrupar por categoría
-  const groupedByCategory = filteredProducts.reduce((acc, product) => {
+  // Agrupar por categoría (solo para mostrar las tabs de categorías)
+  const groupedByCategory = products.reduce((acc, product) => {
     acc[product.category] = acc[product.category] || [];
     acc[product.category].push(product);
     return acc;
   }, {});
 
   const categories = Object.keys(groupedByCategory);
-  const displayProducts = activeCategory 
-    ? groupedByCategory[activeCategory] || []
-    : filteredProducts;
+
+  // Mostrar directamente los productos que vienen del backend
+  // (ya filtrados por categoría si hay una activa)
+  const displayProducts = products;
 
   // Agregar producto personalizado
   const handleAddCustomProduct = () => {
@@ -228,7 +226,7 @@ const ProductGrid = ({
               className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm hover:shadow-md active:scale-95 ${activeCategory === category ? 'text-white' : 'border-2'}`}
               style={activeCategory === category ? { background: 'linear-gradient(135deg, #46546b 0%, #23334e 100%)' } : { color: '#697487', backgroundColor: 'white', borderColor: '#cbd5e1' }}
             >
-              {getCategoryIcon(category)} {category} ({groupedByCategory[category]?.length || 0})
+              {getCategoryIcon(category)} {category} ({categoryCounts[category] || groupedByCategory[category]?.length || 0})
             </button>
           ))}
         </div>

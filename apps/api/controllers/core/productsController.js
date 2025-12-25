@@ -83,7 +83,8 @@ class ProductsController {
       if (search) {
         filter.$or = [
           { name: { $regex: search, $options: 'i' } },
-          { sku: { $regex: search, $options: 'i' } }
+          { sku: { $regex: search, $options: 'i' } },
+          { barcode: { $regex: search, $options: 'i' } } // ⭐ NUEVO: Buscar también por código de barras
         ];
       }
 
@@ -139,11 +140,35 @@ class ProductsController {
         }
       ]);
 
+      // ⭐ NUEVO: Conteo de productos por categoría (limitado a 40 por categoría para el frontend)
+      const categoryCounts = await Product.aggregate([
+        { $match: tenantFilterForAggregate },
+        {
+          $group: {
+            _id: '$category',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            category: '$_id',
+            count: { $min: ['$count', 40] } // Limitar display a 40 máximo
+          }
+        }
+      ]);
+
+      // Convertir a objeto para fácil acceso
+      const categoryCountsObj = categoryCounts.reduce((acc, item) => {
+        acc[item.category] = item.count;
+        return acc;
+      }, {});
+
       const stats = {
         totalProducts,
         totalValue: valueAgg[0]?.totalValue || 0,
         lowStock,
-        outOfStock
+        outOfStock,
+        categoryCounts: categoryCountsObj // ⭐ NUEVO
       };
 
       console.log('📊 Stats calculadas:', stats);
