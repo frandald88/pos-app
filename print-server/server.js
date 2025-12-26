@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const { ThermalPrinter, PrinterTypes } = require('node-thermal-printer');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 const app = express();
 const PORT = process.env.PORT || 9100;
@@ -26,6 +29,104 @@ app.get('/health', (req, res) => {
     version: '1.0.0',
     timestamp: new Date().toISOString()
   });
+});
+
+// Endpoint para listar impresoras disponibles en el sistema
+app.get('/printers/list', async (req, res) => {
+  try {
+    console.log('🔍 Solicitando lista de impresoras del sistema...');
+
+    const printers = await getPrintersList();
+
+    console.log(`✅ Encontradas ${printers.length} impresoras`);
+
+    res.json({
+      success: true,
+      printers: printers,
+      platform: process.platform
+    });
+  } catch (error) {
+    console.error('❌ Error listando impresoras:', error);
+    res.status(500).json({
+      error: 'Failed to list printers',
+      details: error.message,
+      platform: process.platform
+    });
+  }
+});
+
+// Endpoint para prueba de impresión
+app.post('/test-print', async (req, res) => {
+  try {
+    const { config } = req.body;
+
+    console.log('🧪 Solicitud de prueba de impresión');
+    console.log('🔧 Config:', config);
+
+    // Validar que se recibió la configuración
+    if (!config) {
+      return res.status(400).json({ error: 'Config is required' });
+    }
+
+    // Crear instancia de la impresora
+    const printer = await createPrinter(config);
+
+    // Generar ticket de prueba
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println('ASTRODISH POS');
+    printer.bold(false);
+    printer.setTextNormal();
+    printer.println('Prueba de Impresion');
+
+    printer.drawLine();
+
+    printer.alignLeft();
+    printer.println('Esta es una prueba de impresion');
+    printer.println('para verificar la configuracion');
+    printer.println('de tu impresora termica.');
+
+    printer.newLine();
+    printer.println(`Fecha: ${new Date().toLocaleString('es-MX')}`);
+    printer.println(`Impresora: ${config.printerName || 'No especificada'}`);
+    printer.println(`Tipo: ${config.printerType || 'EPSON'}`);
+    printer.println(`Conexion: ${config.connectionType || 'USB'}`);
+
+    printer.drawLine();
+
+    printer.alignCenter();
+    printer.println('Si puedes leer esto,');
+    printer.bold(true);
+    printer.println('LA CONFIGURACION ES CORRECTA!');
+    printer.bold(false);
+
+    printer.newLine();
+    printer.setTextSize(0, 0);
+    printer.println('Powered by Astrodish');
+
+    printer.newLine();
+    printer.newLine();
+    printer.newLine();
+
+    printer.cut();
+
+    // Ejecutar impresión
+    await executePrint(printer);
+
+    console.log('✅ Prueba de impresión exitosa');
+
+    res.json({
+      success: true,
+      message: 'Test print completed successfully'
+    });
+  } catch (error) {
+    console.error('❌ Error en prueba de impresión:', error);
+    res.status(500).json({
+      error: 'Failed to print test',
+      details: error.message
+    });
+  }
 });
 
 // Endpoint para imprimir ticket
@@ -104,6 +205,107 @@ app.post('/print/comanda', async (req, res) => {
     });
   }
 });
+
+// Función para obtener lista de impresoras del sistema
+async function getPrintersList() {
+  const platform = process.platform;
+  let printers = [];
+
+  try {
+    if (platform === 'win32') {
+      // Windows - Usar PowerShell para listar impresoras
+      const command = 'powershell -Command "Get-Printer | Select-Object Name, Type, DriverName, PortName | ConvertTo-Json"';
+      const { stdout } = await execPromise(command);
+
+      const rawPrinters = JSON.parse(stdout);
+      const printerArray = Array.isArray(rawPrinters) ? rawPrinters : [rawPrinters];
+
+      printers = printerArray.map(p => ({
+        name: p.Name,
+        displayName: p.Name,
+        type: detectPrinterType(p.Name, p.DriverName),
+        connection: detectConnectionType(p.PortName),
+        portName: p.PortName,
+        driverName: p.DriverName,
+        isThermal: isThermalPrinter(p.Name, p.DriverName)
+      }));
+    } else if (platform === 'darwin' || platform === 'linux') {
+      // macOS y Linux - Usar lpstat
+      const { stdout } = await execPromise('lpstat -p -d');
+
+      // Parsear salida de lpstat
+      const lines = stdout.split('\n');
+      const printerNames = lines
+        .filter(line => line.startsWith('printer'))
+        .map(line => {
+          const match = line.match(/printer\s+(\S+)/);
+          return match ? match[1] : null;
+        })
+        .filter(name => name !== null);
+
+      printers = printerNames.map(name => ({
+        name: name,
+        displayName: name,
+        type: detectPrinterType(name, ''),
+        connection: 'USB',
+        portName: '',
+        driverName: '',
+        isThermal: isThermalPrinter(name, '')
+      }));
+    }
+
+    // Ordenar: impresoras térmicas primero
+    printers.sort((a, b) => {
+      if (a.isThermal && !b.isThermal) return -1;
+      if (!a.isThermal && b.isThermal) return 1;
+      return 0;
+    });
+
+  } catch (error) {
+    console.error('Error obteniendo lista de impresoras:', error);
+    throw error;
+  }
+
+  return printers;
+}
+
+// Función para detectar si es impresora térmica
+function isThermalPrinter(name, driver) {
+  const thermalKeywords = [
+    'thermal', 'tm-', 'tsp', 'star', 'epson', 'receipt',
+    'pos', 'ticket', 'tanca', 'daruma', 'bematech',
+    'rp', 'ct-', 'kitchen', 'cocina', 'comanda'
+  ];
+
+  const searchText = `${name} ${driver}`.toLowerCase();
+  return thermalKeywords.some(keyword => searchText.includes(keyword));
+}
+
+// Función para detectar tipo de impresora
+function detectPrinterType(name, driver) {
+  const searchText = `${name} ${driver}`.toLowerCase();
+
+  if (searchText.includes('epson') || searchText.includes('tm-')) return 'EPSON';
+  if (searchText.includes('star') || searchText.includes('tsp')) return 'STAR';
+  if (searchText.includes('tanca')) return 'TANCA';
+  if (searchText.includes('daruma')) return 'DARUMA';
+  if (searchText.includes('bematech')) return 'BEMATECH';
+
+  return 'EPSON'; // Default
+}
+
+// Función para detectar tipo de conexión
+function detectConnectionType(portName) {
+  if (!portName) return 'USB';
+
+  const portLower = portName.toLowerCase();
+
+  if (portLower.includes('usb')) return 'USB';
+  if (portLower.includes('ip_') || portLower.includes('tcp')) return 'NETWORK';
+  if (portLower.includes('com') || portLower.includes('serial')) return 'SERIAL';
+
+  return 'USB'; // Default
+}
 
 // Función auxiliar para crear instancia de impresora
 async function createPrinter(config) {
